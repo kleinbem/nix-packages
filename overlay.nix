@@ -2,11 +2,11 @@
 # case where you don't want to add the whole NUR namespace to your
 # configuration.
 
-self: super:
+final: prev:
 let
   isReserved = n: n == "lib" || n == "overlays" || n == "modules";
   nameValuePair = n: v: { name = n; value = v; };
-  nurAttrs = import ./default.nix { pkgs = super; };
+  nurAttrs = import ./default.nix { pkgs = prev; };
 
 in
 builtins.listToAttrs
