@@ -6,10 +6,11 @@
 # commands such as:
 #     nix-build -A mypackage
 
-{ pkgs ? import <nixpkgs> { } }:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 
 {
-
 
   example-package = pkgs.callPackage ./pkgs/example-package { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };

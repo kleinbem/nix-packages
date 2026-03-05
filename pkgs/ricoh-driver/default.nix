@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 pkgs.stdenv.mkDerivation {
   pname = "ricoh-official-driver";
@@ -54,17 +54,23 @@ pkgs.stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  # This is the secret sauce: it wraps the filters so they can 
+  # This is the secret sauce: it wraps the filters so they can
   # find 'gs' (Ghostscript) and 'cat' even in the restricted CUPS env.
   postFixup = ''
     for filter in $out/lib/cups/filter/*; do
-      wrapProgram "$filter" --prefix PATH : "${pkgs.lib.makeBinPath [ pkgs.ghostscript pkgs.coreutils pkgs.gnused ]}"
+      wrapProgram "$filter" --prefix PATH : "${
+        lib.makeBinPath [
+          pkgs.ghostscript
+          pkgs.coreutils
+          pkgs.gnused
+        ]
+      }"
     done
   '';
 
   meta = {
     description = "Ricoh SP 220Nw Official Driver";
-    license = pkgs.lib.licenses.unfree;
-    platforms = pkgs.lib.platforms.linux;
+    license = lib.licenses.unfree;
+    platforms = lib.platforms.linux;
   };
 }
