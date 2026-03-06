@@ -8,6 +8,8 @@
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
+    nix-devshells.url = "path:../nix-devshells";
+    nix-devshells.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -19,9 +21,7 @@
         "x86_64-darwin"
         "aarch64-darwin"
       ];
-      imports = [
-        inputs.treefmt-nix.flakeModule
-      ];
+      imports = [ ];
 
       flake = {
         overlays.default = import ./overlay.nix;
@@ -43,10 +43,7 @@
           legacyPkgs = import ./default.nix { pkgs = pkgsUnfree; };
         in
         {
-          treefmt = {
-            projectRootFile = "flake.nix";
-            programs.nixfmt.enable = true;
-          };
+          formatter = inputs.nix-devshells.formatter.${system};
 
           checks.pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
             src = ./.;
