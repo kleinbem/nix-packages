@@ -13,6 +13,7 @@
 {
 
   example-package = pkgs.callPackage ./pkgs/example-package { };
+  langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...

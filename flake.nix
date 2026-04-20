@@ -25,6 +25,7 @@
 
       flake = {
         overlays.default = import ./overlay.nix;
+        nixosModules.langfuse = import ./modules/nixos/langfuse.nix;
       };
 
       perSystem =
@@ -37,7 +38,7 @@
         }:
         let
           pkgsUnfree = import inputs.nixpkgs {
-            inherit system;
+            hostPlatform = system;
             config.allowUnfree = true;
           };
           legacyPkgs = import ./default.nix { pkgs = pkgsUnfree; };
