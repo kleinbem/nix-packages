@@ -8,7 +8,7 @@
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
-    nix-devshells.url = "path:/home/martin/Develop/github.com/kleinbem/nix/nix-devshells";
+    nix-devshells.url = "github:kleinbem/nix-devshells";
     nix-devshells.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -38,7 +38,7 @@
         }:
         let
           pkgsUnfree = import inputs.nixpkgs {
-            hostPlatform = system;
+            inherit system;
             config.allowUnfree = true;
           };
           legacyPkgs = import ./default.nix { pkgs = pkgsUnfree; };

@@ -10,7 +10,7 @@
 # which this is possible.
 
 {
-  pkgs ? import <nixpkgs> { },
+  pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
 }:
 
 let
