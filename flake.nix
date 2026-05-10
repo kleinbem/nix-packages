@@ -69,7 +69,7 @@
 
           legacyPackages = legacyPkgs;
 
-          packages = lib.filterAttrs (_: v: lib.isDerivation v) legacyPkgs;
+          packages = lib.filterAttrs (_: v: lib.isDerivation v && lib.meta.availableOn system v) legacyPkgs;
         };
     };
 }
