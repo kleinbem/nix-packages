@@ -10,7 +10,10 @@
 # which this is possible.
 
 {
-  pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
+  pkgs ? import (builtins.getFlake "nixpkgs") {
+    system = "x86_64-linux";
+    config.allowUnfree = true;
+  },
 }:
 
 let
