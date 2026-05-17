@@ -46,8 +46,8 @@ stdenv.mkDerivation rec {
 
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
-    hash = "sha256-6ZiUEitVOQQfYL1MnNoaJTF/fdUcdOpHtvnYIiNOJSY=";
-    fetcherVersion = 2; # For pnpm v10
+    hash = "sha256-/nS+9PeSuxSfpOpJ15rQa4HwvWRfJfD2MAKfWInWrNw=";
+    fetcherVersion = 3; # For pnpm v10
     # Ensure patches are available during the offline fetch
     prePnpmInstall = ''
       cp -r ${src}/patches .
