@@ -818,11 +818,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1779628288,
-        "narHash": "sha256-hlrdE8RLcie6h3p7YfOgRaS/TSub0BwBYxK+JC8ezGE=",
+        "lastModified": 1779628955,
+        "narHash": "sha256-AGPt2b+EYQQyM6yyxVyaKj7eRLXRM/NDmiISPFVf5jc=",
         "ref": "refs/heads/main",
-        "rev": "7ef1a0c6399a58a68c4303a518ab367e3c6ae6fc",
-        "revCount": 31,
+        "rev": "711329fe253d3b2a58a31b4f36832a9e796ccc13",
+        "revCount": 32,
         "type": "git",
         "url": "file:///home/martin/Develop/github.com/kleinbem/nix/nix-devshells"
       },
