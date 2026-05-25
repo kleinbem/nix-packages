@@ -818,10 +818,10 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1779716819,
+        "lastModified": 1779716903,
         "narHash": "sha256-/kLhNXJZO/ySqVn+ampGEt6sbWa/r/BwMD2C55pVfv4=",
         "ref": "refs/heads/main",
-        "rev": "1ec0e746a7cde85879608d23a8c8252d20edafcb",
+        "rev": "8c8f4408b69f7529cb77cc009cb851174590247b",
         "revCount": 39,
         "type": "git",
         "url": "file:///home/martin/Develop/github.com/kleinbem/nix/nix-devshells"
