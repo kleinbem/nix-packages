@@ -445,11 +445,11 @@
         "zon2nix": "zon2nix"
       },
       "locked": {
-        "lastModified": 1779573072,
-        "narHash": "sha256-DgdXilZcUCEQdOcgt2+Aj77+up2OkdBFg5Q6En5PUB0=",
+        "lastModified": 1779679738,
+        "narHash": "sha256-6K6ejMEDCsc6ful5y1aTggAGHvN48flDONwEYwK6KX4=",
         "owner": "mitchellh",
         "repo": "ghostty",
-        "rev": "d5d8cef4d3834cc8999eb9344066b0960b033f2d",
+        "rev": "b869a6e5ab0a50ce01e8eb5aa408a02b3cbe4f3a",
         "type": "github"
       },
       "original": {
@@ -818,11 +818,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1779654398,
-        "narHash": "sha256-qdcreJ84QeGnUFdki9U/Doq7BfZpDYb6OHBCM9xbt8Q=",
+        "lastModified": 1779701500,
+        "narHash": "sha256-626qfS+BlPvo2jInx0xvGwEupSsSDDA7UTpyQ14VBTs=",
         "ref": "refs/heads/main",
-        "rev": "73bbcbb98d2e4d039249e7269472cbaea03f0339",
-        "revCount": 37,
+        "rev": "aaf8230af81443c818c49042483aa22ef31de33d",
+        "revCount": 46,
         "type": "git",
         "url": "file:///home/martin/Develop/github.com/kleinbem/nix/nix-devshells"
       },
@@ -994,11 +994,11 @@
     },
     "nixpkgs-master": {
       "locked": {
-        "lastModified": 1779653956,
-        "narHash": "sha256-yhxow7FmhoytK9UVSQsFFBx40H4h08gNvriRVjDyEYU=",
+        "lastModified": 1779700997,
+        "narHash": "sha256-DbSXeSgx/So9liFDiBfgNmAkkajlR7ush5oESxEeYqE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "db1afdd80869a08217dff49fb27f11b537e3e6ac",
+        "rev": "b5341111f31e15402ef007169342550232145225",
         "type": "github"
       },
       "original": {
@@ -1264,11 +1264,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779592685,
-        "narHash": "sha256-p9d56GezhHRf4QfANxwa1d+fvwShvjB5XUhdIl7WEd0=",
+        "lastModified": 1779679233,
+        "narHash": "sha256-qSIAAfK66X6waos6alIYxVze1ZU3C/WPp7NlN4ooP54=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "3a58b199e7c83a80b85c28044f808085ba7e941c",
+        "rev": "47ab6c7b3c6a68beac60067490240efa32ae344c",
         "type": "github"
       },
       "original": {
