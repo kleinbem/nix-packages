@@ -1,6 +1,6 @@
 name: "Build and populate cache"
 on:
-  pull_request:
+  workflow_dispatch: # disabled: unfilled NUR template, trigger manually only
   push:
     branches:
       - main
