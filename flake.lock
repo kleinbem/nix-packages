@@ -574,6 +574,29 @@
         "type": "github"
       }
     },
+    "git-hooks_5": {
+      "inputs": {
+        "flake-compat": "flake-compat_6",
+        "gitignore": "gitignore_7",
+        "nixpkgs": [
+          "nix-devshells",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1778507602,
+        "narHash": "sha256-kTwur1wV+01SdqskVMSo6JMEpg71ps3HpbFY2GsflKs=",
+        "owner": "cachix",
+        "repo": "git-hooks.nix",
+        "rev": "61ab0e80d9c7ab14c256b5b453d8b3fb0189ba0a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cachix",
+        "repo": "git-hooks.nix",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -722,7 +745,7 @@
       "inputs": {
         "nixpkgs": [
           "nix-devshells",
-          "pre-commit-hooks",
+          "git-hooks",
           "nixpkgs"
         ]
       },
@@ -828,6 +851,7 @@
         "devenv": "devenv",
         "flake-parts": "flake-parts_5",
         "ghostty": "ghostty",
+        "git-hooks": "git-hooks_5",
         "mk-shell-bin": "mk-shell-bin",
         "nix2container": "nix2container",
         "nixos-generators": "nixos-generators",
@@ -835,16 +859,15 @@
           "nixpkgs"
         ],
         "nixpkgs-master": "nixpkgs-master",
-        "pre-commit-hooks": "pre-commit-hooks_3",
         "rust-overlay": "rust-overlay_2",
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1779791666,
-        "narHash": "sha256-DLaxa1+KLrVgOKzar45Yu7EuC7Qp/5iLwT3D2wegoZk=",
+        "lastModified": 1779792507,
+        "narHash": "sha256-bAxTesmixJC3GGj5dATO4Lep2roYx4pNYewqko86GlM=",
         "ref": "refs/heads/main",
-        "rev": "16b7cb97f51ed6ed3bc777d4819791b267049194",
-        "revCount": 45,
+        "rev": "e3ddc7fa4aaa2df4fd6a5eaa87d490bc51ac391d",
+        "revCount": 46,
         "type": "git",
         "url": "file:///home/martin/Develop/github.com/kleinbem/nix/nix-devshells"
       },
@@ -1194,29 +1217,6 @@
         "owner": "cachix",
         "repo": "pre-commit-hooks.nix",
         "rev": "a1ef738813b15cf8ec759bdff5761b027e3e1d23",
-        "type": "github"
-      },
-      "original": {
-        "owner": "cachix",
-        "repo": "pre-commit-hooks.nix",
-        "type": "github"
-      }
-    },
-    "pre-commit-hooks_3": {
-      "inputs": {
-        "flake-compat": "flake-compat_6",
-        "gitignore": "gitignore_7",
-        "nixpkgs": [
-          "nix-devshells",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1778507602,
-        "narHash": "sha256-kTwur1wV+01SdqskVMSo6JMEpg71ps3HpbFY2GsflKs=",
-        "owner": "cachix",
-        "repo": "pre-commit-hooks.nix",
-        "rev": "61ab0e80d9c7ab14c256b5b453d8b3fb0189ba0a",
         "type": "github"
       },
       "original": {
