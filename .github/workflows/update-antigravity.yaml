@@ -1,0 +1,106 @@
+name: "Update Antigravity"
+
+# Bumps pkgs/antigravity/versions.json to the latest Google Antigravity
+# releases and opens a PR. Hosted runner — this only discovers versions,
+# prefetches hashes (from Google's official CDNs) and verifies the build.
+#
+# Attic warming is NOT done here: once this PR is merged and the meta-workspace
+# (kleinbem/nix) bumps its nix-packages submodule pointer, the self-hosted
+# `build-packages.yaml` there builds + pushes the closure to cache.kleinbem.dev
+# (hosted runners hit the Cloudflare 413, so they never push).
+
+on:
+  schedule:
+    # Saturdays 05:00 UTC — offset from the meta repo's Sunday update-and-warm.
+    - cron: '0 5 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: "Bump versions.json & open PR"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          # GH_PAT (TF-distributed) rather than the built-in GITHUB_TOKEN: a PAT
+          # can open + merge PRs regardless of the repo's "Allow Actions to
+          # create/approve PRs" setting, so no manual GitHub toggle is required.
+          token: ${{ secrets.GH_PAT }}
+          persist-credentials: false
+
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+
+      - name: Run updater
+        id: update
+        run: |
+          chmod +x scripts/update-antigravity.sh
+          ./scripts/update-antigravity.sh
+          if git diff --quiet pkgs/antigravity/versions.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            ver() { jq -r ".\"$1\".\"x86_64-linux\".url" pkgs/antigravity/versions.json | grep -oP '[0-9]+\.[0-9]+\.[0-9]+-[0-9]+'; }
+            {
+              echo "app=$(ver 'Antigravity 2.0')"
+              echo "ide=$(ver 'Antigravity IDE')"
+              echo "cli=$(ver 'Antigravity CLI')"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify build (eval + build no-FHS IDE)
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          OV="--override-input nix-devshells github:kleinbem/nix-devshells"
+          nix flake check $OV
+          nix build $OV -L \
+            .#packages.x86_64-linux.google-antigravity-ide-no-fhs \
+            .#packages.x86_64-linux.google-antigravity-cli
+
+      - name: Open PR
+        id: cpr
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          commit-message: "chore: update antigravity (app ${{ steps.update.outputs.app }}, ide ${{ steps.update.outputs.ide }}, cli ${{ steps.update.outputs.cli }})"
+          title: "chore: update antigravity (ide ${{ steps.update.outputs.ide }})"
+          body: |
+            ## Antigravity update
+
+            Bumps `pkgs/antigravity/versions.json` to the latest Google releases.
+            Hashes were prefetched directly from Google's official CDNs.
+
+            - **App 2.0**: `${{ steps.update.outputs.app }}`
+            - **IDE**: `${{ steps.update.outputs.ide }}`
+            - **CLI** (`agy`): `${{ steps.update.outputs.cli }}`
+
+            ✅ `nix flake check` + `nix build` (no-FHS IDE, CLI) passed on CI.
+
+            After merge, bump the `nix-packages` submodule in `kleinbem/nix` to warm Attic via `build-packages`.
+
+            ---
+            🤖 Opened automatically by the update-antigravity workflow.
+          branch: auto-update/antigravity
+          delete-branch: true
+          labels: |
+            automated
+            antigravity
+
+      # Fully hands-off: the build-verify step above is the gate, so squash-merge
+      # immediately. Try repo auto-merge first; fall back to a direct merge if
+      # "Allow auto-merge" is off or nothing is blocking.
+      - name: Auto-merge
+        if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          PR: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          gh pr merge "$PR" --squash --delete-branch --auto \
+            || gh pr merge "$PR" --squash --delete-branch
