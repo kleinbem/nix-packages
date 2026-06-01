@@ -22,13 +22,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "langfuse";
-  version = "3.176.0";
+  version = "3.177.1";
 
   src = fetchFromGitHub {
     owner = "langfuse";
     repo = "langfuse";
     rev = "v${version}";
-    hash = "sha256-6s7RvBoQOMsmH/U9VquYYu45IHvn7pYtY3KFSedfRHw=";
+    hash = "sha256-Lm5aEKNAXtsoKONhnikcqGnwDKxr4ZzUAXuUQovmfFA=";
   };
 
   nativeBuildInputs = [
@@ -48,7 +48,7 @@ stdenv.mkDerivation rec {
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
     inherit pnpm;
-    hash = "sha256-pUUZxO8KoCvq7/gWv094XqIgvsd0mejyJVzFkYfKXbY=";
+    hash = "sha256-alYSfnvMIR/uTS/35roPak96RjTH/jzBsz/VSdr5eDs=";
     fetcherVersion = 3;
     prePnpmInstall = ''
       cp -r ${src}/patches .

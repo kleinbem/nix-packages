@@ -1,0 +1,78 @@
+name: "Update Langfuse"
+
+# Bumps pkgs/langfuse/default.nix to the latest Langfuse release and opens
+# a PR. Runs on the self-hosted runner because the pnpm deps fetch downloads
+# all dependencies — too heavy for a hosted runner and benefits from the Nix
+# cache on the local machine.
+#
+# Update cadence: Langfuse releases ~2x per week. Weekly CI keeps lag ≤ 1 week.
+# For urgent security releases, trigger manually via workflow_dispatch.
+
+on:
+  schedule:
+    # Sundays 04:00 UTC — offset from Antigravity (Saturday 05:00).
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: "Bump default.nix & open PR"
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          token: ${{ secrets.GH_PAT }}
+          persist-credentials: false
+
+      - name: Run updater
+        id: update
+        run: |
+          chmod +x scripts/update-langfuse.sh
+          ./scripts/update-langfuse.sh
+          if git diff --quiet pkgs/langfuse/default.nix; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            VER=$(grep -oP 'version = "\K[^"]+' pkgs/langfuse/default.nix | head -1)
+            echo "version=$VER" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR
+        id: cpr
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          commit-message: "chore: update langfuse to ${{ steps.update.outputs.version }}"
+          title: "chore: update langfuse to ${{ steps.update.outputs.version }}"
+          body: |
+            ## Langfuse update
+
+            Bumps `pkgs/langfuse/default.nix` to **${{ steps.update.outputs.version }}**.
+            Source hash and pnpm deps hash updated; pnpm major version checked.
+
+            ✅ Full `nix build .#langfuse` passed on the self-hosted runner.
+
+            After merge, bump the `nix-packages` submodule in `kleinbem/nix` to
+            warm Attic via `build-packages`.
+
+            ---
+            🤖 Opened automatically by the update-langfuse workflow.
+          branch: auto-update/langfuse
+          delete-branch: true
+          labels: |
+            automated
+            dependencies
+
+      - name: Auto-merge
+        if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          PR: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          gh pr merge "$PR" --squash --delete-branch --auto \
+            || gh pr merge "$PR" --squash --delete-branch
