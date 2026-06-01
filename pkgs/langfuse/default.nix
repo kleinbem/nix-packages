@@ -5,7 +5,7 @@
   nodejs_22,
   pnpmConfigHook,
   fetchPnpmDeps,
-  pnpm_10,
+  pnpm_11,
   prisma-engines_6,
   python3,
   pkg-config,
@@ -18,21 +18,22 @@
 
 let
   node = nodejs_22;
+  pnpm = pnpm_11;
 in
 stdenv.mkDerivation rec {
   pname = "langfuse";
-  version = "3.167.4";
+  version = "3.176.0";
 
   src = fetchFromGitHub {
     owner = "langfuse";
     repo = "langfuse";
     rev = "v${version}";
-    hash = "sha256-R8Rv4zpQAoM6SN7uyuD0dXqYKYvM41fwKN+DZ/pIENU=";
+    hash = "sha256-6s7RvBoQOMsmH/U9VquYYu45IHvn7pYtY3KFSedfRHw=";
   };
 
   nativeBuildInputs = [
     node
-    pnpm_10
+    pnpm
     pnpmConfigHook
     prisma-engines_6
     python3 # Required for some node-gyp builds
@@ -46,16 +47,14 @@ stdenv.mkDerivation rec {
 
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
-    pnpm = pnpm_10;
-    hash = "sha256-/nS+9PeSuxSfpOpJ15rQa4HwvWRfJfD2MAKfWInWrNw=";
-    fetcherVersion = 3; # For pnpm v10
-    # Ensure patches are available during the offline fetch
+    inherit pnpm;
+    hash = "sha256-pUUZxO8KoCvq7/gWv094XqIgvsd0mejyJVzFkYfKXbY=";
+    fetcherVersion = 3;
     prePnpmInstall = ''
       cp -r ${src}/patches .
     '';
   };
 
-  # Copy patches before pnpm install in the main build
   preConfigure = ''
     cp -r ${src}/patches .
   '';
