@@ -445,11 +445,11 @@
         "zon2nix": "zon2nix"
       },
       "locked": {
-        "lastModified": 1780925481,
-        "narHash": "sha256-XH2zydfK97HYkW7Ra5I3nrL8hlZRDEMzXW+9OH+ryvU=",
+        "lastModified": 1781100864,
+        "narHash": "sha256-JgixhXDxFdaBcswZ0006cgYTEgsX2PrC8Q65XetO2Bk=",
         "owner": "mitchellh",
         "repo": "ghostty",
-        "rev": "69095e298ab88bb0eb5ba541f4c505f2c22d07f5",
+        "rev": "5659cef41f4f2f7a478d0800a11836fa17e64d66",
         "type": "github"
       },
       "original": {
@@ -863,11 +863,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1781052904,
-        "narHash": "sha256-JDTX0JTca/p8PxlC/lXA38rWG8JPhDRNwlQtNDFDNDU=",
+        "lastModified": 1781191174,
+        "narHash": "sha256-UJ6UG98T0r+9PF7BO2K2/R1uCpvnD2slwNDJ0kEwfJ0=",
         "ref": "refs/heads/main",
-        "rev": "f30441b6c3a4cb88a7f7435df64dda838f036fe2",
-        "revCount": 98,
+        "rev": "63f5eca13fa6b3abcadf15687cdf420b813630fd",
+        "revCount": 102,
         "type": "git",
         "url": "file:///home/martin/Develop/github.com/kleinbem/nix/nix-devshells"
       },
@@ -1039,11 +1039,11 @@
     },
     "nixpkgs-master": {
       "locked": {
-        "lastModified": 1781052528,
-        "narHash": "sha256-qdn3TcKNBzj4cKyvDfnfRePoQ+yBZW5JRaXUzIT/WwU=",
+        "lastModified": 1781190296,
+        "narHash": "sha256-853IAyw2h101a1PhhjCdeN0SKqPj6VzBrAkam8QUWlI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "e81b81f376731aea069e1f3a2e92b8f492306dd1",
+        "rev": "04914f1baf5b4ffab6a1dc3032ff011305cd8a93",
         "type": "github"
       },
       "original": {
@@ -1264,11 +1264,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780975129,
-        "narHash": "sha256-428T1pLXnbVeUgZx2wWEkbvl3ZORjras34ANZ3ACp5A=",
+        "lastModified": 1781147846,
+        "narHash": "sha256-hBdiQYd40xRtBWBiXHUxuQYWmJBiK19YO1FiYgrmEo0=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "fe64e6b409dc513274d2941f8da13bbd0fdcf44e",
+        "rev": "107c334f141854f563f8adf1db781dc453d92639",
         "type": "github"
       },
       "original": {
