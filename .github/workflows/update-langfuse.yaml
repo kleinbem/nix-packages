@@ -1,9 +1,9 @@
 name: "Update Langfuse"
 
 # Bumps pkgs/langfuse/default.nix to the latest Langfuse release and opens
-# a PR. Runs on the self-hosted runner because the pnpm deps fetch downloads
-# all dependencies — too heavy for a hosted runner and benefits from the Nix
-# cache on the local machine.
+# a PR. Runs on ubuntu-latest — the underlying pnpm deps fetch is one-shot
+# per version bump, and the resulting build is cached to Attic for downstream
+# warm-up workflows.
 #
 # Update cadence: Langfuse releases ~2x per week. Weekly CI keeps lag ≤ 1 week.
 # For urgent security releases, trigger manually via workflow_dispatch.
@@ -21,12 +21,19 @@ permissions:
 jobs:
   update:
     name: "Bump default.nix & open PR"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
         with:
           token: ${{ secrets.GH_PAT }}
           persist-credentials: false
+
+      - name: Set up Nix
+        uses: cachix/install-nix-action@v31.10.6
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GH_PAT }}
 
       - name: Run updater
         id: update
@@ -55,7 +62,7 @@ jobs:
             Bumps `pkgs/langfuse/default.nix` to **${{ steps.update.outputs.version }}**.
             Source hash and pnpm deps hash updated; pnpm major version checked.
 
-            ✅ Full `nix build .#langfuse` passed on the self-hosted runner.
+            ✅ Full `nix build .#langfuse` passed on the hosted runner.
 
             After merge, bump the `nix-packages` submodule in `kleinbem/nix` to
             warm Attic via `build-packages`.
