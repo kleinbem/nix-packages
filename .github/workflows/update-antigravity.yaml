@@ -24,12 +24,20 @@ jobs:
     name: "Bump versions.json & open PR"
     runs-on: ubuntu-latest
     steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6.0.2
         with:
-          # GH_PAT (TF-distributed) rather than the built-in GITHUB_TOKEN: a PAT
-          # can open + merge PRs regardless of the repo's "Allow Actions to
-          # create/approve PRs" setting, so no manual GitHub toggle is required.
-          token: ${{ secrets.GH_PAT }}
+          # App token (TF-distributed APP_ID + APP_PRIVATE_KEY) rather than the
+          # built-in GITHUB_TOKEN: an App identity can open + merge PRs
+          # regardless of the repo's "Allow Actions to create/approve PRs"
+          # setting, and its PRs trigger downstream workflows.
+          token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 
       - uses: DeterminateSystems/nix-installer-action@v22
@@ -68,7 +76,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: "chore: update antigravity (app ${{ steps.update.outputs.app }}, ide ${{ steps.update.outputs.ide }}, cli ${{ steps.update.outputs.cli }})"
           title: "chore: update antigravity (ide ${{ steps.update.outputs.ide }})"
           body: |
@@ -99,7 +107,7 @@ jobs:
       - name: Auto-merge
         if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR: ${{ steps.cpr.outputs.pull-request-number }}
         run: |
           gh pr merge "$PR" --squash --delete-branch --auto \

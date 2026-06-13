@@ -23,9 +23,16 @@ jobs:
     name: "Bump default.nix & open PR"
     runs-on: ubuntu-latest
     steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6.0.2
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 
       - name: Set up Nix
@@ -33,7 +40,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GH_PAT }}
+            access-tokens = github.com=${{ steps.app-token.outputs.token }}
 
       - name: Run updater
         id: update
@@ -53,7 +60,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: "chore: update langfuse to ${{ steps.update.outputs.version }}"
           title: "chore: update langfuse to ${{ steps.update.outputs.version }}"
           body: |
@@ -78,7 +85,7 @@ jobs:
       - name: Auto-merge
         if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR: ${{ steps.cpr.outputs.pull-request-number }}
         run: |
           gh pr merge "$PR" --squash --delete-branch --auto \
