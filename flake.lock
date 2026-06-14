@@ -863,11 +863,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1781401471,
-        "narHash": "sha256-H1jrRKymedbQ849Yg8U0cpgcq3t/0frLZBk+xiBKbAM=",
+        "lastModified": 1781425097,
+        "narHash": "sha256-D0HNYDomeKKpC9CLnLUr5HyrxAurn+ZmNLq/mQ26YLY=",
         "ref": "refs/heads/main",
-        "rev": "daca0bf3bc9219611eee4cbf21984e94da4940ac",
-        "revCount": 119,
+        "rev": "19208f56c62f65b3f75458c57c4fedef9a03ef1c",
+        "revCount": 120,
         "type": "git",
         "url": "file:///home/martin/Develop/github.com/kleinbem/nix/nix-devshells"
       },
@@ -1039,11 +1039,11 @@
     },
     "nixpkgs-master": {
       "locked": {
-        "lastModified": 1781401132,
-        "narHash": "sha256-kI3lPsPA01HN5V0d0U0SNTU++d7e/gnm7GsXdPumcho=",
+        "lastModified": 1781424514,
+        "narHash": "sha256-spaowC4+g6iHOhYo2Zpv3l5Of37+q8LKH46mZe6Iocs=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "91b25b18b564dc4a0ab239163a70bf337f1f5203",
+        "rev": "134c6973427a26f0b8924e7bb1a2ce5a9249d903",
         "type": "github"
       },
       "original": {
@@ -1264,11 +1264,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781320681,
-        "narHash": "sha256-mjJ/VxJaIkgcUvKANgKOaaN5M1X1X+6NjCP0C5hw0WI=",
+        "lastModified": 1781407245,
+        "narHash": "sha256-VzJq4MmD0uyNDAceudSe1hHqcQMe9Tau0U4S+5iRGh0=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "5b929d8c854149d926d05ea0cd6469bf4e54db27",
+        "rev": "d5f483210eb016d66102eef22baa128b3b3233fc",
         "type": "github"
       },
       "original": {
