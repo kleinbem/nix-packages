@@ -863,11 +863,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1781399650,
-        "narHash": "sha256-vl0XD5KXI2cn4Ou/r1cbaECVX1gCdfR+ZogGECmfu/g=",
+        "lastModified": 1781400137,
+        "narHash": "sha256-ButmgGgdRPSEXrFPmPviv3GBTQDa/pSEygVikyWJp7s=",
         "ref": "refs/heads/main",
-        "rev": "1e473fcc7676468ddd8f207d9c0aa44acc100e55",
-        "revCount": 116,
+        "rev": "611ce548d632de80a735b62d1385ed4498f5b2c9",
+        "revCount": 117,
         "type": "git",
         "url": "file:///home/martin/Develop/github.com/kleinbem/nix/nix-devshells"
       },
@@ -1039,11 +1039,11 @@
     },
     "nixpkgs-master": {
       "locked": {
-        "lastModified": 1781398873,
-        "narHash": "sha256-moHiMtxnLQCiZlgy1j21gysAgSAYo3PQXVrowt7LubI=",
+        "lastModified": 1781399727,
+        "narHash": "sha256-3btQkszgnYbp2zh0ZqtcPSQogy8uDTFq+049ZMq2Oso=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "aa7b55b13f26ea4b558a8a2874b83126137cdffa",
+        "rev": "8b549a03e5f2d3d7e8499b3b4628ee29994052a4",
         "type": "github"
       },
       "original": {
