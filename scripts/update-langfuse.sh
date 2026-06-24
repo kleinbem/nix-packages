@@ -17,7 +17,10 @@ PKG="pkgs/langfuse/default.nix"
 FAKE="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 log() { echo -e "\033[0;32m[INFO]\033[0m  $*" >&2; }
-err() { echo -e "\033[0;31m[ERROR]\033[0m $*" >&2; exit 1; }
+err() {
+  echo -e "\033[0;31m[ERROR]\033[0m $*" >&2
+  exit 1
+}
 
 # Replace the Nth occurrence (1-indexed) of `hash = "sha256-..."` in $PKG.
 set_hash() {
@@ -44,12 +47,12 @@ extract_hash() {
 }
 
 # ── 1. Latest release ────────────────────────────────────────────────────────
-LATEST=$(curl -fsSL "https://api.github.com/repos/langfuse/langfuse/releases/latest" \
-  | jq -r '.tag_name' | sed 's/^v//')
-[[ -n "$LATEST" && "$LATEST" != "null" ]] || err "Could not fetch latest release"
+LATEST=$(curl -fsSL "https://api.github.com/repos/langfuse/langfuse/releases/latest" |
+  jq -r '.tag_name' | sed 's/^v//')
+[[ -n $LATEST && $LATEST != "null" ]] || err "Could not fetch latest release"
 
 CURRENT=$(grep -oP 'version = "\K[^"]+' "$PKG" | head -1)
-if [[ "$CURRENT" == "$LATEST" ]]; then
+if [[ $CURRENT == "$LATEST" ]]; then
   log "Langfuse already at $LATEST — nothing to do."
   exit 0
 fi
@@ -61,19 +64,19 @@ set_hash 1 "$FAKE"
 
 log "Fetching source hash..."
 SRC_HASH=$(extract_hash)
-[[ -n "$SRC_HASH" ]] || err "Could not get source hash — run: nix build .#langfuse"
+[[ -n $SRC_HASH ]] || err "Could not get source hash — run: nix build .#langfuse"
 log "Source hash: $SRC_HASH"
 set_hash 1 "$SRC_HASH"
 
 # ── 3. pnpm major version ────────────────────────────────────────────────────
 PNPM_FIELD=$(curl -fsSL \
-  "https://raw.githubusercontent.com/langfuse/langfuse/v${LATEST}/package.json" \
-  | jq -r '.packageManager // ""')
+  "https://raw.githubusercontent.com/langfuse/langfuse/v${LATEST}/package.json" |
+  jq -r '.packageManager // ""')
 
-if [[ "$PNPM_FIELD" =~ pnpm@([0-9]+)\. ]]; then
+if [[ $PNPM_FIELD =~ pnpm@([0-9]+)\. ]]; then
   NEW_MAJOR="${BASH_REMATCH[1]}"
   CURRENT_MAJOR=$(grep -oP 'pnpm_\K[0-9]+' "$PKG" | head -1)
-  if [[ "$NEW_MAJOR" != "$CURRENT_MAJOR" ]]; then
+  if [[ $NEW_MAJOR != "$CURRENT_MAJOR" ]]; then
     log "pnpm major changed: $CURRENT_MAJOR → $NEW_MAJOR"
     sed -i "s/pnpm_${CURRENT_MAJOR}/pnpm_${NEW_MAJOR}/g" "$PKG"
   fi
@@ -84,7 +87,7 @@ set_hash 2 "$FAKE"
 
 log "Fetching pnpm deps hash (downloads all dependencies)..."
 PNPM_HASH=$(extract_hash)
-[[ -n "$PNPM_HASH" ]] || err "Could not get pnpm deps hash — run: nix build .#langfuse"
+[[ -n $PNPM_HASH ]] || err "Could not get pnpm deps hash — run: nix build .#langfuse"
 log "pnpm deps hash: $PNPM_HASH"
 set_hash 2 "$PNPM_HASH"
 
