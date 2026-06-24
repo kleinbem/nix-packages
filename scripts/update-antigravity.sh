@@ -14,8 +14,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 OUTPUT_JSON="pkgs/antigravity/versions.json"
 
-log()  { echo -e "\033[0;32m[INFO]\033[0m  $*" >&2; }
-err()  { echo -e "\033[0;31m[ERROR]\033[0m $*" >&2; }
+log() { echo -e "\033[0;32m[INFO]\033[0m  $*" >&2; }
+err() { echo -e "\033[0;31m[ERROR]\033[0m $*" >&2; }
 
 # Official Google update-discovery endpoints (Cloud Run).
 APP_RELEASES="https://antigravity-auto-updater-974169037036.us-central1.run.app/releases"
@@ -26,11 +26,11 @@ CLI_MANIFEST_BASE="https://antigravity-cli-auto-updater-974169037036.us-central1
 APP_BASE="https://storage.googleapis.com/antigravity-public/antigravity-hub"
 IDE_BASE="https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable"
 
-[[ -f "$OUTPUT_JSON" ]] || echo "{}" > "$OUTPUT_JSON"
+[[ -f $OUTPUT_JSON ]] || echo "{}" >"$OUTPUT_JSON"
 
 prefetch_sri() { # url [name] -> SRI sha256
   local url="$1" name="${2:-}" raw
-  if [[ -n "$name" ]]; then
+  if [[ -n $name ]]; then
     raw=$(nix-prefetch-url --type sha256 --name "$name" "$url")
   else
     raw=$(nix-prefetch-url --type sha256 "$url")
@@ -39,13 +39,14 @@ prefetch_sri() { # url [name] -> SRI sha256
 }
 
 current_version() { # name -> version-from-url or "none"
-  jq -r --arg n "$1" '.[$n]."x86_64-linux".url // "none"' "$OUTPUT_JSON" \
-    | grep -oP '[0-9]+\.[0-9]+\.[0-9]+-[0-9]+' || echo "none"
+  jq -r --arg n "$1" '.[$n]."x86_64-linux".url // "none"' "$OUTPUT_JSON" |
+    grep -oP '[0-9]+\.[0-9]+\.[0-9]+-[0-9]+' || echo "none"
 }
 
 write_back() { # name <json-payload>
-  local tmp; tmp=$(mktemp)
-  jq --arg n "$1" --argjson p "$2" '.[$n] = $p' "$OUTPUT_JSON" > "$tmp"
+  local tmp
+  tmp=$(mktemp)
+  jq --arg n "$1" --argjson p "$2" '.[$n] = $p' "$OUTPUT_JSON" >"$tmp"
   mv "$tmp" "$OUTPUT_JSON"
 }
 
@@ -68,10 +69,11 @@ process_hub() { # display-name  version  base-url  filename(URL-encoded)  [name-
     local nix_os="${p%%:*}" api_os="${p##*:}"
     local fname="$file"
     # .dmg for darwin, .tar.gz for linux
-    [[ "$nix_os" == *darwin* ]] && fname="${file%.tar.gz}.dmg"
+    [[ $nix_os == *darwin* ]] && fname="${file%.tar.gz}.dmg"
     local url="${base}/${version}/${api_os}/${fname}"
     log "  hash $nix_os ..."
-    local hash; hash=$(prefetch_sri "$url" "$name_arg")
+    local hash
+    hash=$(prefetch_sri "$url" "$name_arg")
     payload=$(jq --arg k "$nix_os" --arg u "$url" --arg h "$hash" \
       '.[$k]={url:$u,hash:$h}' <<<"$payload")
   done
@@ -81,8 +83,14 @@ process_hub() { # display-name  version  base-url  filename(URL-encoded)  [name-
 log "Discovering latest versions ..."
 APP_VER=$(curl -fsSL "$APP_RELEASES" | jq -r '.[0] | .version + "-" + .execution_id')
 IDE_VER=$(curl -fsSL "$IDE_RELEASES" | jq -r '.[0] | .version + "-" + .execution_id')
-[[ -n "$APP_VER" && "$APP_VER" != "null-null" ]] || { err "no app version"; exit 1; }
-[[ -n "$IDE_VER" && "$IDE_VER" != "null-null" ]] || { err "no IDE version"; exit 1; }
+[[ -n $APP_VER && $APP_VER != "null-null" ]] || {
+  err "no app version"
+  exit 1
+}
+[[ -n $IDE_VER && $IDE_VER != "null-null" ]] || {
+  err "no IDE version"
+  exit 1
+}
 
 process_hub "Antigravity 2.0" "$APP_VER" "$APP_BASE" "Antigravity.tar.gz" ""
 process_hub "Antigravity IDE" "$IDE_VER" "$IDE_BASE" "Antigravity%20IDE.tar.gz" "Antigravity_IDE.tar.gz"
@@ -98,7 +106,10 @@ cli_plats=(
 )
 for p in "${cli_plats[@]}"; do
   nix_os="${p%%:*}" api_os="${p##*:}"
-  manifest=$(curl -fsSL "${CLI_MANIFEST_BASE}/${api_os}.json") || { err "CLI manifest ${api_os}"; exit 1; }
+  manifest=$(curl -fsSL "${CLI_MANIFEST_BASE}/${api_os}.json") || {
+    err "CLI manifest ${api_os}"
+    exit 1
+  }
   url=$(jq -r '.url' <<<"$manifest")
   sha=$(jq -r '.sha512' <<<"$manifest")
   cli_payload=$(jq --arg k "$nix_os" --arg u "$url" --arg h "sha512-$sha" \
