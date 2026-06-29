@@ -74,7 +74,7 @@ jobs:
       - name: Open PR
         id: cpr
         if: steps.update.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.app-token.outputs.token }}
           commit-message: "chore: update antigravity (app ${{ steps.update.outputs.app }}, ide ${{ steps.update.outputs.ide }}, cli ${{ steps.update.outputs.cli }})"
