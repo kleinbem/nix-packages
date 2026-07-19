@@ -308,7 +308,7 @@ let
       # reachable user systemd session.
       if systemd-run --user --scope --quiet -p MemoryHigh=12G true 2>/dev/null; then
         exec systemd-run --user --scope --quiet \
-          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 \
+          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 -p OOMPolicy=kill -p CPUWeight=50 \
           ${antigravity-unwrapped}/lib/${pname}/${binaryRelPath} ${lib.optionalString isIde "--user-data-dir=$HOME/.antigravity-ide"} "$@"
       fi
       exec ${antigravity-unwrapped}/lib/${pname}/${binaryRelPath} ${lib.optionalString isIde "--user-data-dir=$HOME/.antigravity-ide"} "$@"
@@ -443,7 +443,7 @@ let
       shift
       if systemd-run --user --scope --quiet -p MemoryHigh=12G true 2>/dev/null; then
         exec systemd-run --user --scope --quiet \
-          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 \
+          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 -p OOMPolicy=kill -p CPUWeight=50 \
           "$bin" ${lib.optionalString isIde ''--user-data-dir="$HOME/.antigravity-ide"''} "$@"
       fi
       exec "$bin" ${lib.optionalString isIde ''--user-data-dir="$HOME/.antigravity-ide"''} "$@"
