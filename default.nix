@@ -15,6 +15,7 @@
   example-package = pkgs.callPackage ./pkgs/example-package { };
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
+  workspace-guardian = pkgs.callPackage ./pkgs/workspace-guardian { };
 
   # Google Antigravity 2.0 — vendored from the audited jacopone derivation,
   # binaries pinned to Google's official CDNs in pkgs/antigravity/versions.json.

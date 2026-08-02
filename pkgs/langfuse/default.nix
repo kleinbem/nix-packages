@@ -48,8 +48,10 @@ stdenv.mkDerivation rec {
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
     inherit pnpm;
-    hash = "sha256-alYSfnvMIR/uTS/35roPak96RjTH/jzBsz/VSdr5eDs=";
-    fetcherVersion = 3;
+    hash = "sha256-oDRNbU2WBX0wdDi+6Ya8T5aoOXTtFqbdGxWZtXWDvxw=";
+    # fetcherVersion 3 was rejected for pnpm 11 in nixpkgs ≥ 2026-06; 4 uses the
+    # SQLite-dump store format (nixpkgs #522703) — hash computed against it.
+    fetcherVersion = 4;
     prePnpmInstall = ''
       cp -r ${src}/patches .
     '';
