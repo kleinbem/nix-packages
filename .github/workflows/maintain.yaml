@@ -32,25 +32,28 @@ jobs:
       - name: Validate flake (eval-only — blocks a bad lock from landing)
         run: nix flake check --no-build
 
-      - name: Commit lockfile changes via GitHub API (verified signature)
+      - name: Open PR for flake.lock updates (auto-merges once Check Flake is green)
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          GH_REPO: ${{ github.repository }}
-          BRANCH: ${{ github.ref_name }}
         run: |
           if git diff --quiet flake.lock; then
-            echo "flake.lock unchanged — nothing to commit."
+            echo "flake.lock unchanged — nothing to do."
             exit 0
           fi
 
-          CURRENT_SHA=$(gh api "repos/${GH_REPO}/contents/flake.lock?ref=${BRANCH}" --jq .sha)
+          BRANCH_NAME="update-flake-lock"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH_NAME"
+          git add flake.lock
+          git commit -m "chore: update flake.lock (auto)"
+          git push -f origin "$BRANCH_NAME"
 
-          base64 -w0 flake.lock > /tmp/flake-lock.b64
-          jq -n \
-            --arg msg "chore: update flake.lock (auto)" \
-            --arg branch "${BRANCH}" \
-            --arg sha "${CURRENT_SHA}" \
-            --rawfile content /tmp/flake-lock.b64 \
-            '{message: $msg, branch: $branch, sha: $sha, content: $content}' \
-          | gh api --method PUT "repos/${GH_REPO}/contents/flake.lock" --input -
+          gh pr create \
+            --title "chore: update flake.lock" \
+            --body "Automated lockfile update. Check Flake re-validates the new inputs on this PR; auto-merge is enabled and lands this once it's green." \
+            --head "$BRANCH_NAME" \
+            --base main || true
+
+          gh pr merge "$BRANCH_NAME" --auto --squash || true
