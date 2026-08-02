@@ -302,6 +302,15 @@ let
       export CHROME_BIN=${chrome-wrapper}
       export CHROME_PATH=${chrome-wrapper}
 
+      # Same containment as the no-FHS launcher: cap the process tree so a
+      # runaway helper can't freeze the host. --scope keeps env/cwd/tty, and
+      # the probe falls back to plain exec inside sandboxes without a
+      # reachable user systemd session.
+      if systemd-run --user --scope --quiet -p MemoryHigh=12G true 2>/dev/null; then
+        exec systemd-run --user --scope --quiet \
+          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 -p OOMPolicy=kill -p CPUWeight=50 \
+          ${antigravity-unwrapped}/lib/${pname}/${binaryRelPath} ${lib.optionalString isIde "--user-data-dir=$HOME/.antigravity-ide"} "$@"
+      fi
       exec ${antigravity-unwrapped}/lib/${pname}/${binaryRelPath} ${lib.optionalString isIde "--user-data-dir=$HOME/.antigravity-ide"} "$@"
     '';
 
@@ -423,11 +432,20 @@ let
       EOF
       chmod +x $out/lib/${pname}/resources/bin/antigravity-tunnel
 
-      # Create an intermediate launcher script that resolves $HOME at runtime
+      # Create an intermediate launcher script that resolves $HOME at runtime.
+      # The transient scope caps the whole Electron/extension/agent process
+      # tree: a runaway helper throttles the IDE instead of freezing the host
+      # (memory-thrash incident 2026-07-15). Falls back to a plain exec where
+      # no user systemd session is reachable.
       cat <<'EOF' > $out/lib/${pname}/launcher.sh
       #!/bin/sh
       bin="$1"
       shift
+      if systemd-run --user --scope --quiet -p MemoryHigh=12G true 2>/dev/null; then
+        exec systemd-run --user --scope --quiet \
+          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 -p OOMPolicy=kill -p CPUWeight=50 \
+          "$bin" ${lib.optionalString isIde ''--user-data-dir="$HOME/.antigravity-ide"''} "$@"
+      fi
       exec "$bin" ${lib.optionalString isIde ''--user-data-dir="$HOME/.antigravity-ide"''} "$@"
       EOF
       chmod +x $out/lib/${pname}/launcher.sh
