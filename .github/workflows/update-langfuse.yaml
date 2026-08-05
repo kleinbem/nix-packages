@@ -47,7 +47,12 @@ jobs:
         run: |
           chmod +x scripts/update-langfuse.sh
           ./scripts/update-langfuse.sh
-          if git diff --quiet pkgs/langfuse/default.nix; then
+          # update-langfuse.sh's extract_hash() always `git add`s the file as
+          # part of the hash-discovery trick, so a plain (unstaged-only) git
+          # diff here would report "unchanged" even on a real, built bump —
+          # `git diff HEAD` catches staged+unstaged together against the last
+          # commit, regardless of the script's own staging.
+          if git diff HEAD --quiet -- pkgs/langfuse/default.nix; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
