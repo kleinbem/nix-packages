@@ -71,35 +71,69 @@ jobs:
             .#packages.x86_64-linux.google-antigravity-ide-no-fhs \
             .#packages.x86_64-linux.google-antigravity-cli
 
+      # Was peter-evans/create-pull-request, which does a plain local
+      # `git commit` — unsigned, and can never satisfy this org's
+      # required_signatures branch ruleset, so auto-merge below would never
+      # fire. createCommitOnBranch commits server-side and GitHub signs it
+      # automatically ("Verified", committer=GitHub), no key material needed.
       - name: Open PR
         id: cpr
         if: steps.update.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          commit-message: "chore: update antigravity (app ${{ steps.update.outputs.app }}, ide ${{ steps.update.outputs.ide }}, cli ${{ steps.update.outputs.cli }})"
-          title: "chore: update antigravity (ide ${{ steps.update.outputs.ide }})"
-          body: |
-            ## Antigravity update
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH_NAME="auto-update/antigravity"
+          REPO="${{ github.repository }}"
+          MAIN_SHA=$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
 
-            Bumps `pkgs/antigravity/versions.json` to the latest Google releases.
-            Hashes were prefetched directly from Google's official CDNs.
+          if gh api "repos/$REPO/git/ref/heads/$BRANCH_NAME" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" -F force=true >/dev/null
+          else
+            gh api "repos/$REPO/git/refs" -f ref="refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" >/dev/null
+          fi
 
-            - **App 2.0**: `${{ steps.update.outputs.app }}`
-            - **IDE**: `${{ steps.update.outputs.ide }}`
-            - **CLI** (`agy`): `${{ steps.update.outputs.cli }}`
+          jq -n \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH_NAME" \
+            --arg sha "$MAIN_SHA" \
+            --arg headline "chore: update antigravity (app ${{ steps.update.outputs.app }}, ide ${{ steps.update.outputs.ide }}, cli ${{ steps.update.outputs.cli }})" \
+            --arg content "$(base64 -w0 pkgs/antigravity/versions.json)" \
+            --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
+            '{query: $query, variables: {input: {
+                branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                message: {headline: $headline},
+                expectedHeadOid: $sha,
+                fileChanges: {additions: [{path: "pkgs/antigravity/versions.json", contents: $content}]}
+            }}}' | gh api graphql --input -
 
-            ✅ `nix flake check` + `nix build` (no-FHS IDE, CLI) passed on CI.
+          BODY_FILE=$(mktemp)
+          cat > "$BODY_FILE" <<'EOF'
+          ## Antigravity update
 
-            After merge, bump the `nix-packages` submodule in `kleinbem/nix` to warm Attic via `build-packages`.
+          Bumps `pkgs/antigravity/versions.json` to the latest Google releases.
+          Hashes were prefetched directly from Google's official CDNs.
 
-            ---
-            🤖 Opened automatically by the update-antigravity workflow.
-          branch: auto-update/antigravity
-          delete-branch: true
-          labels: |
-            automated
-            antigravity
+          - **App 2.0**: `${{ steps.update.outputs.app }}`
+          - **IDE**: `${{ steps.update.outputs.ide }}`
+          - **CLI** (`agy`): `${{ steps.update.outputs.cli }}`
+
+          ✅ `nix flake check` + `nix build` (no-FHS IDE, CLI) passed on CI.
+
+          After merge, bump the `nix-packages` submodule in `kleinbem/nix` to warm Attic via `build-packages`.
+
+          ---
+          🤖 Opened automatically by the update-antigravity workflow.
+          EOF
+
+          gh pr create \
+            --title "chore: update antigravity (ide ${{ steps.update.outputs.ide }})" \
+            --body-file "$BODY_FILE" \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --label automated \
+            --label antigravity || true
+
+          echo "pull-request-number=$(gh pr view "$BRANCH_NAME" --json number --jq .number)" >> "$GITHUB_OUTPUT"
 
       # Fully hands-off: the build-verify step above is the gate, so squash-merge
       # immediately. Try repo auto-merge first; fall back to a direct merge if

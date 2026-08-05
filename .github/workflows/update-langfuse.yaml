@@ -55,32 +55,66 @@ jobs:
             echo "version=$VER" >> "$GITHUB_OUTPUT"
           fi
 
+      # Was peter-evans/create-pull-request, which does a plain local
+      # `git commit` — unsigned, and can never satisfy this org's
+      # required_signatures branch ruleset, so auto-merge below would never
+      # fire. createCommitOnBranch commits server-side and GitHub signs it
+      # automatically ("Verified", committer=GitHub), no key material needed.
       - name: Open PR
         id: cpr
         if: steps.update.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          commit-message: "chore: update langfuse to ${{ steps.update.outputs.version }}"
-          title: "chore: update langfuse to ${{ steps.update.outputs.version }}"
-          body: |
-            ## Langfuse update
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH_NAME="auto-update/langfuse"
+          REPO="${{ github.repository }}"
+          MAIN_SHA=$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
 
-            Bumps `pkgs/langfuse/default.nix` to **${{ steps.update.outputs.version }}**.
-            Source hash and pnpm deps hash updated; pnpm major version checked.
+          if gh api "repos/$REPO/git/ref/heads/$BRANCH_NAME" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" -F force=true >/dev/null
+          else
+            gh api "repos/$REPO/git/refs" -f ref="refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" >/dev/null
+          fi
 
-            ✅ Full `nix build .#langfuse` passed on the hosted runner.
+          jq -n \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH_NAME" \
+            --arg sha "$MAIN_SHA" \
+            --arg headline "chore: update langfuse to ${{ steps.update.outputs.version }}" \
+            --arg content "$(base64 -w0 pkgs/langfuse/default.nix)" \
+            --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
+            '{query: $query, variables: {input: {
+                branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                message: {headline: $headline},
+                expectedHeadOid: $sha,
+                fileChanges: {additions: [{path: "pkgs/langfuse/default.nix", contents: $content}]}
+            }}}' | gh api graphql --input -
 
-            After merge, bump the `nix-packages` submodule in `kleinbem/nix` to
-            warm Attic via `build-packages`.
+          BODY_FILE=$(mktemp)
+          cat > "$BODY_FILE" <<'EOF'
+          ## Langfuse update
 
-            ---
-            🤖 Opened automatically by the update-langfuse workflow.
-          branch: auto-update/langfuse
-          delete-branch: true
-          labels: |
-            automated
-            dependencies
+          Bumps `pkgs/langfuse/default.nix` to **${{ steps.update.outputs.version }}**.
+          Source hash and pnpm deps hash updated; pnpm major version checked.
+
+          ✅ Full `nix build .#langfuse` passed on the hosted runner.
+
+          After merge, bump the `nix-packages` submodule in `kleinbem/nix` to
+          warm Attic via `build-packages`.
+
+          ---
+          🤖 Opened automatically by the update-langfuse workflow.
+          EOF
+
+          gh pr create \
+            --title "chore: update langfuse to ${{ steps.update.outputs.version }}" \
+            --body-file "$BODY_FILE" \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --label automated \
+            --label dependencies || true
+
+          echo "pull-request-number=$(gh pr view "$BRANCH_NAME" --json number --jq .number)" >> "$GITHUB_OUTPUT"
 
       - name: Auto-merge
         if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
