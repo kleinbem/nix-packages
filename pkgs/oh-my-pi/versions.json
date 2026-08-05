@@ -1,0 +1,12 @@
+{
+  "17.2.9": {
+    "x86_64-linux": {
+      "url": "https://github.com/can1357/oh-my-pi/releases/download/v17.2.9/omp-linux-x64",
+      "hash": "sha256-T3rrM7LzR8EaWsjHNjDjHQLAo+7zaTRoiAufXo8CoCs="
+    },
+    "aarch64-linux": {
+      "url": "https://github.com/can1357/oh-my-pi/releases/download/v17.2.9/omp-linux-arm64",
+      "hash": "sha256-48SwqW2+FPaKZapBWL3BUlKg/DUmkVF/sqB7+F6X4oM="
+    }
+  }
+}

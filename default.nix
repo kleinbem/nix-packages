@@ -34,6 +34,11 @@
     useFHS = false;
   };
   google-antigravity-cli = pkgs.callPackage ./pkgs/antigravity/cli.nix { };
+
+  # Terminal coding-agent CLI. See pkgs/oh-my-pi/default.nix header for
+  # provenance (vendored prebuilt-binary release, same pattern as
+  # google-antigravity-cli above).
+  oh-my-pi = pkgs.callPackage ./pkgs/oh-my-pi { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
