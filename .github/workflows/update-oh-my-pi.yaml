@@ -1,0 +1,121 @@
+name: "Update oh-my-pi"
+
+# Bumps pkgs/oh-my-pi/{default.nix,versions.json} to the latest can1357/
+# oh-my-pi GitHub release and opens a PR. Hosted runner — this only
+# discovers the release, prefetches hashes for each platform's release
+# asset, and verifies the build.
+
+on:
+  schedule:
+    # Fridays 05:00 UTC — same slot as Antigravity/Langfuse, different day.
+    - cron: '0 5 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: "Bump default.nix/versions.json & open PR"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+
+      - name: Run updater
+        id: update
+        run: |
+          chmod +x scripts/update-oh-my-pi.sh
+          ./scripts/update-oh-my-pi.sh
+          if git diff --quiet -- pkgs/oh-my-pi; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            VER=$(grep -oP 'version = "\K[^"]+' pkgs/oh-my-pi/default.nix | head -1)
+            echo "version=$VER" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR
+        id: cpr
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH_NAME="auto-update/oh-my-pi"
+          REPO="${{ github.repository }}"
+          MAIN_SHA=$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
+
+          if gh api "repos/$REPO/git/ref/heads/$BRANCH_NAME" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" -F force=true >/dev/null
+          else
+            gh api "repos/$REPO/git/refs" -f ref="refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" >/dev/null
+          fi
+
+          jq -n \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH_NAME" \
+            --arg sha "$MAIN_SHA" \
+            --arg headline "chore: update oh-my-pi to ${{ steps.update.outputs.version }}" \
+            --arg defaultNix "$(base64 -w0 pkgs/oh-my-pi/default.nix)" \
+            --arg versionsJson "$(base64 -w0 pkgs/oh-my-pi/versions.json)" \
+            --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
+            '{query: $query, variables: {input: {
+                branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                message: {headline: $headline},
+                expectedHeadOid: $sha,
+                fileChanges: {additions: [
+                  {path: "pkgs/oh-my-pi/default.nix", contents: $defaultNix},
+                  {path: "pkgs/oh-my-pi/versions.json", contents: $versionsJson}
+                ]}
+            }}}' | gh api graphql --input -
+
+          BODY_FILE=$(mktemp)
+          cat > "$BODY_FILE" <<'EOF'
+          ## oh-my-pi update
+
+          Bumps `pkgs/oh-my-pi` to **${{ steps.update.outputs.version }}**.
+          Hashes were prefetched directly from the GitHub release assets
+          (`omp-linux-x64`, `omp-linux-arm64`).
+
+          ✅ `nix build .#oh-my-pi` passed on CI.
+
+          ---
+          🤖 Opened automatically by the update-oh-my-pi workflow.
+          EOF
+
+          gh pr create \
+            --title "chore: update oh-my-pi to ${{ steps.update.outputs.version }}" \
+            --body-file "$BODY_FILE" \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --label automated || true
+
+          echo "pull-request-number=$(gh pr view "$BRANCH_NAME" --json number --jq .number)" >> "$GITHUB_OUTPUT"
+
+      # Fully hands-off: update-oh-my-pi.sh's own `nix build` verification is
+      # the gate, so squash-merge immediately. Try repo auto-merge first;
+      # fall back to a direct merge if "Allow auto-merge" is off or nothing
+      # is blocking.
+      - name: Auto-merge
+        if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          gh pr merge "$PR" --squash --delete-branch --auto \
+            || gh pr merge "$PR" --squash --delete-branch
