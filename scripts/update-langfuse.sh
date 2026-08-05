@@ -41,9 +41,15 @@ PY
 
 # Run nix build and extract the "got:" hash from the mismatch error.
 # Must git-add first: Nix evaluates from the git index, not the working tree.
+# nix build is *expected* to fail here (that's how the real hash gets
+# revealed) — under `set -o pipefail` its non-zero exit would otherwise
+# propagate through the pipe and trip `set -e` on the `SRC_HASH=$(...)`/
+# `PNPM_HASH=$(...)` assignment before the friendly `err` check below ever
+# runs, aborting the script with no message. `|| true` absorbs that expected
+# failure so only a genuinely absent hash reaches the check.
 extract_hash() {
   git add "$PKG"
-  nix build ".#langfuse" 2>&1 | grep -oP '(?<=got:    )sha256-\S+' | head -1
+  (nix build ".#langfuse" 2>&1 || true) | grep -oP '(?<=got:    )sha256-\S+' | head -1
 }
 
 # ── 1. Latest release ────────────────────────────────────────────────────────
