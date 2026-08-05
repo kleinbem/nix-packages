@@ -31,13 +31,14 @@ let
   inherit (stdenv.hostPlatform) system;
 
   versions = builtins.fromJSON (builtins.readFile ./versions.json);
-  manifest =
-    versions.${version}.${system} or (throw "Unsupported system for oh-my-pi: ${system}");
+  manifest = versions.${version}.${system} or (throw "Unsupported system for oh-my-pi: ${system}");
 
-  dynamicLinker = {
-    x86_64-linux = "ld-linux-x86-64.so.2";
-    aarch64-linux = "ld-linux-aarch64.so.1";
-  }.${system} or (throw "Unsupported system for oh-my-pi: ${system}");
+  dynamicLinker =
+    {
+      x86_64-linux = "ld-linux-x86-64.so.2";
+      aarch64-linux = "ld-linux-aarch64.so.1";
+    }
+    .${system} or (throw "Unsupported system for oh-my-pi: ${system}");
 in
 stdenv.mkDerivation {
   inherit pname version;
