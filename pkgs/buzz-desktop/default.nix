@@ -21,6 +21,7 @@
   fetchurl,
   gst_all_1,
   firefox-beta,
+  writeShellScript,
 }:
 let
   pname = "buzz-desktop";
@@ -65,6 +66,21 @@ let
     gst_all_1.gst-plugins-good
     gst_all_1.gst-plugins-bad # AAC decoding (faad) — confirmed missing live 2026-08-10
   ];
+
+  # See the long comment on extraBwrapArgs' BROWSER entry below: pointing
+  # BROWSER straight at the firefox binary (first attempt) launches it with
+  # no profile, which collides with the "standard" profile already locked
+  # by this fleet's normal always-running firefox-beta instance — a
+  # DIFFERENT nixpkgs-pinned version at that, since this derivation's own
+  # firefox-beta isn't the same build the user's interactive session is
+  # running. This wrapper restores the "-P standard" targeting so the URL
+  # correctly hands off to the already-running instance instead of a second
+  # instance silently failing to grab a locked profile. Confirmed live
+  # 2026-08-10: bare binary produced no error and no window; needs testing
+  # whether this wrapper resolves it.
+  browserWrapper = writeShellScript "buzz-desktop-browser" ''
+    exec ${firefox-beta}/bin/firefox -P standard "$@"
+  '';
 in
 appimageTools.wrapType2 {
   inherit pname version src;
@@ -130,16 +146,22 @@ appimageTools.wrapType2 {
     # suffix as one filename and fails silently ("No such file or
     # directory", confirmed live 2026-08-10 by reproducing the exact
     # Command::new() call by hand) — the sign-in browser window never
-    # opens. Overriding BROWSER to the bare binary here (no -P flag) is
-    # scoped to this sandbox only; the fleet-wide convention for every
-    # other app is untouched. Tradeoff: opens firefox-beta's *default*
-    # profile instead of the "standard" one, so it won't have that
-    # profile's saved logins/certs — acceptable for a one-off sign-in
-    # redirect, not worth complicating other tools' $BROWSER handling to
-    # avoid.
+    # opens.
+    #
+    # First fix attempt (bare firefox binary path, no -P flag) resolved
+    # that crash but produced a second, silent failure: this derivation's
+    # firefox-beta is a different nixpkgs-pinned build than whatever
+    # version is already running interactively on the host, and Firefox
+    # refuses to open the locked "standard" profile from a second,
+    # different-version instance — no error, just no window. browserWrapper
+    # (defined above) restores "-P standard" so it hands off to the
+    # existing running instance correctly, while still being a single
+    # executable path so Command::new() doesn't choke on embedded args.
+    # Scoped to this sandbox only; the fleet-wide $BROWSER convention for
+    # every other app is untouched.
     "--setenv"
     "BROWSER"
-    "${firefox-beta}/bin/firefox"
+    "${browserWrapper}"
   ];
 
   extraInstallCommands = ''
