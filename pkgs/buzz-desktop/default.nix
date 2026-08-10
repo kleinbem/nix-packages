@@ -20,6 +20,7 @@
   appimageTools,
   fetchurl,
   gst_all_1,
+  firefox-beta,
 }:
 let
   pname = "buzz-desktop";
@@ -120,6 +121,25 @@ appimageTools.wrapType2 {
     "--setenv"
     "GST_REGISTRY_1_0"
     "/tmp/buzz-desktop-gst-registry.bin"
+    # This fleet's global $BROWSER (users/martin/home.nix) is
+    # "<firefox-beta> -P standard" — a binary+flag string, following the
+    # traditional Unix $BROWSER convention of being shell-invoked. buzz-
+    # desktop's Rust "webbrowser" crate instead does a bare
+    # Command::new(env::var("BROWSER")) with no shell splitting, so it
+    # tries to execve the literal string including the " -P standard"
+    # suffix as one filename and fails silently ("No such file or
+    # directory", confirmed live 2026-08-10 by reproducing the exact
+    # Command::new() call by hand) — the sign-in browser window never
+    # opens. Overriding BROWSER to the bare binary here (no -P flag) is
+    # scoped to this sandbox only; the fleet-wide convention for every
+    # other app is untouched. Tradeoff: opens firefox-beta's *default*
+    # profile instead of the "standard" one, so it won't have that
+    # profile's saved logins/certs — acceptable for a one-off sign-in
+    # redirect, not worth complicating other tools' $BROWSER handling to
+    # avoid.
+    "--setenv"
+    "BROWSER"
+    "${firefox-beta}/bin/firefox"
   ];
 
   extraInstallCommands = ''
