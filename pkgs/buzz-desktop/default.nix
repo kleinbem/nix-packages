@@ -41,10 +41,28 @@ let
   # every single launch (journalctl: "ANOM_ABEND ... comm=WebKitWebProces
   # sig=6"), which is why the window shows nothing: the process that
   # would render the page is dead before it gets the chance.
+  #
+  # Root cause (found by tracing the actual exec chain: bwrap -> container-init
+  # -> /etc/profile -> appimage-exec.sh -> AppRun -> AppRun.wrapped -> the
+  # buzz-desktop shim -> buzz-desktop.bin): AppRun.wrapped (linuxdeploy's
+  # compiled launcher, confirmed via `strings` on the extracted AppImage) force
+  # -overwrites GST_PLUGIN_SYSTEM_PATH_1_0 to point at the AppImage's own bundle
+  # dir. Upstream's own workaround for this (usr/bin/buzz-desktop, a shim
+  # installed by their desktop/scripts/fix-appimage.sh) unsets any GST_PLUGIN_*
+  # var whose value contains the AppDir path as a *substring* — but since
+  # AppRun.wrapped prepends its bad path in front of whatever we set (rather
+  # than replacing outright), the combined string still contains the AppDir
+  # substring, so the shim throws away our real plugin paths along with the
+  # bad prefix. GST_PLUGIN_PATH_1_0 (additive search path, as opposed to
+  # GST_PLUGIN_SYSTEM_PATH_1_0 which replaces the default search) is never
+  # touched by AppRun.wrapped at all (absent from its `strings` output) and
+  # therefore never matches the shim's substring check either — it survives
+  # untouched all the way to the real binary. Confirmed live 2026-08-10.
   gstPlugins = [
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-good
+    gst_all_1.gst-plugins-bad # AAC decoding (faad) — confirmed missing live 2026-08-10
   ];
 in
 appimageTools.wrapType2 {
@@ -76,10 +94,32 @@ appimageTools.wrapType2 {
   # explicitly re-declared via --setenv on ITS OWN command line, which is
   # exactly what extraBwrapArgs threads through to (a buildFHSEnv option,
   # passed through by appimageTools.wrapType2's extendMkDerivation).
+  #
+  # NOT GST_PLUGIN_SYSTEM_PATH_1_0 (tried first, also wrong, for a
+  # different reason than wrapProgram): see the long comment on gstPlugins
+  # above — that variable name gets force-clobbered by AppRun.wrapped and
+  # then stripped again by upstream's own AppImage shim. GST_PLUGIN_PATH_1_0
+  # is untouched by both and reaches the real binary intact.
+  #
+  # GST_REGISTRY_1_0 too, not just the plugin path: upstream's own tracker
+  # (block/buzz#2560, still open) documents that the AppImage's default
+  # GStreamer registry cache is the SHARED desktop-wide one
+  # (~/.cache/gstreamer-1.0/registry.x86_64.bin) — the same file any other
+  # GStreamer app on the host reads/writes. A scan done under one
+  # environment (e.g. before this package's GST_PLUGIN_PATH_1_0 fix
+  # existed, or by an entirely different app) can leave stale/empty
+  # results that a later run reuses instead of rescanning, which is
+  # consistent with why clearing ~/.cache/gstreamer-1.0 by hand didn't
+  # reliably fix this. Upstream's own suggested fix #1 for that issue is
+  # exactly this: give the app a private registry instead of sharing the
+  # desktop-wide one.
   extraBwrapArgs = [
     "--setenv"
-    "GST_PLUGIN_SYSTEM_PATH_1_0"
+    "GST_PLUGIN_PATH_1_0"
     (lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" gstPlugins)
+    "--setenv"
+    "GST_REGISTRY_1_0"
+    "/tmp/buzz-desktop-gst-registry.bin"
   ];
 
   extraInstallCommands = ''
