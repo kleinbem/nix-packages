@@ -19,6 +19,7 @@
   lib,
   appimageTools,
   fetchurl,
+  gst_all_1,
 }:
 let
   pname = "buzz-desktop";
@@ -30,6 +31,21 @@ let
   };
 
   appimageContents = appimageTools.extractType2 { inherit pname version src; };
+
+  # GStreamer element lookups (appsink/appsrc/autoaudiosink) fail inside
+  # this FHS wrapper regardless of which plugin packages are included.
+  # Confirmed live 2026-08-10 this is FATAL, not cosmetic: the failed
+  # lookup trips a GLib critical assertion inside WebKitWebProcess
+  # (`g_object_set: assertion 'G_IS_OBJECT (object)' failed` etc.), which
+  # this WebKitGTK build treats as fatal — WebKitWebProcess SIGABRTs
+  # every single launch (journalctl: "ANOM_ABEND ... comm=WebKitWebProces
+  # sig=6"), which is why the window shows nothing: the process that
+  # would render the page is dead before it gets the chance.
+  gstPlugins = [
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
+  ];
 in
 appimageTools.wrapType2 {
   inherit pname version src;
@@ -40,12 +56,30 @@ appimageTools.wrapType2 {
   # binary directly: it failed on the first missing lib each time
   # (libelf.so.1, then webkit2gtk), so these are the real, not guessed,
   # gaps — not a defensive "add everything" list.
-  extraPkgs = pkgs: [
-    pkgs.elfutils # libelf.so.1
-    pkgs.gtk3
-    pkgs.webkitgtk_4_1
-    pkgs.libayatana-appindicator # tray icon support
-    pkgs.zstd # libzstd.so.1
+  extraPkgs =
+    pkgs:
+    [
+      pkgs.elfutils # libelf.so.1
+      pkgs.gtk3
+      pkgs.webkitgtk_4_1
+      pkgs.libayatana-appindicator # tray icon support
+      pkgs.zstd # libzstd.so.1
+    ]
+    ++ gstPlugins;
+
+  # NOT wrapProgram --set (tried first, wrong): that sets the var on the
+  # OUTER wrapper script's shell, but that script's final step execs
+  # `bwrap`, which does NOT forward arbitrary parent env vars into the
+  # sandbox namespace it constructs — confirmed live 2026-08-10 by
+  # reading /proc/<sandboxed-child>/environ directly: zero GST_* vars
+  # present despite wrapProgram setting one. bwrap needs the variable
+  # explicitly re-declared via --setenv on ITS OWN command line, which is
+  # exactly what extraBwrapArgs threads through to (a buildFHSEnv option,
+  # passed through by appimageTools.wrapType2's extendMkDerivation).
+  extraBwrapArgs = [
+    "--setenv"
+    "GST_PLUGIN_SYSTEM_PATH_1_0"
+    (lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" gstPlugins)
   ];
 
   extraInstallCommands = ''
