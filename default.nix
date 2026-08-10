@@ -39,6 +39,11 @@
   # provenance (vendored prebuilt-binary release, same pattern as
   # google-antigravity-cli above).
   oh-my-pi = pkgs.callPackage ./pkgs/oh-my-pi { };
+
+  # Desktop client for the self-hosted Buzz relay (nix-presets/containers/
+  # buzz.nix). Vendored AppImage — see pkgs/buzz-desktop/default.nix header
+  # for why this isn't a from-source Tauri build.
+  buzz-desktop = pkgs.callPackage ./pkgs/buzz-desktop { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
