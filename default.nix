@@ -17,6 +17,10 @@
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
   workspace-guardian = pkgs.callPackage ./pkgs/workspace-guardian { };
 
+  # kleinbem.dev — see pkgs/kleinbem-site/default.nix header for the bump
+  # procedure (pinned to a commit SHA, same pattern as langfuse above).
+  kleinbem-site = pkgs.callPackage ./pkgs/kleinbem-site { };
+
   # Google Antigravity 2.0 — vendored from the audited jacopone derivation,
   # binaries pinned to Google's official CDNs in pkgs/antigravity/versions.json.
   # NOTE: namespaced under `google-antigravity*` to avoid clobbering nixpkgs'
