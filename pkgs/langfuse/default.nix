@@ -22,13 +22,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "langfuse";
-  version = "4.6.0";
+  version = "4.11.0";
 
   src = fetchFromGitHub {
     owner = "langfuse";
     repo = "langfuse";
     rev = "v${version}";
-    hash = "sha256-rid0jMIfFcHLao/UfyZD0RamT1Iv9IQIcL/3WI4O0oc=";
+    hash = "sha256-g8QHzRsMdiCXON62Yo1RTCyqFV54Aah68zN3rPUnwwU=";
   };
 
   nativeBuildInputs = [
@@ -48,7 +48,7 @@ stdenv.mkDerivation rec {
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
     inherit pnpm;
-    hash = "sha256-XICZFsQE1MQtEnxtddAynOJnfHGWJ5q3PHvXHBzBnIQ=";
+    hash = "sha256-lcbvNTlBKV5iGDkRoybDFYclt9PAsD+COdQ65C8lfKw=";
     # fetcherVersion 3 was rejected for pnpm 11 in nixpkgs ≥ 2026-06; 4 uses the
     # SQLite-dump store format (nixpkgs #522703) — hash computed against it.
     fetcherVersion = 4;
