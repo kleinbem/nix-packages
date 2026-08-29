@@ -18,11 +18,11 @@ buildNpmPackage rec {
   src = fetchFromGitHub {
     owner = "kleinbem";
     repo = "kleinbem-site";
-    rev = "53de9803a3eb9684038dbdd6d20e984d3994995e";
-    hash = "sha256-XjuxKQRUVuquIycgzKrRp+FFpkqkPSxKbAbrphxh4D8=";
+    rev = "7363558a40371e41049de93e7745a5424f05f8a6";
+    hash = "sha256-31WeUhExAqhsQpJuaXFwQK9UI0l9szoPsqgH5H52q5M=";
   };
 
-  npmDepsHash = "sha256-72Tz7CoKE+ICwfH7SslmVu3LUjsB6ViojAssJe9ciUY=";
+  npmDepsHash = "sha256-b4nef6C8z2KifCNhc1A7bQi0044GuWfY1YdtZYBvAME=";
 
   nodejs = nodejs_22;
 
