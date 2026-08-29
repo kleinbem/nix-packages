@@ -18,8 +18,8 @@ buildNpmPackage rec {
   src = fetchFromGitHub {
     owner = "kleinbem";
     repo = "kleinbem-site";
-    rev = "7363558a40371e41049de93e7745a5424f05f8a6";
-    hash = "sha256-31WeUhExAqhsQpJuaXFwQK9UI0l9szoPsqgH5H52q5M=";
+    rev = "77eae145e18ff34c45322d35c65a8541519ecd0d";
+    hash = "sha256-CcN8xyUifXh3snC/n4d+5e5YNJk3DxAm8bm3WlqUv2c=";
   };
 
   npmDepsHash = "sha256-b4nef6C8z2KifCNhc1A7bQi0044GuWfY1YdtZYBvAME=";
