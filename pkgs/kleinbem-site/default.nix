@@ -13,16 +13,16 @@
 
 buildNpmPackage rec {
   pname = "kleinbem-site";
-  version = "0-unstable-2026-08-28";
+  version = "0-unstable-2026-08-29";
 
   src = fetchFromGitHub {
     owner = "kleinbem";
     repo = "kleinbem-site";
-    rev = "3a1c499e34f07953b161088267631188de86969b";
-    hash = "sha256-kZk2SV0cYfxtSSRD7R/FcCQLkuvuZnnm5tgqK/O4JGE=";
+    rev = "53de9803a3eb9684038dbdd6d20e984d3994995e";
+    hash = "sha256-XjuxKQRUVuquIycgzKrRp+FFpkqkPSxKbAbrphxh4D8=";
   };
 
-  npmDepsHash = "sha256-EJnPeYXtIlAlLy5S1+EOreDgZhuNPPwwPFXkCKBjNXA=";
+  npmDepsHash = "sha256-72Tz7CoKE+ICwfH7SslmVu3LUjsB6ViojAssJe9ciUY=";
 
   nodejs = nodejs_22;
 
