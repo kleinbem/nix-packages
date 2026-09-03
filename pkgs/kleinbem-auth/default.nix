@@ -1,19 +1,11 @@
 # kleinbem-auth — better-auth social-login service for kleinbem.dev
 # (kleinbem/kleinbem-auth). TypeScript → tsc → dist/, run under plain node.
 #
-# NOT yet wired into ../../default.nix — the GitHub repo doesn't exist until
-# github-config PR #3 is merged. To finish:
-#   1. Merge github-config PR #3, wait for the repo to be created, push the
-#      local kleinbem-auth git repo to it.
-#   2. Fill rev + hash:
-#        nix run nixpkgs#nix-prefetch-github -- kleinbem kleinbem-auth --rev <sha>
-#   3. Fill npmDepsHash:
-#        git -C ../kleinbem-auth show <sha>:package-lock.json > /tmp/pl.json
-#        nix run nixpkgs#prefetch-npm-deps -- /tmp/pl.json
-#   4. Uncomment the `kleinbem-auth = pkgs.callPackage ./pkgs/kleinbem-auth { };`
-#      line in ../../default.nix.
+# Bump: grab the new commit SHA from the kleinbem-auth repo, then
+#   nix run nixpkgs#nix-prefetch-github -- kleinbem kleinbem-auth --rev <sha>
+#   git -C ../kleinbem-auth show <sha>:package-lock.json > /tmp/pl.json
+#   nix run nixpkgs#prefetch-npm-deps -- /tmp/pl.json    # → npmDepsHash
 {
-  lib,
   buildNpmPackage,
   fetchFromGitHub,
   nodejs_22,
@@ -28,11 +20,11 @@ buildNpmPackage rec {
   src = fetchFromGitHub {
     owner = "kleinbem";
     repo = "kleinbem-auth";
-    rev = "0000000000000000000000000000000000000000"; # TODO: real SHA
-    hash = lib.fakeHash; # TODO: nix-prefetch-github
+    rev = "ce93f971c292f231d8dd364281f3017e44c7791a";
+    hash = "sha256-lz5MGzSKX9Whgq/wVaCr+6Zcc6hiMfK1J2T3X6cXsAE=";
   };
 
-  npmDepsHash = lib.fakeHash; # TODO: prefetch-npm-deps package-lock.json
+  npmDepsHash = "sha256-c80WS4b1MbfZtGVOqwydYJASYmp05j5r8QNPKPAdF9Q=";
 
   nodejs = nodejs_22;
 
