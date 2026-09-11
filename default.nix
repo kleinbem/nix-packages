@@ -12,7 +12,6 @@
 
 {
 
-  example-package = pkgs.callPackage ./pkgs/example-package { };
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
   workspace-guardian = pkgs.callPackage ./pkgs/workspace-guardian { };
