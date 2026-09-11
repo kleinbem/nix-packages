@@ -83,8 +83,20 @@ if [[ $PNPM_FIELD =~ pnpm@([0-9]+)\. ]]; then
   NEW_MAJOR="${BASH_REMATCH[1]}"
   CURRENT_MAJOR=$(grep -oP 'pnpm_\K[0-9]+' "$PKG" | head -1)
   if [[ $NEW_MAJOR != "$CURRENT_MAJOR" ]]; then
-    log "pnpm major changed: $CURRENT_MAJOR → $NEW_MAJOR"
-    sed -i "s/pnpm_${CURRENT_MAJOR}/pnpm_${NEW_MAJOR}/g" "$PKG"
+    # nixpkgs doesn't always package the newest pnpm major the moment
+    # upstream adopts it (e.g. pnpm 12 landed in langfuse well before
+    # nixpkgs had a pnpm_12 attribute — see the 2026-09-06 outage). Renaming
+    # to a nonexistent attribute turns step 4 into a silent-ish eval-error
+    # exit instead of a real hash mismatch, so probe first and fall back to
+    # the current major — the lockfile is usually forward-compatible; if it
+    # truly isn't, the verify build in step 5 will fail loudly and honestly.
+    SYSTEM=$(nix eval --impure --raw --expr 'builtins.currentSystem')
+    if nix eval ".#legacyPackages.${SYSTEM}.pnpm_${NEW_MAJOR}" >/dev/null 2>&1; then
+      log "pnpm major changed: $CURRENT_MAJOR → $NEW_MAJOR"
+      sed -i "s/pnpm_${CURRENT_MAJOR}/pnpm_${NEW_MAJOR}/g" "$PKG"
+    else
+      log "Langfuse wants pnpm ${NEW_MAJOR}, but nixpkgs has no pnpm_${NEW_MAJOR} yet — keeping pnpm_${CURRENT_MAJOR}."
+    fi
   fi
 fi
 
