@@ -1,0 +1,127 @@
+name: "Update Buzz Desktop"
+
+# Bumps pkgs/buzz-desktop/default.nix to the latest block/buzz desktop-v*
+# AppImage release and opens a PR. Vendored-binary package (see the header
+# comment in default.nix) — releases land frequently (multiple per week),
+# so this checks mid-week, offset from the other weekly updaters.
+
+on:
+  schedule:
+    # Wednesdays 05:00 UTC.
+    - cron: '0 5 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: "Bump default.nix & open PR"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+
+      - name: Set up Nix
+        uses: cachix/install-nix-action@v31.11.1
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            access-tokens = github.com=${{ steps.app-token.outputs.token }}
+
+      - name: Run updater
+        id: update
+        run: |
+          chmod +x scripts/update-buzz-desktop.sh
+          ./scripts/update-buzz-desktop.sh
+          # update-buzz-desktop.sh's verify step `git add`s the file as part of
+          # nix-prefetch-url's own staging needs — a plain (unstaged-only) git
+          # diff would report "unchanged" even on a real bump, same gotcha as
+          # update-langfuse.sh.
+          if git diff HEAD --quiet -- pkgs/buzz-desktop/default.nix; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            VER=$(grep -oP 'version = "\K[^"]+' pkgs/buzz-desktop/default.nix | head -1)
+            echo "version=$VER" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Was peter-evans/create-pull-request, which does a plain local
+      # `git commit` — unsigned, and can never satisfy this org's
+      # required_signatures branch ruleset, so auto-merge below would never
+      # fire. createCommitOnBranch commits server-side and GitHub signs it
+      # automatically ("Verified", committer=GitHub), no key material needed.
+      - name: Open PR
+        id: cpr
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH_NAME="auto-update/buzz-desktop"
+          REPO="${{ github.repository }}"
+          MAIN_SHA=$(gh api "repos/$REPO/git/ref/heads/main" --jq .object.sha)
+
+          if gh api "repos/$REPO/git/ref/heads/$BRANCH_NAME" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" -F force=true >/dev/null
+          else
+            gh api "repos/$REPO/git/refs" -f ref="refs/heads/$BRANCH_NAME" -f sha="$MAIN_SHA" >/dev/null
+          fi
+
+          jq -n \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH_NAME" \
+            --arg sha "$MAIN_SHA" \
+            --arg headline "chore: update buzz-desktop to ${{ steps.update.outputs.version }}" \
+            --arg content "$(base64 -w0 pkgs/buzz-desktop/default.nix)" \
+            --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
+            '{query: $query, variables: {input: {
+                branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                message: {headline: $headline},
+                expectedHeadOid: $sha,
+                fileChanges: {additions: [{path: "pkgs/buzz-desktop/default.nix", contents: $content}]}
+            }}}' | gh api graphql --input -
+
+          BODY_FILE=$(mktemp)
+          cat > "$BODY_FILE" <<'EOF'
+          ## Buzz Desktop update
+
+          Bumps `pkgs/buzz-desktop/default.nix` to **${{ steps.update.outputs.version }}**.
+          AppImage hash re-prefetched directly from the `desktop-v*` GitHub release.
+
+          ✅ Full `nix build .#buzz-desktop` passed on the hosted runner.
+
+          After merge, bump the `nix-packages` submodule in `kleinbem/nix` to
+          warm Attic via `build-packages`.
+
+          ---
+          🤖 Opened automatically by the update-buzz-desktop workflow.
+          EOF
+
+          gh pr create \
+            --title "chore: update buzz-desktop to ${{ steps.update.outputs.version }}" \
+            --body-file "$BODY_FILE" \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --label automated \
+            --label dependencies || true
+
+          echo "pull-request-number=$(gh pr view "$BRANCH_NAME" --json number --jq .number)" >> "$GITHUB_OUTPUT"
+
+      - name: Auto-merge
+        if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          gh pr merge "$PR" --squash --delete-branch --auto \
+            || gh pr merge "$PR" --squash --delete-branch
