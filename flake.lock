@@ -71,11 +71,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1788956372,
-        "narHash": "sha256-ACop98BNBAWic+KLXd5PBSwzxzMUfEWmefVXDBDFyHQ=",
+        "lastModified": 1789152246,
+        "narHash": "sha256-8ESHEGygXS5lmDepm5cMbmVd8DjcwgwzsmjHc9ffY1c=",
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "2a399e9ea5e981f225d75b25c8fa8d76f730131d",
+        "rev": "6e323832a55097670dbd8eed04b1e63efc841dfa",
         "type": "github"
       },
       "original": {
@@ -216,11 +216,11 @@
         "zon2nix": "zon2nix"
       },
       "locked": {
-        "lastModified": 1789034704,
-        "narHash": "sha256-y9Tg93fOOL7FJbJn37QhVr0dZ/MsFgGZjbhsR0QDiuk=",
+        "lastModified": 1789186967,
+        "narHash": "sha256-0WH8RRa50ZS5tcm2HEhRnCdZ/ZQZ1ruco50ZH7QC5BQ=",
         "owner": "mitchellh",
         "repo": "ghostty",
-        "rev": "44f2a44df7e8c4a0c6df3f7d872ef3d7ead88e51",
+        "rev": "e2e53f861482e080bf45054ba49ef471f9849937",
         "type": "github"
       },
       "original": {
@@ -399,11 +399,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1789110418,
-        "narHash": "sha256-CH2af5Gb7pY9hP571Mlam8p8y10knUkDpzHp/Tv4M/U=",
+        "lastModified": 1789196342,
+        "narHash": "sha256-NlPcB+om/WshpX13gIJhm/zQ/eoo+2DFqxMi06tGKLI=",
         "owner": "kleinbem",
         "repo": "nix-devshells",
-        "rev": "af41d68093a27b70ac7ac9009d4f61c837ddd370",
+        "rev": "0fff62d605438e9b284fa0620b64e89a391922f7",
         "type": "github"
       },
       "original": {
@@ -549,11 +549,11 @@
     },
     "nixpkgs-master": {
       "locked": {
-        "lastModified": 1789109635,
-        "narHash": "sha256-nbbTPtGpBQ2MQxOHe+zzxx66PK8LBnVYClwDxi5in3I=",
+        "lastModified": 1789195239,
+        "narHash": "sha256-PXAQ9/wsuX+6PECbVYweexUk/DV4d23ZppvKeWjusdk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "76d4bb58c3e73252fd0bfe74791ea7028b86fab9",
+        "rev": "f91ef05a18e509dad346aeb874c736763f604e30",
         "type": "github"
       },
       "original": {
@@ -648,11 +648,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789024335,
-        "narHash": "sha256-kCy/MVLRIr95DJ4vspVzWj+kO/x+JuwSHmYZCvShg8w=",
+        "lastModified": 1789110695,
+        "narHash": "sha256-llh6ZJN8/G4QCED9m6nHEfWhz2ONOzkKyvWHivNqW7A=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "577bb1e1fc5af0713169176c5c76622c21fa3ec0",
+        "rev": "ab777f900c3de943e117eb4814ddff6f645b28ad",
         "type": "github"
       },
       "original": {
