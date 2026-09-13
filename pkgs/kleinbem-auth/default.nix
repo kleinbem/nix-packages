@@ -15,13 +15,13 @@
 
 buildNpmPackage rec {
   pname = "kleinbem-auth";
-  version = "0-unstable-2026-09-13";
+  version = "0-unstable-2026-09-13.1";
 
   src = fetchFromGitHub {
     owner = "kleinbem";
     repo = "kleinbem-auth";
-    rev = "b44684f21c66b30575e181f4de92083f186e6a00";
-    hash = "sha256-vBdwj/mxSbqo7lzFQp9B4+ocfXg/2/1sB1EmY7k+mTg=";
+    rev = "4af900ce52911a0ccc83cceae18809e6a45676c4";
+    hash = "sha256-iQZ3axLa1zSrZVWcAMHLmDFiq8D/7lMViCyAGw/BzBA=";
   };
 
   npmDepsHash = "sha256-0Pr+PJgB3Ad1hGBKFb0lXDwQXLWYj5F9BJ1n0OY4xSo=";
