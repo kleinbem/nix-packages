@@ -258,6 +258,11 @@ let
             --replace-fail "/bin/bash" "${bash}/bin/bash"
         fi
       fi
+
+      if [ -f "resources/app/out/main.js" ]; then
+        substituteInPlace resources/app/out/main.js \
+          --replace-fail '"/usr/bin/google-chrome"' '"/run/current-system/sw/bin/google-chrome","/run/current-system/sw/bin/google-chrome-stable","/run/current-system/sw/bin/chromium","/etc/profiles/per-user/martin/bin/google-chrome","${browserPkg}/bin/${browserCommand}","/usr/bin/google-chrome"'
+      fi
     '';
 
     unpackPhase = ''
@@ -417,6 +422,11 @@ let
             --replace-fail "/usr/bin/pkexec" "/run/wrappers/bin/pkexec" \
             --replace-fail "/bin/bash" "${bash}/bin/bash"
         fi
+      fi
+
+      if [ -f "resources/app/out/main.js" ]; then
+        substituteInPlace resources/app/out/main.js \
+          --replace-fail '"/usr/bin/google-chrome"' '"/run/current-system/sw/bin/google-chrome","/run/current-system/sw/bin/google-chrome-stable","/run/current-system/sw/bin/chromium","/etc/profiles/per-user/martin/bin/google-chrome","${browserPkg}/bin/${browserCommand}","/usr/bin/google-chrome"'
       fi
     '';
 
