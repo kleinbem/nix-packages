@@ -21,6 +21,7 @@
   copyDesktopItems,
   makeWrapper,
   writeShellScript,
+  writeShellScriptBin,
   asar,
   bash,
   alsa-lib,
@@ -132,9 +133,22 @@ let
       browser_cmd=${browserPkg}/bin/${browserCommand}
     fi
 
+    # Do not force user profile if caller specified custom user-data-dir or remote-debugging-port (e.g. browser automation)
+    for arg in "$@"; do
+      case "$arg" in
+        --user-data-dir*|--remote-debugging-port*)
+          exec "$browser_cmd" "$@"
+          ;;
+      esac
+    done
+
     exec "$browser_cmd" \
       ${lib.optionalString useSystemChromeProfile ''--user-data-dir="${browserProfileDir}" --profile-directory=Default''} \
       "$@"
+  '';
+
+  chrome-bin = writeShellScriptBin "chrome" ''
+    exec ${chrome-wrapper} "$@"
   '';
 
   # Libraries loaded via dlopen() at runtime
@@ -301,6 +315,7 @@ let
       # This ensures extensions installed in user's Chrome profile are available
       export CHROME_BIN=${chrome-wrapper}
       export CHROME_PATH=${chrome-wrapper}
+      export PATH="${chrome-bin}/bin:$PATH"
 
       # Same containment as the no-FHS launcher: cap the process tree so a
       # runaway helper can't freeze the host. --scope keeps env/cwd/tty, and
@@ -455,6 +470,7 @@ let
         --add-flags $out/lib/${pname}/${binaryRelPath} \
         --set CHROME_BIN ${chrome-wrapper} \
         --set CHROME_PATH ${chrome-wrapper} \
+        --prefix PATH : "${chrome-bin}/bin" \
         --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath dlopenLibs}" \
         --prefix XDG_DATA_DIRS : "${gsettings-desktop-schemas}/share/gsettings-schemas/${gsettings-desktop-schemas.name}:${gtk3}/share/gsettings-schemas/${gtk3.name}"
 
