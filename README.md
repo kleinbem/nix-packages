@@ -1,37 +1,43 @@
-# nur-packages-template
+# nix-packages
 
-**A template for [NUR](https://github.com/nix-community/NUR) repositories**
+Custom package derivations for the kleinbem fleet, structured as a
+[NUR](https://github.com/nix-community/NUR)-style repo: `default.nix`
+exposes an attrset of packages, `overlay.nix` exposes the same set as a
+nixpkgs overlay.
 
-## Setup
+## Packages
 
-1. Click on [Use this template](https://github.com/nix-community/nur-packages-template/generate) to start a repo based on this template. (Do _not_ fork it.)
-2. Add your packages to the [pkgs](./pkgs) directory and to
-   [default.nix](./default.nix)
-   * Remember to mark the broken packages as `broken = true;` in the `meta`
-     attribute, or travis (and consequently caching) will fail!
-   * Library functions, modules and overlays go in the respective directories
-3. Choose your CI: Depending on your preference you can use github actions (recommended) or [Travis ci](https://travis-ci.com).
-   - Github actions: Change your NUR repo name and optionally add a cachix name in [.github/workflows/build.yml](./.github/workflows/build.yml) and change the cron timer
-     to a random value as described in the file
-   - Travis ci: Change your NUR repo name and optionally your cachix repo name in 
-   [.travis.yml](./.travis.yml). Than enable travis in your repo. You can add a cron job in the repository settings on travis to keep your cachix cache fresh
-5. Change your travis and cachix names on the README template section and delete
-   the rest
-6. [Add yourself to NUR](https://github.com/nix-community/NUR#how-to-add-your-own-repository)
+| Attribute | What it is |
+|---|---|
+| `langfuse` | Self-hosted LLM observability service. |
+| `ricoh-driver` | Printer driver package. |
+| `workspace-guardian` | Fleet workspace-guardian tooling. |
+| `kleinbem-site` | Build of the `kleinbem-site` repo (kleinbem.dev). |
+| `kleinbem-auth` | Build of the `kleinbem-auth` repo (visitor login service). |
+| `google-antigravity`, `google-antigravity-ide`, `google-antigravity-ide-no-fhs`, `google-antigravity-cli` | Google Antigravity IDE/CLI, vendored from an audited derivation. Namespaced under `google-antigravity*` to avoid clobbering nixpkgs' own `antigravity` attr. |
+| `oh-my-pi` | Terminal coding-agent CLI, vendored prebuilt-binary release. |
+| `buzz-desktop` | Desktop client for the self-hosted Buzz relay (see `nix-presets/containers/buzz.nix`). |
 
-## README template
+`modules/nixos/langfuse.nix` ships a NixOS module alongside the `langfuse`
+package.
 
-# nur-packages
+## Usage
 
-**My personal [NUR](https://github.com/nix-community/NUR) repository**
+```nix
+inputs.nix-packages.url = "github:kleinbem/nix-packages";
+# ...
+environment.systemPackages = [
+  inputs.nix-packages.packages.${system}.oh-my-pi
+];
+# or, as an overlay:
+nixpkgs.overlays = [ inputs.nix-packages.overlays.default ];
+```
 
-<!-- Remove this if you don't use github actions -->
-![Build and populate cache](https://github.com/<YOUR-GITHUB-USER>/nur-packages/workflows/Build%20and%20populate%20cache/badge.svg)
+## Adding a package
 
-<!--
-Uncomment this if you use travis:
-
-[![Build Status](https://travis-ci.com/<YOUR_TRAVIS_USERNAME>/nur-packages.svg?branch=master)](https://travis-ci.com/<YOUR_TRAVIS_USERNAME>/nur-packages)
--->
-[![Cachix Cache](https://img.shields.io/badge/cachix-<YOUR_CACHIX_CACHE_NAME>-blue.svg)](https://<YOUR_CACHIX_CACHE_NAME>.cachix.org)
-
+Add a new `pkgs/<name>/` directory with its derivation, then one line in
+`default.nix` calling it — see the existing packages for the pattern.
+`kleinbem-site`/`kleinbem-auth` are how those app repos' builds reach
+`nix-config`/`container-factory`; bumping their version is part of a
+4-repo chain (site → nix-packages pin+hashes → nix-config flake.lock →
+deploy) — see `kleinbem-site`'s own docs for details.

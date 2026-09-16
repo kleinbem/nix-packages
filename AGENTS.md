@@ -4,10 +4,6 @@ Custom package derivations for the fleet, structured as a
 [NUR](https://github.com/nix-community/NUR)-style repo (`default.nix` +
 `overlay.nix`).
 
-Note: `README.md` is still the unedited `nur-packages-template`
-boilerplate — it documents template setup instructions, not this repo's
-actual contents. This file is the real orientation.
-
 ## Layout
 
 | Path | What lives here |
