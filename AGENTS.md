@@ -8,7 +8,7 @@ Custom package derivations for the fleet, structured as a
 
 | Path | What lives here |
 |---|---|
-| `pkgs/` | One directory per package: `antigravity`, `buzz-desktop`, `kleinbem-auth`, `kleinbem-site`, `langfuse`, `oh-my-pi`, `ricoh-driver`, `workspace-guardian`. |
+| `pkgs/` | One directory per package: `antigravity`, `buzz-desktop`, `kleinbem-auth`, `kleinbem-site`, `langfuse`, `oh-my-pi`, `ricoh-driver`. |
 | `default.nix` | The NUR-style attrset (`pkgs.callPackage ./pkgs/<name> { }` per package) consumed by `nix-config` and other flakes. |
 | `overlay.nix` | Same packages exposed as a nixpkgs overlay, for consumers who don't want the whole NUR namespace. |
 | `modules/nixos/` | NixOS modules shipped alongside the packages (not just derivations). |

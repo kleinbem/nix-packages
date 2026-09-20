@@ -14,7 +14,6 @@
 
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
-  workspace-guardian = pkgs.callPackage ./pkgs/workspace-guardian { };
 
   # kleinbem.dev — see pkgs/kleinbem-site/default.nix header for the bump
   # procedure (pinned to a commit SHA, same pattern as langfuse above).

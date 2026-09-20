@@ -11,7 +11,6 @@ nixpkgs overlay.
 |---|---|
 | `langfuse` | Self-hosted LLM observability service. |
 | `ricoh-driver` | Printer driver package. |
-| `workspace-guardian` | Fleet workspace-guardian tooling. |
 | `kleinbem-site` | Build of the `kleinbem-site` repo (kleinbem.dev). |
 | `kleinbem-auth` | Build of the `kleinbem-auth` repo (visitor login service). |
 | `google-antigravity`, `google-antigravity-ide`, `google-antigravity-ide-no-fhs`, `google-antigravity-cli` | Google Antigravity IDE/CLI, vendored from an audited derivation. Namespaced under `google-antigravity*` to avoid clobbering nixpkgs' own `antigravity` attr. |
