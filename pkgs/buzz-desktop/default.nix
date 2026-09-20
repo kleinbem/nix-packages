@@ -32,7 +32,7 @@ let
     hash = "sha256-9brR7eui1jQ+QQLpziuu1M2kpt/RarqjMIG/rbxfnU4=";
   };
 
-  appimageContents = appimageTools.extractType2 { inherit pname version src; };
+  appimageContents = appimageTools.extract { inherit pname version src; };
 
   # GStreamer element lookups (appsink/appsrc/autoaudiosink) fail inside
   # this FHS wrapper regardless of which plugin packages are included.
