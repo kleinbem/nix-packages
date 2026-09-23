@@ -326,9 +326,9 @@ let
       # runaway helper can't freeze the host. --scope keeps env/cwd/tty, and
       # the probe falls back to plain exec inside sandboxes without a
       # reachable user systemd session.
-      if systemd-run --user --scope --quiet -p MemoryHigh=12G true 2>/dev/null; then
+      if systemd-run --user --scope --quiet -p MemoryHigh=16G true 2>/dev/null; then
         exec systemd-run --user --scope --quiet \
-          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 -p OOMPolicy=kill -p CPUWeight=50 \
+          -p MemoryHigh=16G -p MemoryMax=24G -p TasksMax=8192 -p OOMPolicy=continue \
           ${antigravity-unwrapped}/lib/${pname}/${binaryRelPath} ${lib.optionalString isIde "--user-data-dir=$HOME/.antigravity-ide"} "$@"
       fi
       exec ${antigravity-unwrapped}/lib/${pname}/${binaryRelPath} ${lib.optionalString isIde "--user-data-dir=$HOME/.antigravity-ide"} "$@"
@@ -355,6 +355,7 @@ let
 
       mkdir -p $out/bin
       ln -s ${fhs}/bin/${pname}-fhs $out/bin/${desktopIcon}
+      ln -s $out/bin/${desktopIcon} $out/bin/antigravity
 
       # Install icon from the app resources
       mkdir -p $out/share/pixmaps $out/share/icons/hicolor/1024x1024/apps
@@ -466,9 +467,9 @@ let
       #!/bin/sh
       bin="$1"
       shift
-      if systemd-run --user --scope --quiet -p MemoryHigh=12G true 2>/dev/null; then
+      if systemd-run --user --scope --quiet -p MemoryHigh=16G true 2>/dev/null; then
         exec systemd-run --user --scope --quiet \
-          -p MemoryHigh=12G -p MemoryMax=16G -p TasksMax=2048 -p OOMPolicy=kill -p CPUWeight=50 \
+          -p MemoryHigh=16G -p MemoryMax=24G -p TasksMax=8192 -p OOMPolicy=continue \
           "$bin" ${lib.optionalString isIde ''--user-data-dir="$HOME/.antigravity-ide"''} "$@"
       fi
       exec "$bin" ${lib.optionalString isIde ''--user-data-dir="$HOME/.antigravity-ide"''} "$@"
@@ -483,6 +484,7 @@ let
         --prefix PATH : "${chrome-bin}/bin" \
         --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath dlopenLibs}" \
         --prefix XDG_DATA_DIRS : "${gsettings-desktop-schemas}/share/gsettings-schemas/${gsettings-desktop-schemas.name}:${gtk3}/share/gsettings-schemas/${gtk3.name}"
+      ln -s $out/bin/${desktopIcon} $out/bin/antigravity
 
       # Install icon from the app resources
       mkdir -p $out/share/pixmaps $out/share/icons/hicolor/1024x1024/apps
