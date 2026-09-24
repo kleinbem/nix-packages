@@ -46,8 +46,8 @@ stdenv.mkDerivation {
     runHook preInstall
 
     mkdir -p $out/bin
-    # Rename to agy to avoid naming conflict and match installer behavior
-    cp antigravity $out/bin/agy
+    cp antigravity $out/bin/antigravity-cli
+    ln -s antigravity-cli $out/bin/agy
 
     runHook postInstall
   '';
@@ -62,6 +62,6 @@ stdenv.mkDerivation {
       "x86_64-darwin"
       "aarch64-darwin"
     ];
-    mainProgram = "agy";
+    mainProgram = "antigravity-cli";
   };
 }
