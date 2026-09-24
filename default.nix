@@ -13,6 +13,7 @@
 {
 
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
+  ente-museum = pkgs.callPackage ./pkgs/ente-museum { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
 
   # kleinbem.dev — see pkgs/kleinbem-site/default.nix header for the bump

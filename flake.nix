@@ -26,6 +26,7 @@
       flake = {
         overlays.default = import ./overlay.nix;
         nixosModules.langfuse = import ./modules/nixos/langfuse.nix;
+        nixosModules.ente-museum = import ./modules/nixos/ente-museum.nix;
       };
 
       perSystem =
