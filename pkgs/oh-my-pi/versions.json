@@ -78,5 +78,15 @@
       "url": "https://github.com/can1357/oh-my-pi/releases/download/v18.2.5/omp-linux-arm64",
       "hash": "sha256-zaHC+eAwk8Fw/XcOaYxoD5ytDd3CPIjUIJuHdkZT7MQ="
     }
+  },
+  "18.3.1": {
+    "x86_64-linux": {
+      "url": "https://github.com/can1357/oh-my-pi/releases/download/v18.3.1/omp-linux-x64",
+      "hash": "sha256-CAbfYCvyu5sgLRUiBLG+9kUOtry/vzHWbjdn0buzs6c="
+    },
+    "aarch64-linux": {
+      "url": "https://github.com/can1357/oh-my-pi/releases/download/v18.3.1/omp-linux-arm64",
+      "hash": "sha256-lbnj3Dwglohb4snJI71Fuzv4HRcjZ9t+cJCTZykmHiw="
+    }
   }
 }
