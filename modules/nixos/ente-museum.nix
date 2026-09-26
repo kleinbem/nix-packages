@@ -51,6 +51,18 @@ in
         type = types.str;
         default = "ente_db";
       };
+      user = mkOption {
+        type = types.str;
+        example = "pguser";
+        description = ''
+          Postgres role museum connects as (ENTE_DB_USER). Deliberately no
+          default: upstream's configurations/local.yaml leaves `db.user`
+          empty, and an empty user makes lib/pq parse the DSN's
+          `password=…` as the role name — museum then panics with
+          `role "password=<the password>" does not exist`, writing the DB
+          password into the journal on every restart (core-pi 2026-09-26).
+        '';
+      };
       sslmode = mkOption {
         type = types.str;
         default = "disable";
@@ -116,6 +128,7 @@ in
         ENTE_DB_HOST = cfg.db.host;
         ENTE_DB_PORT = toString cfg.db.port;
         ENTE_DB_NAME = cfg.db.name;
+        ENTE_DB_USER = cfg.db.user;
         ENTE_DB_SSLMODE = cfg.db.sslmode;
         ENTE_S3_B2_EU_CEN_ENDPOINT = cfg.s3.endpoint;
         ENTE_S3_B2_EU_CEN_REGION = cfg.s3.region;
