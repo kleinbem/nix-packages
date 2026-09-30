@@ -25,11 +25,11 @@
 }:
 let
   pname = "buzz-desktop";
-  version = "0.5.24";
+  version = "0.5.26";
 
   src = fetchurl {
     url = "https://github.com/block/buzz/releases/download/desktop-v${version}/Buzz_${version}_amd64.AppImage";
-    hash = "sha256-cD5s/yEvfqu8ZbPLgWxW1lqoWMQ1o94xVP+7MjrJNws=";
+    hash = "sha256-67HFouhjceRMawqqdO9X6AwphliNnxftpSTcQ4iTz0M=";
   };
 
   appimageContents = appimageTools.extract { inherit pname version src; };
