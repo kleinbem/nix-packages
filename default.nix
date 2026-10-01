@@ -62,6 +62,10 @@
   # NIP-GS git commit/tag signing program using Nostr secp256k1 keys.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569176
   git-sign-nostr = pkgs.callPackage ./pkgs/git-sign-nostr/package.nix { };
+
+  # Model Context Protocol (MCP) server for Buzz developers and AI coding agents.
+  # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569182
+  buzz-dev-mcp = pkgs.callPackage ./pkgs/buzz-dev-mcp/package.nix { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
