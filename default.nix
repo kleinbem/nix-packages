@@ -46,6 +46,10 @@
   # google-antigravity-cli above).
   oh-my-pi = pkgs.callPackage ./pkgs/oh-my-pi { };
 
+  # Relay server, admin CLI, and pairing relay for the self-hosted Buzz workspace.
+  # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569154
+  buzz-relay = pkgs.callPackage ./pkgs/buzz-relay/package.nix { };
+
   # Desktop client for the self-hosted Buzz relay (nix-presets/containers/
   # buzz.nix). Vendored AppImage — see pkgs/buzz-desktop/default.nix header
   # for why this isn't a from-source Tauri build.
