@@ -51,11 +51,13 @@ rustPlatform.buildRustPackage {
 
   postInstall = ''
     wrapProgram $out/bin/buzz-dev-mcp \
-      --prefix PATH : ${lib.makeBinPath [
-        bash
-        git
-        ripgrep
-      ]}
+      --prefix PATH : ${
+        lib.makeBinPath [
+          bash
+          git
+          ripgrep
+        ]
+      }
   '';
 
   meta = {

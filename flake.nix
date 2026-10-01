@@ -26,6 +26,7 @@
       flake = {
         overlays.default = import ./overlay.nix;
         nixosModules.langfuse = import ./modules/nixos/langfuse.nix;
+        nixosModules.buzz-relay = import ./modules/nixos/buzz-relay.nix;
       };
 
       perSystem =
