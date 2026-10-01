@@ -54,6 +54,10 @@
   # buzz.nix). Vendored AppImage — see pkgs/buzz-desktop/default.nix header
   # for why this isn't a from-source Tauri build.
   buzz-desktop = pkgs.callPackage ./pkgs/buzz-desktop { };
+
+  # Git credential helper producing NIP-98 authentication headers for Nostr git repos.
+  # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569173
+  git-credential-nostr = pkgs.callPackage ./pkgs/git-credential-nostr/package.nix { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
