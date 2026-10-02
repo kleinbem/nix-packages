@@ -66,6 +66,10 @@
   # Model Context Protocol (MCP) server for Buzz developers and AI coding agents.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569182
   buzz-dev-mcp = pkgs.callPackage ./pkgs/buzz-dev-mcp/package.nix { };
+
+  # Minimal, unbreakable ACP-compliant autonomous AI agent for Buzz workspace.
+  # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569247
+  buzz-agent = pkgs.callPackage ./pkgs/buzz-agent/package.nix { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
