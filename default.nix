@@ -70,6 +70,12 @@
   # Minimal, unbreakable ACP-compliant autonomous AI agent for Buzz workspace.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569247
   buzz-agent = pkgs.callPackage ./pkgs/buzz-agent/package.nix { };
+
+  # Agent-first CLI for the Buzz relay and workspace.
+  buzz-cli = pkgs.callPackage ./pkgs/buzz-cli/package.nix { };
+
+  # Agent Control Protocol (ACP) bridge for the Buzz workspace.
+  buzz-acp = pkgs.callPackage ./pkgs/buzz-acp/package.nix { };
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
