@@ -6,22 +6,12 @@
   stdenv,
 }:
 
+let
+  buzzSource = import ../buzz/source.nix { inherit fetchFromGitHub; };
+in
 rustPlatform.buildRustPackage {
   pname = "buzz-acp";
-  version = "0.1.0-unstable-2026-09-02";
-
-  __structuredAttrs = true;
-  __darwinAllowLocalNetworking = true;
-  strictDeps = true;
-
-  src = fetchFromGitHub {
-    owner = "block";
-    repo = "buzz";
-    rev = "47d068e2109d077414cbf2f4f1c927f6d051037a";
-    hash = "sha256-sLIyStOy330KzzVF9QnIn27loT5QXCRz0U4NN9bxU40=";
-  };
-
-  cargoHash = "sha256-q8FUmTHnPfy/Ub+TNs3UK3exOoX1GdZGwHkH5pDteKE=";
+  inherit (buzzSource) version src cargoHash;
 
   cargoBuildFlags = [
     "--package=buzz-acp"

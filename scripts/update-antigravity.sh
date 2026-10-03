@@ -35,7 +35,7 @@ prefetch_sri() { # url [name] -> SRI sha256
   else
     raw=$(nix-prefetch-url --type sha256 "$url")
   fi
-  nix hash to-sri --type sha256 "$raw"
+  nix hash convert --hash-algo sha256 "$raw"
 }
 
 current_version() { # name -> version-from-url or "none"

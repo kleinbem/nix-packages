@@ -6,21 +6,12 @@
   makeWrapper,
 }:
 
+let
+  buzzSource = import ../buzz/source.nix { inherit fetchFromGitHub; };
+in
 rustPlatform.buildRustPackage {
   pname = "git-sign-nostr";
-  version = "0.1.0-unstable-2026-09-02";
-
-  __structuredAttrs = true;
-  strictDeps = true;
-
-  src = fetchFromGitHub {
-    owner = "block";
-    repo = "buzz";
-    rev = "47d068e2109d077414cbf2f4f1c927f6d051037a";
-    hash = "sha256-sLIyStOy330KzzVF9QnIn27loT5QXCRz0U4NN9bxU40=";
-  };
-
-  cargoHash = "sha256-q8FUmTHnPfy/Ub+TNs3UK3exOoX1GdZGwHkH5pDteKE=";
+  inherit (buzzSource) version src cargoHash;
 
   patches = [
     # Fix BIP-340 curve point validation under nostr 0.44 (upstream issue #6175)

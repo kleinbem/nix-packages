@@ -51,7 +51,7 @@ for p in "${PLATFORMS[@]}"; do
   url="https://github.com/can1357/oh-my-pi/releases/download/v${LATEST}/${asset}"
   log "  hash $nix_os ..."
   raw=$(nix-prefetch-url --type sha256 "$url")
-  hash=$(nix hash to-sri --type sha256 "$raw")
+  hash=$(nix hash convert --hash-algo sha256 "$raw")
   payload=$(jq --arg k "$nix_os" --arg u "$url" --arg h "$hash" \
     '.[$k]={url:$u,hash:$h}' <<<"$payload")
 done

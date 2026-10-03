@@ -39,7 +39,7 @@ log "Updating $CURRENT → $LATEST"
 URL="https://github.com/block/buzz/releases/download/desktop-v${LATEST}/Buzz_${LATEST}_amd64.AppImage"
 log "Prefetching $URL ..."
 RAW_HASH=$(nix-prefetch-url --type sha256 "$URL") || err "Could not fetch AppImage — check the URL/naming didn't change: $URL"
-HASH=$(nix hash to-sri --type sha256 "$RAW_HASH")
+HASH=$(nix hash convert --hash-algo sha256 "$RAW_HASH")
 log "Hash: $HASH"
 
 # ── 3. Bump version + hash together (order matters: version drives the URL) ─
