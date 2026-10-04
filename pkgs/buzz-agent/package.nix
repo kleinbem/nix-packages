@@ -22,6 +22,12 @@ rustPlatform.buildRustPackage {
     "--package=buzz-agent"
   ];
 
+  checkFlags = [
+    # Test executes the `buzz-agent` binary via `.env_clear()`, which strips `SSL_CERT_FILE`
+    # and fails TLS root initialization inside the Nix build sandbox.
+    "--skip=cli_signin_aliases_reuse_legacy_cache_without_runtime_configuration"
+  ];
+
   nativeCheckInputs = [ cacert ];
 
   env = lib.optionalAttrs (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) {
