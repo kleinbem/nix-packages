@@ -8,6 +8,7 @@
   protobuf,
   openssl,
   git,
+  bash,
   makeWrapper,
 }:
 
@@ -17,6 +18,11 @@ in
 rustPlatform.buildRustPackage {
   pname = "buzz-relay";
   inherit (buzzSource) version src cargoHash;
+
+  postPatch = ''
+    substituteInPlace crates/buzz-relay/src/api/git/hook.rs \
+      --replace-fail '#!/usr/bin/env bash' '#!${lib.getExe bash}'
+  '';
 
   nativeBuildInputs = [
     cmake
@@ -48,7 +54,7 @@ rustPlatform.buildRustPackage {
 
   postInstall = ''
     wrapProgram $out/bin/buzz-relay \
-      --prefix PATH : ${lib.makeBinPath [ git ]}
+      --prefix PATH : ${lib.makeBinPath [ git bash ]}
   '';
 
   meta = {

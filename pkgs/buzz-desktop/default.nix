@@ -1,74 +1,161 @@
-# Buzz Desktop — Tauri client for Buzz (github.com/block/buzz), the
-# Nostr-based team chat/git/agent-workspace relay this fleet self-hosts
-# (nix-presets/containers/buzz.nix). Staged derivation matching upstream PR
-# https://github.com/NixOS/nixpkgs/pull/569165.
 {
   lib,
-  appimageTools,
-  fetchurl,
+  stdenv,
+  rustPlatform,
+  fetchFromGitHub,
+  callPackage,
+  cargo-tauri,
+  cmake,
+  perl,
+  pkg-config,
+  makeWrapper,
+  wrapGAppsHook3,
+  alsa-lib,
+  gtk3,
+  libopus,
+  libsoup_3,
+  webkitgtk_4_1,
+  glib-networking,
   gst_all_1,
-  xdg-utils,
+  bash,
+  git,
+  ffmpeg-headless,
+  cacert,
+  coreutils,
 }:
+
 let
-  pname = "buzz-desktop";
-  version = "0.5.26";
+  buzzSource = import ../buzz/source.nix { inherit fetchFromGitHub; };
 
-  src = fetchurl {
-    url = "https://github.com/block/buzz/releases/download/desktop-v${version}/Buzz_${version}_amd64.AppImage";
-    hash = "sha256-67HFouhjceRMawqqdO9X6AwphliNnxftpSTcQ4iTz0M=";
-  };
+  frontend = callPackage ./frontend.nix { };
+  sidecars = callPackage ./sidecars.nix { };
+  sherpaOnnxArchives = callPackage ./sherpa-onnx.nix { };
 
-  appimageContents = appimageTools.extract { inherit pname version src; };
+  rustTarget = stdenv.hostPlatform.rust.rustcTarget;
 
-  gstPlugins = with gst_all_1; [
+  gstreamerPlugins = with gst_all_1; [
     gstreamer
     gst-plugins-base
     gst-plugins-good
-    gst-plugins-bad
+    gst-libav
   ];
+  gstreamerPluginPath = lib.makeSearchPath "lib/gstreamer-1.0" gstreamerPlugins;
+
+  runtimePrograms = [
+    bash
+    git
+    ffmpeg-headless
+  ];
+  runtimePath = lib.makeBinPath runtimePrograms;
+  caBundle = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+
+  registrySetup = ''
+    if [[ -z "''${GST_REGISTRY_1_0:-}" ]]; then
+      cacheHome="''${XDG_CACHE_HOME:-''${HOME:?HOME must be set}/.cache}"
+      export GST_REGISTRY_1_0="$cacheHome/buzz/gstreamer-1.0/registry-${rustTarget}.bin"
+      ${coreutils}/bin/mkdir -p "$cacheHome/buzz/gstreamer-1.0"
+    fi
+  '';
 in
-appimageTools.wrapType2 {
-  inherit pname version src;
+rustPlatform.buildRustPackage {
+  pname = "buzz-desktop";
+  inherit (buzzSource) version src;
 
-  extraPkgs =
-    pkgs:
-    with pkgs;
-    [
-      elfutils
-      gtk3
-      webkitgtk_4_1
-      libayatana-appindicator
-      zstd
-      xdg-utils
-    ]
-    ++ gstPlugins;
+  cargoRoot = "desktop/src-tauri";
+  buildAndTestSubdir = "desktop/src-tauri";
+  cargoHash = "sha256-GQoRKRv0eM94ckLPBsMWHwA3tPqpThm8ZDv0DL4RUZQ=";
+  strictDeps = true;
 
-  extraBwrapArgs = [
-    "--setenv"
-    "GST_PLUGIN_PATH_1_0"
-    (lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" gstPlugins)
-    "--setenv"
-    "GST_REGISTRY_1_0"
-    "/tmp/buzz-desktop-gst-registry.bin"
-    "--setenv"
-    "BROWSER"
-    "${xdg-utils}/bin/xdg-open"
+  postPatch = ''
+    rm -rf desktop/dist
+    cp -R ${frontend} desktop/dist
+    chmod -R u+w desktop/dist
+
+    mkdir -p desktop/src-tauri/binaries
+    for executable in \
+      buzz \
+      buzz-acp \
+      buzz-agent \
+      buzz-backend-kubernetes \
+      buzz-dev-mcp \
+      git-credential-nostr
+    do
+      install -Dm755 \
+        "${sidecars}/bin/$executable" \
+        "desktop/src-tauri/binaries/$executable-${rustTarget}"
+    done
+
+    substituteInPlace desktop/src-tauri/tauri.conf.json \
+      --replace-fail '"beforeBuildCommand": "pnpm build"' '"beforeBuildCommand": null'
+  '';
+
+  nativeBuildInputs = [
+    cmake
+    perl
+    pkg-config
+    cargo-tauri.hook
+    makeWrapper
+    wrapGAppsHook3
   ];
 
-  extraInstallCommands = ''
-    install -Dm444 ${appimageContents}/buzz-desktop.png $out/share/icons/hicolor/512x512/apps/${pname}.png
-    install -Dm444 ${appimageContents}/Buzz.desktop $out/share/applications/${pname}.desktop
-    substituteInPlace $out/share/applications/${pname}.desktop \
-      --replace-fail 'Exec=buzz-desktop' 'Exec=${pname}' \
-      --replace-fail 'Icon=buzz-desktop' "Icon=${pname}"
+  buildInputs = [
+    alsa-lib
+    gtk3
+    libopus
+    libsoup_3
+    webkitgtk_4_1
+    glib-networking
+  ]
+  ++ gstreamerPlugins;
+
+  env = {
+    AWS_LC_SYS_CMAKE_BUILDER = 1;
+    SHERPA_ONNX_ARCHIVE_DIR = sherpaOnnxArchives;
+  };
+
+  cargoBuildFlags = [
+    "--package"
+    "buzz-desktop"
+  ];
+
+  doNotPostBuildInstallCargoBinaries = true;
+  tauriBuildFlags = [ "--no-sign" ];
+
+  doCheck = false;
+
+  postInstall = ''
+    substituteInPlace $out/share/applications/Buzz.desktop \
+      --replace-fail 'Categories=' 'Categories=Network;Chat;InstantMessaging;'
+    ln -s Buzz.desktop $out/share/applications/buzz-desktop.desktop
+  '';
+
+  preFixup = ''
+    gappsWrapperArgs+=(
+      --prefix PATH : "${runtimePath}"
+      --set-default SSL_CERT_FILE "${caBundle}"
+      --set-default BUZZ_SHELL "${lib.getExe bash}"
+      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${gstreamerPluginPath}"
+    )
+  '';
+
+  postFixup = ''
+    wrapProgramShell "$out/bin/buzz-desktop" \
+      --run ${lib.escapeShellArg registrySetup}
   '';
 
   meta = {
     description = "Desktop client for Buzz, a Nostr-based workspace";
     homepage = "https://github.com/block/buzz";
     license = lib.licenses.asl20;
-    mainProgram = pname;
+    sourceProvenance = with lib.sourceTypes; [
+      fromSource
+      binaryNativeCode
+    ];
+    mainProgram = "buzz-desktop";
     maintainers = with lib.maintainers; [ kleinbem ];
-    platforms = [ "x86_64-linux" ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-linux"
+    ];
   };
 }
