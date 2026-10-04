@@ -17,7 +17,8 @@ let
 
   pnpmDeps = fetchPnpmDeps {
     pname = "buzz-desktop-frontend";
-    inherit (buzzSource) version src;
+    inherit (buzzSource) src;
+    version = "0.5.26-unstable-2026-10-03";
     inherit pnpm;
     fetcherVersion = 4;
     hash = "sha256-qxtgbCeivfpAQg2+JOUGCQo7agf0GAARvLle89jFzu4=";
@@ -25,7 +26,8 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "buzz-desktop-frontend";
-  inherit (buzzSource) version src;
+  inherit (buzzSource) src;
+  version = "0.5.26-unstable-2026-10-03";
   inherit pnpmDeps;
   strictDeps = true;
 

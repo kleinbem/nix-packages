@@ -59,7 +59,8 @@ let
 in
 rustPlatform.buildRustPackage {
   pname = "buzz-desktop";
-  inherit (buzzSource) version src;
+  inherit (buzzSource) src;
+  version = "0.5.26-unstable-2026-10-03";
 
   cargoRoot = "desktop/src-tauri";
   buildAndTestSubdir = "desktop/src-tauri";
