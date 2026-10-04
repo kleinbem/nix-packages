@@ -54,7 +54,12 @@ rustPlatform.buildRustPackage {
 
   postInstall = ''
     wrapProgram $out/bin/buzz-relay \
-      --prefix PATH : ${lib.makeBinPath [ git bash ]}
+      --prefix PATH : ${
+        lib.makeBinPath [
+          git
+          bash
+        ]
+      }
   '';
 
   meta = {
