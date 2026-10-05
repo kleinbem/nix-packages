@@ -23,6 +23,7 @@
   gst_all_1,
   onnxruntime,
   sherpa-onnx,
+  vulkan-loader,
   bash,
   git,
   ffmpeg-headless,
@@ -42,6 +43,8 @@ let
     gstreamer
     gst-plugins-base
     gst-plugins-good
+    # transcode elements for WebKit's MediaRecorder (voice notes)
+    gst-plugins-bad
     gst-libav
   ];
 
@@ -142,6 +145,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
     "buzz-desktop"
   ];
 
+  # Compute sharing; upstream's Linux release builds enable it too.
+  buildFeatures = [ "mesh-llm" ];
+
   doNotPostBuildInstallCargoBinaries = true;
   tauriBuildFlags = [ "--no-sign" ];
 
@@ -150,10 +156,18 @@ rustPlatform.buildRustPackage (finalAttrs: {
   doCheck = false;
 
   postInstall = ''
+    # The app finds its sidecars next to its own executable. Keep them out of
+    # $out/bin so they don't collide with the standalone buzz-cli, buzz-agent, etc.
+    mkdir -p $out/libexec/buzz-desktop
+    mv $out/bin/* $out/libexec/buzz-desktop/
+
     substituteInPlace $out/share/applications/Buzz.desktop \
       --replace-fail 'Categories=' 'Categories=Network;Chat;InstantMessaging;'
     ln -s Buzz.desktop $out/share/applications/buzz-desktop.desktop
   '';
+
+  # Wrap only the app (not the sidecars), in one shell wrapper; see postFixup.
+  dontWrapGApps = true;
 
   preFixup = ''
     gappsWrapperArgs+=(
@@ -167,14 +181,21 @@ rustPlatform.buildRustPackage (finalAttrs: {
       --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt"
       --set-default BUZZ_SHELL "${lib.getExe bash}"
       --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${lib.makeSearchPath "lib/gstreamer-1.0" gstreamerPlugins}"
+      # mesh-llm downloads prebuilt llama.cpp runtimes (CPU or Vulkan) and dlopens
+      # them; libgomp and libvulkan are not on any default path on NixOS.
+      --prefix LD_LIBRARY_PATH : "${
+        lib.makeLibraryPath [
+          stdenv.cc.cc.lib
+          vulkan-loader
+        ]
+      }"
     )
   '';
 
-  # The registry path depends on $HOME at runtime, which needs `--run`; the
-  # gapps wrapper is a binary wrapper here and does not support it, so add an
-  # outer shell wrapper.
+  # A shell wrapper because the registry path depends on $HOME at runtime (`--run`).
   postFixup = ''
-    wrapProgramShell "$out/bin/buzz-desktop" \
+    makeShellWrapper "$out/libexec/buzz-desktop/buzz-desktop" "$out/bin/buzz-desktop" \
+      "''${gappsWrapperArgs[@]}" \
       --run ${lib.escapeShellArg registrySetup}
   '';
 
