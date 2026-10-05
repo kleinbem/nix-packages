@@ -67,7 +67,7 @@ rustPlatform.buildRustPackage {
     homepage = "https://github.com/block/buzz";
     license = lib.licenses.asl20;
     mainProgram = "buzz-relay";
-    maintainers = with lib.maintainers; [ kleinbem ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 }
