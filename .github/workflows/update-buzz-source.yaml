@@ -102,7 +102,7 @@ jobs:
           - `git-credential-nostr`
           - `git-sign-nostr`
 
-          ✅ Verified builds of representative packages succeeded on the runner.
+          All 7 packages were built (with their test suites) on the runner before this PR was opened.
 
           ---
           🤖 Opened automatically by the update-buzz-source workflow.

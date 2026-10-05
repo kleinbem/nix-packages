@@ -51,8 +51,8 @@
   buzz-relay = pkgs.callPackage ./pkgs/buzz-relay/package.nix { };
 
   # Desktop client for the self-hosted Buzz relay (nix-presets/containers/
-  # buzz.nix). Vendored AppImage — see pkgs/buzz-desktop/default.nix header
-  # for why this isn't a from-source Tauri build.
+  # buzz.nix). Built from source at the desktop-v* release tag, with its own
+  # sidecars; mirrors upstream PR https://github.com/NixOS/nixpkgs/pull/569165
   buzz-desktop = pkgs.callPackage ./pkgs/buzz-desktop { };
 
   # Git credential helper producing NIP-98 authentication headers for Nostr git repos.

@@ -1,19 +1,19 @@
 {
   lib,
-  fetchFromGitHub,
   rustPlatform,
   cmake,
   perl,
   pkg-config,
   openssl,
+  src,
+  version,
 }:
 
-let
-  buzzSource = import ../buzz/source.nix { inherit fetchFromGitHub; };
-in
 rustPlatform.buildRustPackage {
   pname = "buzz-desktop-sidecars";
-  inherit (buzzSource) version src cargoHash;
+  inherit version src;
+
+  cargoHash = "sha256-A/lpudjM3ZahSNiWHxW8UKFlBhdBuAEQL87c8Q+C7Q4=";
 
   nativeBuildInputs = [
     cmake
@@ -37,6 +37,7 @@ rustPlatform.buildRustPackage {
   doCheck = false;
 
   preBuild = ''
+    # Remap transient Nix build paths for reproducible output.
     export RUSTFLAGS="--remap-path-prefix=$NIX_BUILD_TOP=/build ''${RUSTFLAGS:-}"
   '';
 

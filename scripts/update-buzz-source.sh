@@ -4,14 +4,16 @@
 # Because all 7 Rust packages (buzz-relay, buzz-cli, buzz-acp, buzz-agent,
 # buzz-dev-mcp, git-credential-nostr, git-sign-nostr) are crates in the same
 # monorepo workspace, they share the exact same source commit, SRI source hash,
-# and workspace Cargo vendor hash.
+# and workspace Cargo vendor hash. (buzz-desktop is NOT part of this: it builds
+# from the desktop-v* release tag with its own sidecars — see
+# update-buzz-desktop.sh.)
 #
 # This script:
 #   1. Queries the GitHub API for the latest commit on block/buzz main.
 #   2. Prefetches the source tarball and computes the SRI hash.
 #   3. Temporarily sets a dummy cargoHash to discover the new vendor hash.
 #   4. Updates pkgs/buzz/source.json atomically (updating all 7 packages).
-#   5. Verifies builds of representative packages (buzz-cli, git-sign-nostr).
+#   5. Builds all 7 packages, so a broken bump never reaches the auto-merged PR.
 #
 # Usage:  ./scripts/update-buzz-source.sh
 # Deps:   bash, curl, jq, nix (nix-prefetch-url, nix hash)
@@ -60,7 +62,7 @@ jq --arg v "$NEW_VERSION" \
 
 git add "$PKG_JSON"
 
-GOT_CARGO_HASH=$( (nix build .#buzz-cli 2>&1 || true) | grep -oP '(?<=got:    )sha256-\S+' | head -1)
+GOT_CARGO_HASH=$( (nix build .#buzz-cli 2>&1 || true) | sed -nE 's/^[[:space:]]*got:[[:space:]]*(sha256-[A-Za-z0-9+/=]+).*/\1/p' | head -1)
 if [[ -z $GOT_CARGO_HASH ]]; then
   # Revert dirty state before exiting
   git checkout -- "$PKG_JSON"
@@ -73,6 +75,9 @@ jq --arg c "$GOT_CARGO_HASH" '.cargoHash = $c' "$PKG_JSON" >"$PKG_JSON.tmp" && m
 git add "$PKG_JSON"
 
 # ── 5. Verify builds ──────────────────────────────────────────────────────────
-log "Verifying build of buzz-cli, git-sign-nostr, and buzz-dev-mcp..."
-nix build .#buzz-cli .#git-sign-nostr .#buzz-dev-mcp 2>&1 | tail -3
+# All of them: they share the vendor hash, but each has its own patches,
+# substitutions and test suite that a new upstream commit can break.
+PACKAGES=(buzz-relay buzz-cli buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr)
+log "Verifying builds of ${PACKAGES[*]}..."
+nix build --no-link "${PACKAGES[@]/#/.#}" 2>&1 | tail -3
 log "Build verified! Buzz ecosystem bumped to $NEW_VERSION."

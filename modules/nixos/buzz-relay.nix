@@ -280,5 +280,5 @@ in
     };
   };
 
-  meta.maintainers = with lib.maintainers; [ kleinbem ];
+  meta.maintainers = [ ];
 }

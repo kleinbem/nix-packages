@@ -3,13 +3,17 @@
   stdenv,
   rustPlatform,
   fetchFromGitHub,
+  fetchPnpmDeps,
   callPackage,
   cargo-tauri,
   cmake,
   perl,
   pkg-config,
-  makeWrapper,
+  nodejs_24,
+  pnpm_11,
+  pnpmConfigHook,
   wrapGAppsHook3,
+  makeShellWrapper,
   alsa-lib,
   gtk3,
   libopus,
@@ -17,19 +21,20 @@
   webkitgtk_4_1,
   glib-networking,
   gst_all_1,
+  onnxruntime,
+  sherpa-onnx,
   bash,
   git,
   ffmpeg-headless,
   cacert,
   coreutils,
+  nix-update-script,
 }:
 
 let
-  buzzSource = import ../buzz/source.nix { inherit fetchFromGitHub; };
-
-  frontend = callPackage ./frontend.nix { };
-  sidecars = callPackage ./sidecars.nix { };
-  sherpaOnnxArchives = callPackage ./sherpa-onnx.nix { };
+  pnpm = pnpm_11.override {
+    nodejs-slim = nodejs_24;
+  };
 
   rustTarget = stdenv.hostPlatform.rust.rustcTarget;
 
@@ -39,16 +44,9 @@ let
     gst-plugins-good
     gst-libav
   ];
-  gstreamerPluginPath = lib.makeSearchPath "lib/gstreamer-1.0" gstreamerPlugins;
 
-  runtimePrograms = [
-    bash
-    git
-    ffmpeg-headless
-  ];
-  runtimePath = lib.makeBinPath runtimePrograms;
-  caBundle = "${cacert}/etc/ssl/certs/ca-bundle.crt";
-
+  # Keep the GStreamer plugin registry per user and per target, so it is not
+  # shared with (and corrupted by) other GStreamer applications.
   registrySetup = ''
     if [[ -z "''${GST_REGISTRY_1_0:-}" ]]; then
       cacheHome="''${XDG_CACHE_HOME:-''${HOME:?HOME must be set}/.cache}"
@@ -57,21 +55,33 @@ let
     fi
   '';
 in
-rustPlatform.buildRustPackage {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "buzz-desktop";
-  inherit (buzzSource) src;
-  version = "0.5.26-unstable-2026-10-03";
+  version = "0.5.26";
+
+  __structuredAttrs = true;
+  strictDeps = true;
+
+  src = fetchFromGitHub {
+    owner = "block";
+    repo = "buzz";
+    tag = "desktop-v${finalAttrs.version}";
+    hash = "sha256-w/CHknkyFT+iHv4jd5Anv1Q/5kOZ7H1DEKB9dwqQHiE=";
+  };
 
   cargoRoot = "desktop/src-tauri";
   buildAndTestSubdir = "desktop/src-tauri";
   cargoHash = "sha256-GQoRKRv0eM94ckLPBsMWHwA3tPqpThm8ZDv0DL4RUZQ=";
-  strictDeps = true;
+
+  pnpmDeps = fetchPnpmDeps {
+    inherit (finalAttrs) pname version src;
+    inherit pnpm;
+    fetcherVersion = 4;
+    hash = "sha256-qxtgbCeivfpAQg2+JOUGCQo7agf0GAARvLle89jFzu4=";
+  };
+  pnpmWorkspaces = [ "buzz" ];
 
   postPatch = ''
-    rm -rf desktop/dist
-    cp -R ${frontend} desktop/dist
-    chmod -R u+w desktop/dist
-
     mkdir -p desktop/src-tauri/binaries
     for executable in \
       buzz \
@@ -82,12 +92,17 @@ rustPlatform.buildRustPackage {
       git-credential-nostr
     do
       install -Dm755 \
-        "${sidecars}/bin/$executable" \
+        "${finalAttrs.passthru.sidecars}/bin/$executable" \
         "desktop/src-tauri/binaries/$executable-${rustTarget}"
     done
 
-    substituteInPlace desktop/src-tauri/tauri.conf.json \
-      --replace-fail '"beforeBuildCommand": "pnpm build"' '"beforeBuildCommand": null'
+    # Link against sherpa-onnx from nixpkgs instead of downloading prebuilt static libraries.
+    # Every dependent must opt out of the default `static` feature, or Cargo unifies both.
+    for manifest in desktop/src-tauri/Cargo.toml crates/buzz-voice/Cargo.toml; do
+      substituteInPlace "$manifest" \
+        --replace-fail 'sherpa-onnx = "1.12"' \
+          'sherpa-onnx = { version = "1.12", default-features = false, features = [ "shared" ] }'
+    done
   '';
 
   nativeBuildInputs = [
@@ -95,8 +110,11 @@ rustPlatform.buildRustPackage {
     perl
     pkg-config
     cargo-tauri.hook
-    makeWrapper
+    nodejs_24
+    pnpm
+    pnpmConfigHook
     wrapGAppsHook3
+    makeShellWrapper
   ];
 
   buildInputs = [
@@ -106,13 +124,18 @@ rustPlatform.buildRustPackage {
     libsoup_3
     webkitgtk_4_1
     glib-networking
+    onnxruntime
+    sherpa-onnx
   ]
   ++ gstreamerPlugins;
 
   env = {
     AWS_LC_SYS_CMAKE_BUILDER = 1;
-    SHERPA_ONNX_ARCHIVE_DIR = sherpaOnnxArchives;
+    SHERPA_ONNX_LIB_DIR = "${lib.getLib sherpa-onnx}/lib";
   };
+
+  # cmake is only used by dependency build scripts
+  dontUseCmakeConfigure = true;
 
   cargoBuildFlags = [
     "--package"
@@ -122,6 +145,8 @@ rustPlatform.buildRustPackage {
   doNotPostBuildInstallCargoBinaries = true;
   tauriBuildFlags = [ "--no-sign" ];
 
+  # The desktop crate's tests need a display and a running relay; the bundled
+  # sidecars are tested in their standalone packages (buzz-agent, buzz-dev-mcp, ...).
   doCheck = false;
 
   postInstall = ''
@@ -132,31 +157,52 @@ rustPlatform.buildRustPackage {
 
   preFixup = ''
     gappsWrapperArgs+=(
-      --prefix PATH : "${runtimePath}"
-      --set-default SSL_CERT_FILE "${caBundle}"
+      --prefix PATH : "${
+        lib.makeBinPath [
+          bash
+          git
+          ffmpeg-headless
+        ]
+      }"
+      --set-default SSL_CERT_FILE "${cacert}/etc/ssl/certs/ca-bundle.crt"
       --set-default BUZZ_SHELL "${lib.getExe bash}"
-      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${gstreamerPluginPath}"
+      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${lib.makeSearchPath "lib/gstreamer-1.0" gstreamerPlugins}"
     )
   '';
 
+  # The registry path depends on $HOME at runtime, which needs `--run`; the
+  # gapps wrapper is a binary wrapper here and does not support it, so add an
+  # outer shell wrapper.
   postFixup = ''
     wrapProgramShell "$out/bin/buzz-desktop" \
       --run ${lib.escapeShellArg registrySetup}
   '';
 
+  passthru = {
+    # Built from the same tag as the app so the bundled binaries match it.
+    sidecars = callPackage ./sidecars.nix {
+      inherit (finalAttrs) version src;
+    };
+    updateScript = nix-update-script {
+      extraArgs = [
+        "--version-regex"
+        "desktop-v(.*)"
+        "--subpackage"
+        "sidecars"
+      ];
+    };
+  };
+
   meta = {
     description = "Desktop client for Buzz, a Nostr-based workspace";
     homepage = "https://github.com/block/buzz";
+    changelog = "https://github.com/block/buzz/releases/tag/desktop-v${finalAttrs.version}";
     license = lib.licenses.asl20;
-    sourceProvenance = with lib.sourceTypes; [
-      fromSource
-      binaryNativeCode
-    ];
     mainProgram = "buzz-desktop";
-    maintainers = with lib.maintainers; [ kleinbem ];
+    maintainers = [ ];
     platforms = [
       "x86_64-linux"
       "aarch64-linux"
     ];
   };
-}
+})

@@ -1,9 +1,10 @@
 name: "Update Buzz Desktop"
 
-# Bumps pkgs/buzz-desktop/default.nix to the latest block/buzz desktop-v*
-# AppImage release and opens a PR. Vendored-binary package (see the header
-# comment in default.nix) — releases land frequently (multiple per week),
-# so this checks mid-week, offset from the other weekly updaters.
+# Bumps pkgs/buzz-desktop to the latest block/buzz desktop-v* release and opens
+# a PR. Built from source at the release tag; nix-update rewrites the version
+# and all hashes in default.nix and sidecars.nix (see the script). Releases
+# land frequently (multiple per week), so this checks mid-week, offset from
+# the other weekly updaters.
 
 on:
   schedule:
@@ -41,19 +42,19 @@ jobs:
 
       - name: Run updater
         id: update
+        env:
+          # nix-update queries GitHub for release tags.
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           chmod +x scripts/update-buzz-desktop.sh
           ./scripts/update-buzz-desktop.sh
-          # update-buzz-desktop.sh's verify step `git add`s the file as part of
-          # nix-prefetch-url's own staging needs — a plain (unstaged-only) git
-          # diff would report "unchanged" even on a real bump, same gotcha as
-          # update-langfuse.sh.
-          if git diff HEAD --quiet -- pkgs/buzz-desktop/default.nix; then
+          # The script `git add`s its edits so the flake build sees them; a
+          # plain (unstaged-only) git diff would report "unchanged".
+          if git diff HEAD --quiet -- pkgs/buzz-desktop; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            VER=$(grep -oP 'version = "\K[^"]+' pkgs/buzz-desktop/default.nix | head -1)
-            echo "version=$VER" >> "$GITHUB_OUTPUT"
+            echo "version=$(nix eval --raw .#buzz-desktop.version)" >> "$GITHUB_OUTPUT"
           fi
 
       # Was peter-evans/create-pull-request, which does a plain local
@@ -82,23 +83,27 @@ jobs:
             --arg branch "$BRANCH_NAME" \
             --arg sha "$MAIN_SHA" \
             --arg headline "chore: update buzz-desktop to ${{ steps.update.outputs.version }}" \
-            --arg content "$(base64 -w0 pkgs/buzz-desktop/default.nix)" \
+            --argjson additions "$(
+              for f in pkgs/buzz-desktop/default.nix pkgs/buzz-desktop/sidecars.nix; do
+                jq -n --arg path "$f" --arg contents "$(base64 -w0 "$f")" '{path: $path, contents: $contents}'
+              done | jq -s .
+            )" \
             --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
             '{query: $query, variables: {input: {
                 branch: {repositoryNameWithOwner: $repo, branchName: $branch},
                 message: {headline: $headline},
                 expectedHeadOid: $sha,
-                fileChanges: {additions: [{path: "pkgs/buzz-desktop/default.nix", contents: $content}]}
+                fileChanges: {additions: $additions}
             }}}' | gh api graphql --input -
 
           BODY_FILE=$(mktemp)
           cat > "$BODY_FILE" <<'EOF'
           ## Buzz Desktop update
 
-          Bumps `pkgs/buzz-desktop/default.nix` to **${{ steps.update.outputs.version }}**.
-          AppImage hash re-prefetched directly from the `desktop-v*` GitHub release.
+          Bumps `pkgs/buzz-desktop` to **${{ steps.update.outputs.version }}** (`desktop-v${{ steps.update.outputs.version }}`).
+          Version and all hashes (source, Cargo, pnpm, sidecars) updated by nix-update.
 
-          ✅ Full `nix build .#buzz-desktop` passed on the hosted runner.
+          A full `nix build .#buzz-desktop` passed on the hosted runner before this PR was opened.
 
           After merge, bump the `nix-packages` submodule in `kleinbem/nix` to
           warm Attic via `build-packages`.
