@@ -163,7 +163,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
     substituteInPlace $out/share/applications/Buzz.desktop \
       --replace-fail 'Categories=' 'Categories=Network;Chat;InstantMessaging;'
-    ln -s Buzz.desktop $out/share/applications/buzz-desktop.desktop
   '';
 
   # Wrap only the app (not the sidecars), in one shell wrapper; see postFixup.
