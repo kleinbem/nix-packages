@@ -1,0 +1,88 @@
+name: "Canary: mesh-llm"
+
+# Builds nixpkgs' mesh-llm packages against MeshLLM main every night, so
+# packaging breakage shows up long before the next release reaches nixpkgs.
+# A failure opens (or comments on) one issue; the next green run closes it.
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+    inputs:
+      mesh_llm_rev:
+        description: MeshLLM commit to build (default main)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: canary-mesh-llm
+  cancel-in-progress: false
+
+env:
+  # Until NixOS/nixpkgs#571722 merges; then NixOS/nixpkgs master.
+  NIXPKGS_REPO: kleinbem/nixpkgs
+  NIXPKGS_REF: mesh-llm-init
+  ISSUE_TITLE: "Canary: mesh-llm packaging fails against MeshLLM main"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      # The Rust workspace and llama.cpp need more than the runner's free disk.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ env.NIXPKGS_REPO }}
+          ref: ${{ env.NIXPKGS_REF }}
+          path: nixpkgs
+          persist-credentials: false
+
+      - uses: cachix/install-nix-action@v31.11.1
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ github.token }}
+
+      - name: Build
+        env:
+          NIXPKGS: nixpkgs
+          MESH_LLM_REV: ${{ inputs.mesh_llm_rev }}
+        run: |
+          rev="${MESH_LLM_REV:-$(git ls-remote https://github.com/Mesh-LLM/mesh-llm refs/heads/main | cut -f1)}"
+          echo "MESH_LLM_REV=$rev" >> "$GITHUB_ENV"
+          MESH_LLM_REV="$rev" canary/mesh-llm/run.sh
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="MeshLLM [\`${MESH_LLM_REV:0:9}\`](https://github.com/Mesh-LLM/mesh-llm/commit/$MESH_LLM_REV) fails: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number // empty')"
+          if [[ -n "$issue" ]]; then
+            gh issue comment "$issue" --body "$body"
+          else
+            gh issue create --title "$ISSUE_TITLE" --body "$body"
+          fi
+
+      - name: Close issue on success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number // empty')"
+          if [[ -n "$issue" ]]; then
+            gh issue close "$issue" --comment "Green again at MeshLLM \`${MESH_LLM_REV:0:9}\`."
+          fi

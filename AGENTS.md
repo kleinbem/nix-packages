@@ -13,6 +13,7 @@ Custom package derivations for the fleet, structured as a
 | `overlay.nix` | Same packages exposed as a nixpkgs overlay, for consumers who don't want the whole NUR namespace. |
 | `modules/nixos/` | NixOS modules shipped alongside the packages (not just derivations). |
 | `ci.nix` | CI build set. |
+| `canary/` | Nightly canaries building nixpkgs packages against upstream main (`canary/mesh-llm`, workflow `canary-mesh-llm.yaml`), to catch packaging breakage before the next release. |
 
 ## Conventions
 
