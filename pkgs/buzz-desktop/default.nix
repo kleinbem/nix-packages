@@ -60,7 +60,7 @@ let
 in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "buzz-desktop";
-  version = "0.5.27";
+  version = "0.5.28";
 
   __structuredAttrs = true;
   strictDeps = true;
@@ -69,12 +69,12 @@ rustPlatform.buildRustPackage (finalAttrs: {
     owner = "block";
     repo = "buzz";
     tag = "desktop-v${finalAttrs.version}";
-    hash = "sha256-h/4xEemRexKpjz4ZD9XKGSL+0vizdx5QuqmVO3oO7W4=";
+    hash = "sha256-NEsLQwcoQ2zTgznFgGFGNgYPnoclicNVycSEjl7I0Wo=";
   };
 
   cargoRoot = "desktop/src-tauri";
   buildAndTestSubdir = "desktop/src-tauri";
-  cargoHash = "sha256-oPJNW3eQfZc1oIYWNmAqpc7/F6NnMePbfQBG/kMQ1UU=";
+  cargoHash = "sha256-lB+7VKXczOyJlr+6LP5UtyMKzyJCEXyBeFOi8Rznirw=";
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
