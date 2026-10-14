@@ -13,7 +13,7 @@ rustPlatform.buildRustPackage {
   pname = "buzz-desktop-sidecars";
   inherit version src;
 
-  cargoHash = "sha256-e2vWeSx9JTjHqupOMkNpD+0vNCs8ubMm/lRp+RVRK78=";
+  cargoHash = "sha256-UQ8qNqoeDwkwhmVZebi++gb2GP61dr1Zv2QU9mJ6KJ8=";
 
   nativeBuildInputs = [
     cmake
