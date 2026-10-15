@@ -41,9 +41,19 @@ let
       version =
         (builtins.fromTOML (builtins.readFile "${meshLlmSrc}/Cargo.toml")).workspace.package.version;
       src = github "ggml-org" "llama.cpp" (final.lib.trim (builtins.readFile llamaPin));
-      passthru = old.passthru // {
-        inherit meshLlmSrc llamaCppBuild;
-      };
+      passthru =
+        old.passthru
+        // {
+          inherit meshLlmSrc llamaCppBuild;
+        }
+        # Upstream's automation tool (newer packages): its cargo hash is pinned
+        # to one release, so take its dependencies from the lockfile as well.
+        // final.lib.optionalAttrs (old.passthru ? automation) {
+          automation = old.passthru.automation.overrideAttrs {
+            src = meshLlmSrc;
+            cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${meshLlmSrc}/Cargo.lock"; };
+          };
+        };
     });
 
     mesh-llm = prev.mesh-llm.overrideAttrs (old: {
