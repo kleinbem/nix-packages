@@ -49,6 +49,9 @@
   # Command-line tool for downloading APK files from Google Play, F-Droid, and APKPure
   apkeep = pkgs.callPackage ./pkgs/apkeep { };
 
+  # Native messaging host (binary + manifest) for kleinbem/chrome-open-in-app.
+  chrome-open-in-app-host = pkgs.callPackage ./pkgs/chrome-open-in-app-host { };
+
   # Relay server, admin CLI, and pairing relay for the self-hosted Buzz workspace.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569154
   buzz-relay = pkgs.callPackage ./pkgs/buzz-relay/package.nix { };
