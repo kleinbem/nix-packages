@@ -46,6 +46,9 @@
   # google-antigravity-cli above).
   oh-my-pi = pkgs.callPackage ./pkgs/oh-my-pi { };
 
+  # Command-line tool for downloading APK files from Google Play, F-Droid, and APKPure
+  apkeep = pkgs.callPackage ./pkgs/apkeep { };
+
   # Relay server, admin CLI, and pairing relay for the self-hosted Buzz workspace.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569154
   buzz-relay = pkgs.callPackage ./pkgs/buzz-relay/package.nix { };
