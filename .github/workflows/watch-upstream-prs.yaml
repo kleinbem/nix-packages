@@ -1,0 +1,55 @@
+name: "Watch: upstream PRs"
+
+# Checks the upstream PRs in watch/upstream-prs/prs.txt once a week. When one
+# has a conflict, got merged or closed, has new comments or reviews, or CI ran
+# beyond the security checks, the report goes into one issue (opened or
+# commented on). Quiet weeks leave no trace.
+
+on:
+  schedule:
+    - cron: '17 6 * * 5'
+  workflow_dispatch:
+    inputs:
+      since:
+        description: Report activity since this ISO date (default 8 days ago)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: watch-upstream-prs
+  cancel-in-progress: false
+
+env:
+  ISSUE_TITLE: "Watch: activity on upstream PRs"
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check PRs
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SINCE: ${{ inputs.since }}
+        run: watch/upstream-prs/run.sh | tee report.md
+
+      - name: Report
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number // empty')"
+          if [[ -n "$issue" ]]; then
+            gh issue comment "$issue" --body-file report.md
+          else
+            gh issue create --title "$ISSUE_TITLE" --body-file report.md
+          fi

@@ -1,0 +1,8 @@
+# Upstream PRs to watch: one owner/repo#number per line.
+# Outside PRs there wait weeks for triage, so a weekly look is enough.
+block/buzz#8031
+block/buzz#8035
+block/buzz#8040
+block/buzz#8071
+# Not ours: the fix our closed #8091 deferred to.
+block/buzz#5292
