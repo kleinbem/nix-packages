@@ -7,7 +7,7 @@
 # NIXPKGS: a nixpkgs checkout with the mesh-llm packages.
 # MESH_LLM_REV: the MeshLLM commit to build (default: main).
 # CANARY_NIXPKGS_CONFIG: a nixpkgs config expression (default: none), e.g. for CUDA.
-# attrs: what to build (default: mesh-llm-native-runtime mesh-llm client-ready network nixos).
+# attrs: what to build (default: native-runtime mesh-llm client-ready network nixos).
 set -euo pipefail
 
 nixpkgs="$(realpath "${NIXPKGS:?set NIXPKGS to a nixpkgs checkout}")"
@@ -47,7 +47,7 @@ if [[ -z $pnpm_hash ]]; then
 fi
 
 if (($# == 0)); then
-  set -- mesh-llm-native-runtime mesh-llm client-ready network nixos
+  set -- native-runtime mesh-llm client-ready network nixos
 fi
 attrs=()
 for attr in "$@"; do

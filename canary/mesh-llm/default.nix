@@ -38,8 +38,13 @@ let
     in
     if pins == [ ] then throw "MeshLLM ${rev} has no llama.cpp upstream.txt" else builtins.head pins;
 
+  # The runtime's attribute: skippy-native-runtime since the prep branch for
+  # 0.79 renamed it after upstream, mesh-llm-native-runtime before.
+  runtimeAttr =
+    pkgs': if pkgs' ? skippy-native-runtime then "skippy-native-runtime" else "mesh-llm-native-runtime";
+
   overlay = final: prev: {
-    mesh-llm-native-runtime = prev.mesh-llm-native-runtime.overrideAttrs (old: {
+    ${runtimeAttr prev} = prev.${runtimeAttr prev}.overrideAttrs (old: {
       # mesh-llm --version reports the workspace version, which versionCheckHook checks.
       version =
         (builtins.fromTOML (builtins.readFile "${meshLlmSrc}/Cargo.toml")).workspace.package.version;
@@ -134,7 +139,8 @@ let
       '';
 in
 {
-  inherit (pkgs) mesh-llm mesh-llm-native-runtime;
+  inherit (pkgs) mesh-llm;
+  native-runtime = pkgs.${runtimeAttr pkgs};
   client-ready = pkgs.mesh-llm.tests.client-ready;
   nixos = pkgs.nixosTests.mesh-llm;
   # Build-only: the GPU runtimes need no GPU to build (runtime-cuda needs allowUnfree).
