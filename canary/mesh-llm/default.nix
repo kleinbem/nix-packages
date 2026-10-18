@@ -38,8 +38,13 @@ let
     in
     if pins == [ ] then throw "MeshLLM ${rev} has no llama.cpp upstream.txt" else builtins.head pins;
 
+  # The runtime's attribute: skippy-native-runtime since the prep branch for
+  # 0.79 renamed it after upstream, mesh-llm-native-runtime before.
+  runtimeAttr =
+    pkgs': if pkgs' ? skippy-native-runtime then "skippy-native-runtime" else "mesh-llm-native-runtime";
+
   overlay = final: prev: {
-    mesh-llm-native-runtime = prev.mesh-llm-native-runtime.overrideAttrs (old: {
+    ${runtimeAttr prev} = prev.${runtimeAttr prev}.overrideAttrs (old: {
       # mesh-llm --version reports the workspace version, which versionCheckHook checks.
       version =
         (builtins.fromTOML (builtins.readFile "${meshLlmSrc}/Cargo.toml")).workspace.package.version;
@@ -134,12 +139,61 @@ let
       '';
 in
 {
-  inherit (pkgs) mesh-llm mesh-llm-native-runtime;
+  inherit (pkgs) mesh-llm;
+  native-runtime = pkgs.${runtimeAttr pkgs};
   client-ready = pkgs.mesh-llm.tests.client-ready;
   nixos = pkgs.nixosTests.mesh-llm;
   # Build-only: the GPU runtimes need no GPU to build (runtime-cuda needs allowUnfree).
   inherit (pkgs.mesh-llm.tests) runtime-rocm;
   runtime-cuda = pkgs.mesh-llm.tests.runtime-cuda or null;
+
+  # `mesh-llm goose` against nixpkgs' Goose: mesh-llm writes Goose's custom
+  # provider and MCP extension, then starts `goose session`; a shim turns that
+  # into one non-interactive turn. Catches a change in either side's formats.
+  goose =
+    pkgs.runCommand "mesh-llm-goose"
+      {
+        nativeBuildInputs = [
+          pkgs.mesh-llm
+          pkgs.curl
+          pkgs.cacert
+          pkgs.jq
+        ];
+        meta.platforms = pkgs.lib.platforms.linux;
+      }
+      ''
+        export HOME=$TMPDIR/home XDG_CONFIG_HOME=$TMPDIR/home/.config XDG_CACHE_HOME=$TMPDIR/cache
+        # A short answer: the 1 MB model would otherwise write until the output limit.
+        export XDG_STATE_HOME=$TMPDIR/state GOOSE_DISABLE_KEYRING=1 GOOSE_MAX_TOKENS=32
+        mkdir -p $HOME/.mesh-llm shim
+        printf 'version = 1\n\n[[models]]\nmodel = "%s"\nctx_size = 8192\n' ${model} > $HOME/.mesh-llm/config.toml
+        cat > shim/goose <<SHIM
+        #!${pkgs.runtimeShell}
+        [ "\$1" = session ] && shift
+        exec ${pkgs.lib.getExe pkgs.goose-cli} run --no-session --no-profile --max-turns 1 --text "Once upon a time" "\$@"
+        SHIM
+        chmod +x shim/goose
+
+        mesh-llm serve --log-format json --port 19337 --bind-port 17842 > serve.log 2>&1 &
+        pid=$!
+        for _ in $(seq 360); do
+          curl -fsS http://127.0.0.1:19337/v1/models 2>/dev/null | grep -q '"id"' && break
+          kill -0 $pid || { cat serve.log; echo "mesh-llm exited before serving" >&2; exit 1; }
+          sleep 0.5
+        done
+        PATH=$PWD/shim:$PATH timeout 600 mesh-llm goose --port 19337 > goose.log 2>&1 \
+          || { cat goose.log; echo "mesh-llm goose failed" >&2; exit 1; }
+        kill -INT $pid; timeout 30 tail --pid=$pid -f /dev/null || true
+
+        provider=$HOME/.config/goose/custom_providers/mesh.json
+        jq -e '.engine == "openai" and .base_url == "http://localhost:19337"' $provider > /dev/null \
+          || { cat $provider; echo "unexpected Goose provider" >&2; exit 1; }
+        grep -q 'type: streamable_http' $HOME/.config/goose/config.yaml \
+          || { cat $HOME/.config/goose/config.yaml; echo "no MCP extension in Goose's config" >&2; exit 1; }
+        grep -q 'route=chat_completions' serve.log \
+          || { tail -40 serve.log; echo "Goose sent no chat request to mesh-llm" >&2; exit 1; }
+        tail -c 2000 goose.log > $out
+      '';
 
   network = startupHosts {
     name = "mesh-llm";
