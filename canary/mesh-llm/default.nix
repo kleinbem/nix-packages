@@ -66,9 +66,62 @@ let
   };
 
   pkgs = import nixpkgs { overlays = [ overlay ]; };
+
+  # The 1 MB model of nixpkgs' NixOS test.
+  model = pkgs.fetchurl {
+    url = "https://huggingface.co/ggml-org/models-moved/resolve/499bc8821c6b12b4e53c5bffcb21ec206f212d81/tinyllamas/stories260K.gguf";
+    hash = "sha256-Jwy6G9UQn0LQM1D2BAYCRWBGTbFzwOOH2R8EJtO9JW0=";
+  };
 in
 {
   inherit (pkgs) mesh-llm mesh-llm-native-runtime;
   client-ready = pkgs.mesh-llm.tests.client-ready;
   nixos = pkgs.nixosTests.mesh-llm;
+
+  # The hosts a serving node tries to reach at startup, through a local proxy
+  # that refuses every connection (the sandbox has no network anyway). Fails
+  # when they differ from expected-hosts.txt: a new request, or one that went away.
+  network =
+    pkgs.runCommand "mesh-llm-startup-hosts"
+      {
+        nativeBuildInputs = [
+          pkgs.mesh-llm
+          pkgs.python3
+          pkgs.curl
+          pkgs.cacert
+        ];
+        meta.platforms = pkgs.lib.platforms.linux;
+      }
+      ''
+        export HOME=$TMPDIR/home XDG_CACHE_HOME=$TMPDIR/cache XDG_CONFIG_HOME=$TMPDIR/config
+        export XDG_STATE_HOME=$TMPDIR/state
+        mkdir -p $HOME/.mesh-llm
+        printf 'version = 1\n\n[[models]]\nmodel = "%s"\n' ${model} > $HOME/.mesh-llm/config.toml
+
+        python3 -I ${./proxy.py} 18080 --refuse > proxy.log 2>&1 &
+        proxy=$!
+        export HTTPS_PROXY=http://127.0.0.1:18080 HTTP_PROXY=http://127.0.0.1:18080
+        export ALL_PROXY=$HTTPS_PROXY NO_PROXY=127.0.0.1,localhost
+        mesh-llm serve --log-format json --port 19337 --console 13131 --bind-port 17842 > mesh.jsonl 2>&1 &
+        pid=$!
+        for _ in $(seq 360); do
+          curl -fsS --noproxy '*' http://127.0.0.1:19337/v1/models 2>/dev/null | grep -q '"id"' && break
+          kill -0 $pid || { cat mesh.jsonl; echo "mesh-llm exited before serving" >&2; exit 1; }
+          sleep 0.5
+        done
+        curl -fsS --noproxy '*' http://127.0.0.1:19337/v1/models | grep -q '"id"' \
+          || { cat mesh.jsonl; echo "mesh-llm did not serve the model" >&2; exit 1; }
+        # Requests made after readiness count too.
+        sleep 20
+        kill -INT $pid; timeout 30 tail --pid=$pid -f /dev/null || true
+        kill $proxy
+
+        # Hosts only; the iroh relay names are the mesh's own and may change.
+        awk '{ print $3 }' proxy.log | sed -E 's|^https?://||; s|[:/].*||; s|.*\.iroh\.link\.?$|<iroh relays>|' \
+          | LC_ALL=C sort -u > $out
+        if ! diff -u ${./expected-hosts.txt} $out; then
+          echo "the hosts mesh-llm contacts at startup changed (- expected, + now)" >&2
+          exit 1
+        fi
+      '';
 }

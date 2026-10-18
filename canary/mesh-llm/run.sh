@@ -6,7 +6,7 @@
 #
 # NIXPKGS: a nixpkgs checkout with the mesh-llm packages.
 # MESH_LLM_REV: the MeshLLM commit to build (default: main).
-# attrs: what to build (default: mesh-llm-native-runtime mesh-llm client-ready).
+# attrs: what to build (default: mesh-llm-native-runtime mesh-llm client-ready network nixos).
 set -euo pipefail
 
 nixpkgs="$(realpath "${NIXPKGS:?set NIXPKGS to a nixpkgs checkout}")"
@@ -43,7 +43,7 @@ if [[ -z $pnpm_hash ]]; then
 fi
 
 if (($# == 0)); then
-  set -- mesh-llm-native-runtime mesh-llm client-ready
+  set -- mesh-llm-native-runtime mesh-llm client-ready network nixos
 fi
 attrs=()
 for attr in "$@"; do
