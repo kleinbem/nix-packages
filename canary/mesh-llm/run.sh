@@ -6,6 +6,7 @@
 #
 # NIXPKGS: a nixpkgs checkout with the mesh-llm packages.
 # MESH_LLM_REV: the MeshLLM commit to build (default: main).
+# CANARY_NIXPKGS_CONFIG: a nixpkgs config expression (default: none), e.g. for CUDA.
 # attrs: what to build (default: mesh-llm-native-runtime mesh-llm client-ready network nixos).
 set -euo pipefail
 
@@ -29,6 +30,9 @@ if [[ -z $llama_build ]]; then
 fi
 
 args=(--arg nixpkgs "$nixpkgs" --argstr rev "$rev" --argstr llamaCppBuild "$llama_build")
+if [[ -n ${CANARY_NIXPKGS_CONFIG:-} ]]; then
+  args+=(--arg config "$CANARY_NIXPKGS_CONFIG")
+fi
 
 # The pnpm dependencies have no lockfile-derived hash: build them once with an
 # empty one and take the hash Nix reports.
