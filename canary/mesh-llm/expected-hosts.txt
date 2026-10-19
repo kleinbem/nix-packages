@@ -1,4 +1,3 @@
 <iroh relays>
-api.github.com
 github.com
 huggingface.co
