@@ -137,6 +137,8 @@ let
           exit 1
         fi
       '';
+  runtimeTests =
+    if (pkgs.skippy.tests or { }) ? runtime-rocm then pkgs.skippy.tests else pkgs.mesh-llm.tests;
 in
 {
   inherit (pkgs) mesh-llm;
@@ -144,8 +146,9 @@ in
   client-ready = pkgs.mesh-llm.tests.client-ready;
   nixos = pkgs.nixosTests.mesh-llm;
   # Build-only: the GPU runtimes need no GPU to build (runtime-cuda needs allowUnfree).
-  inherit (pkgs.mesh-llm.tests) runtime-rocm;
-  runtime-cuda = pkgs.mesh-llm.tests.runtime-cuda or null;
+  # Their tests moved from mesh-llm to skippy when the packages were split.
+  inherit (runtimeTests) runtime-rocm;
+  runtime-cuda = runtimeTests.runtime-cuda or null;
 
   # `mesh-llm goose` against nixpkgs' Goose: mesh-llm writes Goose's custom
   # provider and MCP extension, then starts `goose session`; a shim turns that
