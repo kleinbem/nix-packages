@@ -7,6 +7,25 @@ nixpkgs overlay.
 
 ## Packages
 
+Three groups. The first two are the Block AI landscape (goose, Buzz, Berd,
+MeshLLM) that this repo stages for nixpkgs and runs in the fleet; the third
+is everything else the fleet needs.
+
+### Block
+
+| Attribute | What it is |
+|---|---|
+| `buzz-relay`, `buzz-cli`, `buzz-acp`, `buzz-agent`, `buzz-dev-mcp`, `git-credential-nostr`, `git-sign-nostr` | The Buzz workspace's Rust crates, one pinned source (`pkgs/buzz/source.json`). Staged for NixOS/nixpkgs#570552 and #574877; `buzz-cli` is already in nixpkgs. |
+| `buzz-desktop` | Desktop client for the self-hosted Buzz relay (see `nix-presets/containers/buzz.nix`), with its sidecars. Staged for NixOS/nixpkgs#571723. |
+
+### MeshLLM
+
+| Attribute | What it is |
+|---|---|
+| `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `skippy`, `skippy-native-runtime`, `skippy-native-runtime-vulkan` | NixOS/nixpkgs#571722, built from the PR branch's own package files (flake input `nixpkgs-mesh`, see `pkgs/mesh-llm/default.nix`), not copies. `nixosModules.mesh-llm` is the PR's `services.mesh-llm`. Goes away once the PR is in the fleet's nixpkgs. |
+
+### Everything else
+
 | Attribute | What it is |
 |---|---|
 | `langfuse` | Self-hosted LLM observability service. |
@@ -15,10 +34,20 @@ nixpkgs overlay.
 | `kleinbem-auth` | Build of the `kleinbem-auth` repo (visitor login service). |
 | `google-antigravity`, `google-antigravity-ide`, `google-antigravity-ide-no-fhs`, `google-antigravity-cli` | Google Antigravity IDE/CLI, vendored from an audited derivation. Namespaced under `google-antigravity*` to avoid clobbering nixpkgs' own `antigravity` attr. |
 | `oh-my-pi` | Terminal coding-agent CLI, vendored prebuilt-binary release. |
-| `buzz-desktop` | Desktop client for the self-hosted Buzz relay (see `nix-presets/containers/buzz.nix`). |
+| `apkeep` | Downloads APKs from Google Play, F-Droid and APKPure. |
+| `chrome-open-in-app-host` | Native messaging host for `kleinbem/chrome-open-in-app`. |
 
-`modules/nixos/langfuse.nix` ships a NixOS module alongside the `langfuse`
-package.
+`modules/nixos/` ships NixOS modules alongside the packages: `langfuse`,
+`buzz-relay`, and `mesh-llm` (from the `nixpkgs-mesh` input).
+
+## Rule for packages that are also ours in nixpkgs
+
+What we maintain in nixpkgs is consumed from there, never copied here. While
+a package only exists on a PR branch of `kleinbem/nixpkgs`, this repo
+re-exports the branch's package files against its own nixpkgs (the
+`nixpkgs-mesh` input is the first case). Real derivations live here only for
+software nobody has in nixpkgs yet, or for a channel nixpkgs doesn't carry
+(upstream `main` for the canaries).
 
 ## Usage
 

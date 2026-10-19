@@ -567,6 +567,23 @@
         "type": "github"
       }
     },
+    "nixpkgs-mesh": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792416486,
+        "narHash": "sha256-CUMcmewmEibaRitBttprIir9FAKeFTOMD2SXeaVH1gw=",
+        "owner": "kleinbem",
+        "repo": "nixpkgs",
+        "rev": "6ef4d05c78a8cc7f289f822a2e7d4c5ee3561dc6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kleinbem",
+        "ref": "mesh-llm-next",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-src": {
       "flake": false,
       "locked": {
@@ -654,6 +671,7 @@
         "git-hooks": "git-hooks",
         "nix-devshells": "nix-devshells",
         "nixpkgs": "nixpkgs_4",
+        "nixpkgs-mesh": "nixpkgs-mesh",
         "treefmt-nix": "treefmt-nix_3"
       }
     },
