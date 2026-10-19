@@ -49,6 +49,18 @@ let
       version =
         (builtins.fromTOML (builtins.readFile "${meshLlmSrc}/Cargo.toml")).workspace.package.version;
       src = github "ggml-org" "llama.cpp" (final.lib.trim (builtins.readFile llamaPin));
+      # Temporary: since the v0.7.0 pin, clef.cpp misses <algorithm> and fails
+      # with GCC 14+ (Mesh-LLM/mesh-llm#2495). Without this the canary stops at
+      # the runtime and checks nothing after it. Drop it once main has the fix.
+      postPatch = (old.postPatch or "") + ''
+        if [ -f src/models/clef.cpp ]; then
+          if grep -q '#include <algorithm>' src/models/clef.cpp; then
+            echo "canary: clef.cpp includes <algorithm> now, drop the workaround (#2495)"
+          else
+            sed -i '1i #include <algorithm>' src/models/clef.cpp
+          fi
+        fi
+      '';
       passthru =
         old.passthru
         // {
@@ -137,6 +149,8 @@ let
           exit 1
         fi
       '';
+  runtimeTests =
+    if (pkgs.skippy.tests or { }) ? runtime-rocm then pkgs.skippy.tests else pkgs.mesh-llm.tests;
 in
 {
   inherit (pkgs) mesh-llm;
@@ -144,8 +158,9 @@ in
   client-ready = pkgs.mesh-llm.tests.client-ready;
   nixos = pkgs.nixosTests.mesh-llm;
   # Build-only: the GPU runtimes need no GPU to build (runtime-cuda needs allowUnfree).
-  inherit (pkgs.mesh-llm.tests) runtime-rocm;
-  runtime-cuda = pkgs.mesh-llm.tests.runtime-cuda or null;
+  # Their tests moved from mesh-llm to skippy when the packages were split.
+  inherit (runtimeTests) runtime-rocm;
+  runtime-cuda = runtimeTests.runtime-cuda or null;
 
   # `mesh-llm goose` against nixpkgs' Goose: mesh-llm writes Goose's custom
   # provider and MCP extension, then starts `goose session`; a shim turns that
