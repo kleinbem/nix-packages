@@ -49,6 +49,18 @@ let
       version =
         (builtins.fromTOML (builtins.readFile "${meshLlmSrc}/Cargo.toml")).workspace.package.version;
       src = github "ggml-org" "llama.cpp" (final.lib.trim (builtins.readFile llamaPin));
+      # Temporary: since the v0.7.0 pin, clef.cpp misses <algorithm> and fails
+      # with GCC 14+ (Mesh-LLM/mesh-llm#2495). Without this the canary stops at
+      # the runtime and checks nothing after it. Drop it once main has the fix.
+      postPatch = (old.postPatch or "") + ''
+        if [ -f src/models/clef.cpp ]; then
+          if grep -q '#include <algorithm>' src/models/clef.cpp; then
+            echo "canary: clef.cpp includes <algorithm> now, drop the workaround (#2495)"
+          else
+            sed -i '1i #include <algorithm>' src/models/clef.cpp
+          fi
+        fi
+      '';
       passthru =
         old.passthru
         // {
