@@ -8,8 +8,30 @@
 
 {
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
+  # The nixpkgs tree with the mesh-llm packages (flake input nixpkgs-mesh).
+  # Outside the flake (overlay.nix, ci.nix, nix-build) it comes from the
+  # same lock entry, so there is one pin.
+  nixpkgsMesh ?
+    let
+      locked = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs-mesh.locked;
+    in
+    builtins.fetchTree {
+      inherit (locked)
+        type
+        owner
+        repo
+        rev
+        narHash
+        ;
+    },
 }:
 
+let
+  # mesh-llm, skippy and the native runtimes from NixOS/nixpkgs#571722,
+  # built from the PR's own package files against this nixpkgs. See
+  # pkgs/mesh-llm/default.nix.
+  meshLlm = pkgs.callPackage ./pkgs/mesh-llm { inherit nixpkgsMesh; };
+in
 {
 
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
@@ -82,6 +104,15 @@
 
   # Agent Control Protocol (ACP) bridge for the Buzz workspace.
   buzz-acp = pkgs.callPackage ./pkgs/buzz-acp/package.nix { };
+  inherit (meshLlm)
+    mesh-llm
+    mesh-llm-cuda
+    mesh-llm-rocm
+    skippy
+    skippy-native-runtime
+    skippy-native-runtime-vulkan
+    ;
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
