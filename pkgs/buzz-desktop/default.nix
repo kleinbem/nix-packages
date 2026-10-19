@@ -21,6 +21,7 @@
   webkitgtk_4_1,
   glib-networking,
   gst_all_1,
+  libayatana-appindicator,
   onnxruntime,
   sherpa-onnx,
   vulkan-loader,
@@ -99,6 +100,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
         "desktop/src-tauri/binaries/$executable-${rustTarget}"
     done
 
+    # The tray icon dlopens libayatana-appindicator by soname, which is not on
+    # any default library path on NixOS.
+    substituteInPlace $cargoDepsCopy/*/libappindicator-sys-*/src/lib.rs \
+      --replace-fail "libayatana-appindicator3.so.1" "${libayatana-appindicator}/lib/libayatana-appindicator3.so.1"
+
     # Link against sherpa-onnx from nixpkgs instead of downloading prebuilt static libraries.
     # Every dependent must opt out of the default `static` feature, or Cargo unifies both.
     for manifest in desktop/src-tauri/Cargo.toml crates/buzz-voice/Cargo.toml; do
@@ -127,6 +133,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     libsoup_3
     webkitgtk_4_1
     glib-networking
+    # tray icon; Tauri's bundler looks it up with pkg-config
+    libayatana-appindicator
     onnxruntime
     sherpa-onnx
   ]
