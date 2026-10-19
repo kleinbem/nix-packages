@@ -37,8 +37,27 @@
           langfuse = import ./modules/nixos/langfuse.nix;
           buzz-relay = import ./modules/nixos/buzz-relay.nix;
           # services.mesh-llm exactly as in NixOS/nixpkgs#571722; needs the
-          # overlay (or the packages) for pkgs.mesh-llm.
-          mesh-llm = import "${inputs.nixpkgs-mesh}/nixos/modules/services/misc/mesh-llm.nix";
+          # overlay (or the packages) for pkgs.mesh-llm. Without the module's
+          # meta.doc: the NixOS manual, which every host builds, only accepts
+          # chapters whose identifiers are in nixpkgs' own redirects.json, so
+          # an out-of-tree chapter fails the build. The manual gets it with
+          # the nixpkgs PR; the options are documented either way.
+          mesh-llm =
+            # The module system passes only the arguments a module names, so
+            # name the module's own and hand them on (deadnix strips an unused
+            # `@args` pattern, hence the explicit set).
+            {
+              config,
+              lib,
+              pkgs,
+              ...
+            }:
+            let
+              module = import "${inputs.nixpkgs-mesh}/nixos/modules/services/misc/mesh-llm.nix" {
+                inherit config lib pkgs;
+              };
+            in
+            module // { meta = builtins.removeAttrs (module.meta or { }) [ "doc" ]; };
         };
       };
 
