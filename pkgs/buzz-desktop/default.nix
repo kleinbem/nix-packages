@@ -75,7 +75,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoRoot = "desktop/src-tauri";
   buildAndTestSubdir = "desktop/src-tauri";
-  cargoHash = "sha256-lB+7VKXczOyJlr+6LP5UtyMKzyJCEXyBeFOi8Rznirw=";
+  # Temporary: MeshLLM v0.76.2 -> v0.78.1 (Cargo.toml tags + Cargo.lock).
+  # 0.76.2 speaks skippy stage generation 8, current meshes speak 11, so the
+  # pinned version cannot take part in split serving with them. Builds
+  # without source changes. Drop when upstream bumps:
+  # https://github.com/block/buzz/pull/7938
+  # Regenerate on every version bump: sed the tags, then `cargo metadata` in
+  # desktop/src-tauri to re-resolve the lockfile minimally.
+  cargoPatches = [ ./mesh-llm-0.78.1.patch ];
+  cargoHash = "sha256-r5chIVD0fxhP6meAnkju9cGJmyNlATOWwV9s1SEZbyA=";
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
