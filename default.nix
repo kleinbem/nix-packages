@@ -133,6 +133,9 @@ in
   braindump = pkgs.callPackage ./pkgs/braindump/package.nix { };
   # LLM-based security scanner writing SARIF (block/codecrucible).
   codecrucible = pkgs.callPackage ./pkgs/codecrucible/package.nix { };
+  # AI-driven UI testing for Android, iOS and web (block/trailblaze; uber JAR +
+  # launcher as upstream ships it).
+  trailblaze = pkgs.callPackage ./pkgs/trailblaze/package.nix { };
 
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
