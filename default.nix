@@ -104,10 +104,6 @@ in
 
   # Agent Control Protocol (ACP) bridge for the Buzz workspace.
   buzz-acp = pkgs.callPackage ./pkgs/buzz-acp/package.nix { };
-  # Desktop app for AI agents on Goose (block/berd). Written in nixpkgs form
-  # (by-name package.nix) for a later nixpkgs PR.
-  berd = pkgs.callPackage ./pkgs/berd/package.nix { };
-
   inherit (meshLlm)
     mesh-llm
     mesh-llm-cuda
@@ -116,6 +112,27 @@ in
     skippy-native-runtime
     skippy-native-runtime-vulkan
     ;
+
+  # ---- Block AI landscape, tier 1/2 (all in nixpkgs form for later nixpkgs PRs) ----
+  # Desktop app for AI agents on Goose (block/berd).
+  berd = pkgs.callPackage ./pkgs/berd/package.nix { };
+  # Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor).
+  aittributor = pkgs.callPackage ./pkgs/aittributor/package.nix { };
+  # Merges system, user and repo lefthook configs into one set of git hooks (block/lhm).
+  lhm = pkgs.callPackage ./pkgs/lhm/package.nix { };
+  # LLM code reviewer built on Goose (block/review; the attribute carries the
+  # org because "review" alone says nothing).
+  block-review = pkgs.callPackage ./pkgs/block-review/package.nix { };
+  # MCP server + CLI that queue agents' expensive commands (block/agent-task-queue).
+  agent-task-queue = pkgs.callPackage ./pkgs/agent-task-queue/package.nix { };
+  # CLI for ANCHORS, requirements-driven development for agents (block/anchorsmd).
+  anchors = pkgs.callPackage ./pkgs/anchors/package.nix { };
+  # Manage AI rules, commands and skills across coding agents (block/ai-rules).
+  ai-rules = pkgs.callPackage ./pkgs/ai-rules/package.nix { };
+  # Dumps Claude Code and goose session histories as one JSON format (block/braindump).
+  braindump = pkgs.callPackage ./pkgs/braindump/package.nix { };
+  # LLM-based security scanner writing SARIF (block/codecrucible).
+  codecrucible = pkgs.callPackage ./pkgs/codecrucible/package.nix { };
 
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...

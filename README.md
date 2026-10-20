@@ -18,6 +18,14 @@ is everything else the fleet needs.
 | `buzz-relay`, `buzz-cli`, `buzz-acp`, `buzz-agent`, `buzz-dev-mcp`, `git-credential-nostr`, `git-sign-nostr` | The Buzz workspace's Rust crates, one pinned source (`pkgs/buzz/source.json`). Staged for NixOS/nixpkgs#570552 and #574877; `buzz-cli` is already in nixpkgs. |
 | `buzz-desktop` | Desktop client for the self-hosted Buzz relay (see `nix-presets/containers/buzz.nix`), with its sidecars. Staged for NixOS/nixpkgs#571723. |
 | `berd` | Block's desktop app for AI agents (Tauri + React) on the Goose ACP backend, with nixpkgs' `goose-cli` as the `goosed` sidecar. Not in nixpkgs yet; written in nixpkgs form. |
+| `aittributor` | Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor). Not in nixpkgs yet; written in nixpkgs form. |
+| `lhm` | Merges system, user and repo lefthook configs into one set of git hooks (block/lhm). Not in nixpkgs yet; written in nixpkgs form. |
+| `block-review` | LLM code reviewer for git changes, built on Goose (block/review; binary `review`). Not in nixpkgs yet; written in nixpkgs form. |
+| `agent-task-queue` | MCP server + `tq` CLI that queue agents' expensive commands so they run one at a time (block/agent-task-queue). Not in nixpkgs yet; written in nixpkgs form. |
+| `anchors` | CLI for ANCHORS, Block's requirements-driven development framework for AI agents (block/anchorsmd). Not in nixpkgs yet; written in nixpkgs form. |
+| `ai-rules` | Manage AI rules, commands and skills across 11 coding agents from one source (block/ai-rules). Not in nixpkgs yet; written in nixpkgs form. |
+| `braindump` | Dumps Claude Code and goose agent session histories as one JSON format (block/braindump). Not in nixpkgs yet; written in nixpkgs form. |
+| `codecrucible` | LLM-based security analysis of git repositories with an audit pass and SARIF output (block/codecrucible). Not in nixpkgs yet; written in nixpkgs form. |
 
 ### MeshLLM
 
