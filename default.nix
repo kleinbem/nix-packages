@@ -113,6 +113,10 @@ in
     skippy-native-runtime-vulkan
     ;
 
+  # CLI for ANCHORS, requirements-driven development for agents (block/anchorsmd).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  anchors = pkgs.callPackage ./pkgs/anchors/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
