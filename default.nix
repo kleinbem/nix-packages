@@ -137,6 +137,10 @@ in
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
   anchors = pkgs.callPackage ./pkgs/anchors/package.nix { };
 
+  # Manage AI rules, commands and skills across coding agents (block/ai-rules).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  ai-rules = pkgs.callPackage ./pkgs/ai-rules/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
