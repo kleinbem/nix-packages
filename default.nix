@@ -149,6 +149,10 @@ in
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
   codecrucible = pkgs.callPackage ./pkgs/codecrucible/package.nix { };
 
+  # AI-driven UI testing for Android, iOS and web (block/trailblaze; uber JAR +
+  # launcher as upstream ships it). In nixpkgs form for a later nixpkgs PR.
+  trailblaze = pkgs.callPackage ./pkgs/trailblaze/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
