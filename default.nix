@@ -129,6 +129,10 @@ in
   # org because "review" alone says nothing). In nixpkgs form for a later PR.
   block-review = pkgs.callPackage ./pkgs/block-review/package.nix { };
 
+  # MCP server + CLI that queue agents' expensive commands (block/agent-task-queue).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  agent-task-queue = pkgs.callPackage ./pkgs/agent-task-queue/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
