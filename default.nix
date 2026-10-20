@@ -113,6 +113,10 @@ in
     skippy-native-runtime-vulkan
     ;
 
+  # LLM-based security scanner writing SARIF (block/codecrucible).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  codecrucible = pkgs.callPackage ./pkgs/codecrucible/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
