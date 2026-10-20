@@ -21,6 +21,7 @@ is everything else the fleet needs.
 | `aittributor` | Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor). Not in nixpkgs yet; written in nixpkgs form. |
 | `lhm` | Merges system, user and repo lefthook configs into one set of git hooks (block/lhm). Not in nixpkgs yet; written in nixpkgs form. |
 | `block-review` | LLM code reviewer for git changes, built on Goose (block/review; binary `review`). Not in nixpkgs yet; written in nixpkgs form. |
+| `agent-task-queue` | MCP server + `tq` CLI that queue agents' expensive commands so they run one at a time (block/agent-task-queue). Not in nixpkgs yet; written in nixpkgs form. |
 
 ### MeshLLM
 
