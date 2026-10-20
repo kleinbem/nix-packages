@@ -17,6 +17,7 @@ is everything else the fleet needs.
 |---|---|
 | `buzz-relay`, `buzz-cli`, `buzz-acp`, `buzz-agent`, `buzz-dev-mcp`, `git-credential-nostr`, `git-sign-nostr` | The Buzz workspace's Rust crates, one pinned source (`pkgs/buzz/source.json`). Staged for NixOS/nixpkgs#570552 and #574877; `buzz-cli` is already in nixpkgs. |
 | `buzz-desktop` | Desktop client for the self-hosted Buzz relay (see `nix-presets/containers/buzz.nix`), with its sidecars. Staged for NixOS/nixpkgs#571723. |
+| `aittributor` | Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor). Not in nixpkgs yet; written in nixpkgs form. |
 
 ### MeshLLM
 
