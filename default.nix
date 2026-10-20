@@ -113,6 +113,10 @@ in
     skippy-native-runtime-vulkan
     ;
 
+  # AI-driven UI testing for Android, iOS and web (block/trailblaze; uber JAR +
+  # launcher as upstream ships it). In nixpkgs form for a later nixpkgs PR.
+  trailblaze = pkgs.callPackage ./pkgs/trailblaze/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
