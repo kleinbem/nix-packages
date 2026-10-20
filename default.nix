@@ -113,6 +113,10 @@ in
     skippy-native-runtime-vulkan
     ;
 
+  # LLM code reviewer built on Goose (block/review; the attribute carries the
+  # org because "review" alone says nothing). In nixpkgs form for a later PR.
+  block-review = pkgs.callPackage ./pkgs/block-review/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
