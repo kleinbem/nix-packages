@@ -113,6 +113,10 @@ in
     skippy-native-runtime-vulkan
     ;
 
+  # Merges system, user and repo lefthook configs into one set of git hooks (block/lhm).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  lhm = pkgs.callPackage ./pkgs/lhm/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
