@@ -24,6 +24,7 @@ is everything else the fleet needs.
 | `agent-task-queue` | MCP server + `tq` CLI that queue agents' expensive commands so they run one at a time (block/agent-task-queue). Not in nixpkgs yet; written in nixpkgs form. |
 | `anchors` | CLI for ANCHORS, Block's requirements-driven development framework for AI agents (block/anchorsmd). Not in nixpkgs yet; written in nixpkgs form. |
 | `ai-rules` | Manage AI rules, commands and skills across 11 coding agents from one source (block/ai-rules). Not in nixpkgs yet; written in nixpkgs form. |
+| `braindump` | Dumps Claude Code and goose agent session histories as one JSON format (block/braindump). Not in nixpkgs yet; written in nixpkgs form. |
 
 ### MeshLLM
 

@@ -141,6 +141,10 @@ in
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
   ai-rules = pkgs.callPackage ./pkgs/ai-rules/package.nix { };
 
+  # Dumps Claude Code and goose session histories as one JSON format (block/braindump).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  braindump = pkgs.callPackage ./pkgs/braindump/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
