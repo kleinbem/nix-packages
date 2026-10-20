@@ -117,6 +117,10 @@ in
     skippy-native-runtime-vulkan
     ;
 
+  # Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  aittributor = pkgs.callPackage ./pkgs/aittributor/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
