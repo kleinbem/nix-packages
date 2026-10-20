@@ -20,6 +20,7 @@ is everything else the fleet needs.
 | `berd` | Block's desktop app for AI agents (Tauri + React) on the Goose ACP backend, with nixpkgs' `goose-cli` as the `goosed` sidecar. Not in nixpkgs yet; written in nixpkgs form. |
 | `aittributor` | Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor). Not in nixpkgs yet; written in nixpkgs form. |
 | `lhm` | Merges system, user and repo lefthook configs into one set of git hooks (block/lhm). Not in nixpkgs yet; written in nixpkgs form. |
+| `block-review` | LLM code reviewer for git changes, built on Goose (block/review; binary `review`). Not in nixpkgs yet; written in nixpkgs form. |
 
 ### MeshLLM
 
