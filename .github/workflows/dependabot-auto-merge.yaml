@@ -1,0 +1,31 @@
+name: Dependabot auto-merge
+
+# Arms auto-merge on Dependabot's patch and minor updates, so they merge as
+# soon as the required checks pass. Majors stay open for a human: they are the
+# ones that break peer ranges. The app token (APP_ID/APP_PRIVATE_KEY are
+# Dependabot secrets, see nix/infra/github-secrets.tf) makes the app the
+# merger: a merge done with GITHUB_TOKEN would not trigger main's push
+# workflows.
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  auto-merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v3
+      - if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
