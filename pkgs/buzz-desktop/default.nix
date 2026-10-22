@@ -21,6 +21,7 @@
   webkitgtk_4_1,
   glib-networking,
   gst_all_1,
+  libayatana-appindicator,
   onnxruntime,
   sherpa-onnx,
   vulkan-loader,
@@ -74,7 +75,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoRoot = "desktop/src-tauri";
   buildAndTestSubdir = "desktop/src-tauri";
-  cargoHash = "sha256-lB+7VKXczOyJlr+6LP5UtyMKzyJCEXyBeFOi8Rznirw=";
+  # Temporary: MeshLLM v0.76.2 -> v0.78.1 (Cargo.toml tags + Cargo.lock).
+  # 0.76.2 speaks skippy stage generation 8, current meshes speak 11, so the
+  # pinned version cannot take part in split serving with them. Builds
+  # without source changes. Drop when upstream bumps:
+  # https://github.com/block/buzz/pull/7938
+  # Regenerate on every version bump: sed the tags, then `cargo metadata` in
+  # desktop/src-tauri to re-resolve the lockfile minimally.
+  cargoPatches = [ ./mesh-llm-0.78.1.patch ];
+  cargoHash = "sha256-r5chIVD0fxhP6meAnkju9cGJmyNlATOWwV9s1SEZbyA=";
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
@@ -98,6 +107,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
         "${finalAttrs.passthru.sidecars}/bin/$executable" \
         "desktop/src-tauri/binaries/$executable-${rustTarget}"
     done
+
+    # The tray icon dlopens libayatana-appindicator by soname, which is not on
+    # any default library path on NixOS.
+    substituteInPlace $cargoDepsCopy/*/libappindicator-sys-*/src/lib.rs \
+      --replace-fail "libayatana-appindicator3.so.1" "${libayatana-appindicator}/lib/libayatana-appindicator3.so.1"
 
     # Link against sherpa-onnx from nixpkgs instead of downloading prebuilt static libraries.
     # Every dependent must opt out of the default `static` feature, or Cargo unifies both.
@@ -127,6 +141,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     libsoup_3
     webkitgtk_4_1
     glib-networking
+    # tray icon; Tauri's bundler looks it up with pkg-config
+    libayatana-appindicator
     onnxruntime
     sherpa-onnx
   ]
@@ -163,7 +179,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
     substituteInPlace $out/share/applications/Buzz.desktop \
       --replace-fail 'Categories=' 'Categories=Network;Chat;InstantMessaging;'
-    ln -s Buzz.desktop $out/share/applications/buzz-desktop.desktop
   '';
 
   # Wrap only the app (not the sidecars), in one shell wrapper; see postFixup.

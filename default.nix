@@ -8,8 +8,30 @@
 
 {
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
+  # The nixpkgs tree with the mesh-llm packages (flake input nixpkgs-mesh).
+  # Outside the flake (overlay.nix, ci.nix, nix-build) it comes from the
+  # same lock entry, so there is one pin.
+  nixpkgsMesh ?
+    let
+      locked = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs-mesh.locked;
+    in
+    builtins.fetchTree {
+      inherit (locked)
+        type
+        owner
+        repo
+        rev
+        narHash
+        ;
+    },
 }:
 
+let
+  # mesh-llm, skippy and the native runtimes from NixOS/nixpkgs#571722,
+  # built from the PR's own package files against this nixpkgs. See
+  # pkgs/mesh-llm/default.nix.
+  meshLlm = pkgs.callPackage ./pkgs/mesh-llm { inherit nixpkgsMesh; };
+in
 {
 
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
@@ -49,6 +71,9 @@
   # Command-line tool for downloading APK files from Google Play, F-Droid, and APKPure
   apkeep = pkgs.callPackage ./pkgs/apkeep { };
 
+  # Native messaging host (binary + manifest) for kleinbem/chrome-open-in-app.
+  chrome-open-in-app-host = pkgs.callPackage ./pkgs/chrome-open-in-app-host { };
+
   # Relay server, admin CLI, and pairing relay for the self-hosted Buzz workspace.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569154
   buzz-relay = pkgs.callPackage ./pkgs/buzz-relay/package.nix { };
@@ -79,6 +104,55 @@
 
   # Agent Control Protocol (ACP) bridge for the Buzz workspace.
   buzz-acp = pkgs.callPackage ./pkgs/buzz-acp/package.nix { };
+  # Desktop app for AI agents on Goose (block/berd). Written in nixpkgs form
+  # (by-name package.nix) for a later nixpkgs PR.
+  berd = pkgs.callPackage ./pkgs/berd/package.nix { };
+
+  inherit (meshLlm)
+    mesh-llm
+    mesh-llm-cuda
+    mesh-llm-rocm
+    skippy
+    skippy-native-runtime
+    skippy-native-runtime-vulkan
+    ;
+
+  # Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  aittributor = pkgs.callPackage ./pkgs/aittributor/package.nix { };
+
+  # Merges system, user and repo lefthook configs into one set of git hooks (block/lhm).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  lhm = pkgs.callPackage ./pkgs/lhm/package.nix { };
+
+  # LLM code reviewer built on Goose (block/review; the attribute carries the
+  # org because "review" alone says nothing). In nixpkgs form for a later PR.
+  block-review = pkgs.callPackage ./pkgs/block-review/package.nix { };
+
+  # MCP server + CLI that queue agents' expensive commands (block/agent-task-queue).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  agent-task-queue = pkgs.callPackage ./pkgs/agent-task-queue/package.nix { };
+
+  # CLI for ANCHORS, requirements-driven development for agents (block/anchorsmd).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  anchors = pkgs.callPackage ./pkgs/anchors/package.nix { };
+
+  # Manage AI rules, commands and skills across coding agents (block/ai-rules).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  ai-rules = pkgs.callPackage ./pkgs/ai-rules/package.nix { };
+
+  # Dumps Claude Code and goose session histories as one JSON format (block/braindump).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  braindump = pkgs.callPackage ./pkgs/braindump/package.nix { };
+
+  # LLM-based security scanner writing SARIF (block/codecrucible).
+  # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
+  codecrucible = pkgs.callPackage ./pkgs/codecrucible/package.nix { };
+
+  # AI-driven UI testing for Android, iOS and web (block/trailblaze; uber JAR +
+  # launcher as upstream ships it). In nixpkgs form for a later nixpkgs PR.
+  trailblaze = pkgs.callPackage ./pkgs/trailblaze/package.nix { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }

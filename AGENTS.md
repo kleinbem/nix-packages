@@ -14,6 +14,7 @@ Custom package derivations for the fleet, structured as a
 | `modules/nixos/` | NixOS modules shipped alongside the packages (not just derivations). |
 | `ci.nix` | CI build set. |
 | `canary/` | Nightly canaries building nixpkgs packages against upstream main (`canary/mesh-llm`, workflow `canary-mesh-llm.yaml`), to catch packaging breakage before the next release. |
+| `watch/upstream-prs/` | Weekly look at our open upstream PRs (`prs.txt`, workflow `watch-upstream-prs.yaml`): conflicts, merges, new reviews or CI runs go into one issue. |
 
 ## Conventions
 

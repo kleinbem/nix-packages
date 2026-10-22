@@ -10,6 +10,14 @@
     git-hooks.inputs.nixpkgs.follows = "nixpkgs";
     nix-devshells.url = "github:kleinbem/nix-devshells";
     nix-devshells.inputs.nixpkgs.follows = "nixpkgs";
+    # The nixpkgs branch behind NixOS/nixpkgs#571722 (mesh-llm, skippy and
+    # their NixOS module). pkgs/mesh-llm re-exports its package files against
+    # this flake's nixpkgs instead of copying them; drop once the PR is in
+    # the fleet's nixpkgs. Not a flake: only its files are read.
+    nixpkgs-mesh = {
+      url = "github:kleinbem/nixpkgs/mesh-llm-next";
+      flake = false;
+    };
   };
 
   outputs =
@@ -25,8 +33,32 @@
 
       flake = {
         overlays.default = import ./overlay.nix;
-        nixosModules.langfuse = import ./modules/nixos/langfuse.nix;
-        nixosModules.buzz-relay = import ./modules/nixos/buzz-relay.nix;
+        nixosModules = {
+          langfuse = import ./modules/nixos/langfuse.nix;
+          buzz-relay = import ./modules/nixos/buzz-relay.nix;
+          # services.mesh-llm exactly as in NixOS/nixpkgs#571722; needs the
+          # overlay (or the packages) for pkgs.mesh-llm. Without the module's
+          # meta.doc: the NixOS manual, which every host builds, only accepts
+          # chapters whose identifiers are in nixpkgs' own redirects.json, so
+          # an out-of-tree chapter fails the build. The manual gets it with
+          # the nixpkgs PR; the options are documented either way.
+          mesh-llm =
+            # The module system passes only the arguments a module names, so
+            # name the module's own and hand them on (deadnix strips an unused
+            # `@args` pattern, hence the explicit set).
+            {
+              config,
+              lib,
+              pkgs,
+              ...
+            }:
+            let
+              module = import "${inputs.nixpkgs-mesh}/nixos/modules/services/misc/mesh-llm.nix" {
+                inherit config lib pkgs;
+              };
+            in
+            module // { meta = builtins.removeAttrs (module.meta or { }) [ "doc" ]; };
+        };
       };
 
       perSystem =
@@ -42,7 +74,10 @@
             inherit system;
             config.allowUnfree = true;
           };
-          legacyPkgs = import ./default.nix { pkgs = pkgsUnfree; };
+          legacyPkgs = import ./default.nix {
+            pkgs = pkgsUnfree;
+            nixpkgsMesh = inputs.nixpkgs-mesh;
+          };
         in
         {
           formatter = inputs.nix-devshells.formatter.${system};

@@ -17,7 +17,9 @@ let
     };
   };
 
-  source = sources.${stdenv.hostPlatform.system} or (throw "Unsupported system for apkeep: ${stdenv.hostPlatform.system}");
+  source =
+    sources.${stdenv.hostPlatform.system}
+      or (throw "Unsupported system for apkeep: ${stdenv.hostPlatform.system}");
 in
 stdenv.mkDerivation {
   inherit pname version;
