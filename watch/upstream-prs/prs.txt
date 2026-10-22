@@ -8,3 +8,6 @@ block/buzz#8071
 block/buzz#5292
 # Not ours: the MeshLLM bump our buzz-desktop override waits for.
 block/buzz#7938
+# Ours (first llama.cpp PR). When merged: comment on Mesh-LLM/mesh-llm#2524
+# that patch 0010 can go with the next pin that has it.
+ggml-org/llama.cpp#30981
