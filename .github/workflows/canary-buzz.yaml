@@ -86,10 +86,10 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - uses: cachix/install-nix-action@v31.11.1
+      - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
         with:
-          extra_nix_config: |
-            access-tokens = github.com=${{ github.token }}
+          github-token: ${{ github.token }}
+          extra-conf: |
             system-features = nixos-test benchmark big-parallel kvm
 
       - name: Build
