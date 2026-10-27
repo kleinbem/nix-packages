@@ -27,11 +27,12 @@ is everything else the fleet needs.
 | `codecrucible` | LLM-based security analysis of git repositories with an audit pass and SARIF output (block/codecrucible). Not in nixpkgs yet; written in nixpkgs form. |
 | `trailblaze` | AI-driven UI testing framework for Android, iOS and web (block/trailblaze; upstream's uber JAR + launcher). Not in nixpkgs yet; written in nixpkgs form. |
 
-### MeshLLM
+### From our open nixpkgs PRs
 
 | Attribute | What it is |
 |---|---|
-| `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `skippy`, `skippy-native-runtime`, `skippy-native-runtime-vulkan` | NixOS/nixpkgs#571722, built from the PR branch's own package files (flake input `nixpkgs-mesh`, see `pkgs/mesh-llm/default.nix`), not copies. `nixosModules.mesh-llm` is the PR's `services.mesh-llm`. Goes away once the PR is in the fleet's nixpkgs. |
+| `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `skippy`, `skippy-native-runtime`, `skippy-native-runtime-vulkan` | MeshLLM, NixOS/nixpkgs#571722. `nixosModules.mesh-llm` is the PR's `services.mesh-llm`. |
+| `buzz-app` | The Buzz desktop app, NixOS/nixpkgs#577918. |
 
 ### Everything else
 
@@ -47,16 +48,30 @@ is everything else the fleet needs.
 | `chrome-open-in-app-host` | Native messaging host for `kleinbem/chrome-open-in-app`. |
 
 `modules/nixos/` ships NixOS modules alongside the packages: `langfuse`,
-`buzz-relay`, and `mesh-llm` (from the `nixpkgs-mesh` input).
+`buzz-relay`, and `mesh-llm` (from its nixpkgs PR).
 
 ## Rule for packages that are also ours in nixpkgs
 
 What we maintain in nixpkgs is consumed from there, never copied here. While
-a package only exists on a PR branch of `kleinbem/nixpkgs`, this repo
-re-exports the branch's package files against its own nixpkgs (the
-`nixpkgs-mesh` input is the first case). Real derivations live here only for
+a package only exists on a nixpkgs PR, `nixpkgs-prs.json` pins the PR at one
+commit and `lib/nixpkgs-prs.nix` builds the PR's own package files (and
+modules) against this flake's nixpkgs. Real derivations live here only for
 software nobody has in nixpkgs yet, or for a channel nixpkgs doesn't carry
 (upstream `main` for the canaries).
+
+The lifecycle of an entry:
+
+1. **Add:** a new entry in `nixpkgs-prs.json` (PR number, repository, the
+   attributes, any modules), by hand, then pin it.
+2. **Pin:** run the *Pin nixpkgs PR* workflow with the entry and a commit
+   whose packages are green on nixpkgs-review-gha. It opens a PR that
+   auto-merges. The daily lock update never moves a pin, so nothing reaches
+   the fleet unless it was pinned on purpose. nix-config's build-all builds
+   the pinned packages with the fleet's nixpkgs before a host installs them.
+3. **Remove:** the weekly *nixpkgs PRs merged* workflow opens a PR that
+   removes an entry once nixpkgs has its packages in the same or a newer
+   version. For an entry with modules it's a draft: switch nix-config to
+   nixpkgs' module first.
 
 ## Usage
 

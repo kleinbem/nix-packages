@@ -1,0 +1,55 @@
+name: nixpkgs PRs merged
+# Weekly: an entry of nixpkgs-prs.json whose packages nixpkgs now has in the
+# same or a newer version goes, so nixpkgs' packages take over. Entries with
+# NixOS modules get a draft instead: nix-config imports the module from here
+# and has to switch to nixpkgs' own first.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          nix-path: nixpkgs=channel:nixos-unstable
+
+      - name: Open a PR per merged entry
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          for name in $(./scripts/nixpkgs-prs-merged.sh); do
+            git checkout -- nixpkgs-prs.json
+            pr=$(jq -r --arg n "$name" '.[$n].pr' nixpkgs-prs.json)
+            modules=$(jq -r --arg n "$name" '.[$n].modules // {} | keys | join(", ")' nixpkgs-prs.json)
+            jq --indent 2 --arg n "$name" 'del(.[$n])' nixpkgs-prs.json > nixpkgs-prs.json.new
+            mv nixpkgs-prs.json.new nixpkgs-prs.json
+            body="nixpkgs has \`$name\`'s packages in the same or a newer version (NixOS/nixpkgs#$pr), so this uses nixpkgs' packages instead."
+            if [ -n "$modules" ]; then
+              ./scripts/open-signed-pr.sh "nixpkgs-merged/$name" "chore($name): use nixpkgs' packages" \
+                "$body
+
+          Draft: nix-config imports the module(s) $modules from this flake. Switch nix-config to nixpkgs' own module first, then mark this ready.
+
+          🤖 Opened by the nixpkgs-prs-merged workflow." --draft nixpkgs-prs.json
+            else
+              ./scripts/open-signed-pr.sh "nixpkgs-merged/$name" "chore($name): use nixpkgs' packages" \
+                "$body
+
+          🤖 Opened by the nixpkgs-prs-merged workflow." nixpkgs-prs.json
+            fi
+          done

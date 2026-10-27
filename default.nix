@@ -8,32 +8,11 @@
 
 {
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
-  # The nixpkgs tree with the mesh-llm packages (flake input nixpkgs-mesh).
-  # Outside the flake (overlay.nix, ci.nix, nix-build) it comes from the
-  # same lock entry, so there is one pin.
-  nixpkgsMesh ?
-    let
-      locked = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs-mesh.locked;
-    in
-    builtins.fetchTree {
-      inherit (locked)
-        type
-        owner
-        repo
-        rev
-        narHash
-        ;
-    },
 }:
 
-let
-  # mesh-llm, skippy and the native runtimes from NixOS/nixpkgs#571722,
-  # built from the PR's own package files against this nixpkgs. See
-  # pkgs/mesh-llm/default.nix.
-  meshLlm = pkgs.callPackage ./pkgs/mesh-llm { inherit nixpkgsMesh; };
-in
-{
-
+# Packages from our open nixpkgs PRs (nixpkgs-prs.json, lib/nixpkgs-prs.nix).
+(import ./lib/nixpkgs-prs.nix { inherit (pkgs) lib; }).packages pkgs
+// {
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
 
@@ -102,15 +81,6 @@ in
   # Desktop app for AI agents on Goose (block/berd). Written in nixpkgs form
   # (by-name package.nix) for a later nixpkgs PR.
   berd = pkgs.callPackage ./pkgs/berd/package.nix { };
-
-  inherit (meshLlm)
-    mesh-llm
-    mesh-llm-cuda
-    mesh-llm-rocm
-    skippy
-    skippy-native-runtime
-    skippy-native-runtime-vulkan
-    ;
 
   # Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor).
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
