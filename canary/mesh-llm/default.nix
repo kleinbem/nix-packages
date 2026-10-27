@@ -208,7 +208,7 @@ in
   };
 }
 // pkgs.lib.optionalAttrs (pkgs ? skippy) {
-  # Skippy, released with MeshLLM (nixpkgs' mesh-llm-next has it before 0.79).
+  # Skippy, released with MeshLLM (our nixpkgs PR has it before 0.79).
   inherit (pkgs) skippy;
   network-skippy = startupHosts {
     name = "skippy";

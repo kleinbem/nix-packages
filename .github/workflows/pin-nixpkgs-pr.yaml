@@ -1,0 +1,60 @@
+name: Pin nixpkgs PR
+# Pins an entry of nixpkgs-prs.json (packages from one of our open nixpkgs
+# PRs) to a commit, through a PR that auto-merges once Check Flake is green.
+# Pin only a commit whose packages are green on nixpkgs-review-gha. The fleet
+# build of the pinned packages is gated in nix-config (build-all).
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Entry in nixpkgs-prs.json (e.g. buzz-app)
+        required: true
+        type: string
+      rev:
+        description: Full commit SHA to pin
+        required: true
+        type: string
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    env:
+      NAME: ${{ inputs.name }}
+      REV: ${{ inputs.rev }}
+    steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          nix-path: nixpkgs=channel:nixos-unstable
+
+      - name: Pin
+        run: ./scripts/pin-nixpkgs-pr.sh "$NAME" "$REV"
+
+      - name: Evaluate the pinned packages
+        run: |
+          for attr in $(jq -r --arg n "$NAME" '.[$n].attrs[]' nixpkgs-prs.json); do
+            nix eval --raw ".#legacyPackages.x86_64-linux.$attr.drvPath"
+            echo
+          done
+
+      - name: Open the PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          pr=$(jq -r --arg n "$NAME" '.[$n].pr' nixpkgs-prs.json)
+          ./scripts/open-signed-pr.sh "pin/$NAME" "chore($NAME): pin to ${REV:0:12}" \
+            "Pins \`$NAME\` to $REV, the state of NixOS/nixpkgs#$pr this fleet runs. nix-config's build-all builds it with the fleet's nixpkgs before it reaches a host.
+
+          🤖 Opened by the pin-nixpkgs-pr workflow." \
+            nixpkgs-prs.json

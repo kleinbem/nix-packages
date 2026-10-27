@@ -1,0 +1,30 @@
+{
+  "buzz-app": {
+    "pr": 577918,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "21284bb619d658c38b931425d9eebe5a1c00aea3",
+    "narHash": "sha256-t0DXVUXd82+9tPl4kXFLj99f2YPdrOPtlnKH+OC3wtE=",
+    "attrs": [
+      "buzz-app"
+    ]
+  },
+  "mesh-llm": {
+    "pr": 571722,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "6c68a12adbb8c969a9693c5cdc8fb2ccd6343c90",
+    "narHash": "sha256-ZDXSa4ocLOVDQMG800FBKXSFvaHfy/RpIRYZEMwY4tA=",
+    "attrs": [
+      "mesh-llm",
+      "mesh-llm-cuda",
+      "mesh-llm-rocm",
+      "skippy",
+      "skippy-native-runtime",
+      "skippy-native-runtime-vulkan"
+    ],
+    "modules": {
+      "mesh-llm": "nixos/modules/services/misc/mesh-llm.nix"
+    }
+  }
+}
