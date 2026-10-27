@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds nixpkgs' Buzz packages against a Buzz commit (default: main), so
-# packaging breakage shows up before the next desktop release reaches nixpkgs.
+# packaging breakage shows up before the next Buzz release reaches nixpkgs.
 #
 #   NIXPKGS=~/nixpkgs canary/buzz/run.sh [attr...]
 #
@@ -32,13 +32,11 @@ learn_hash() {
   echo "$hash"
 }
 args+=(--argstr workspaceCargoHash "$(learn_hash workspaceCargoDeps)")
-args+=(--argstr desktopCargoHash "$(learn_hash desktopCargoDeps)")
-args+=(--argstr desktopPnpmHash "$(learn_hash buzz-desktop.pnpmDeps)")
 args+=(--argstr relayWebPnpmHash "$(learn_hash buzz-relay.web.pnpmDeps)")
 
 if (($# == 0)); then
   set -- buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp \
-    buzz-backend-kubernetes buzz-relay buzz-desktop tests nixos
+    buzz-backend-kubernetes buzz-relay tests nixos
 fi
 attrs=()
 for attr in "$@"; do

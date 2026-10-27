@@ -78,11 +78,6 @@ in
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569154
   buzz-relay = pkgs.callPackage ./pkgs/buzz-relay/package.nix { };
 
-  # Desktop client for the self-hosted Buzz relay (nix-presets/containers/
-  # buzz.nix). Built from source at the desktop-v* release tag, with its own
-  # sidecars; mirrors upstream PR https://github.com/NixOS/nixpkgs/pull/569165
-  buzz-desktop = pkgs.callPackage ./pkgs/buzz-desktop { };
-
   # Git credential helper producing NIP-98 authentication headers for Nostr git repos.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569173
   git-credential-nostr = pkgs.callPackage ./pkgs/git-credential-nostr/package.nix { };

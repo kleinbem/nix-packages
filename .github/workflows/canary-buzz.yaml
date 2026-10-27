@@ -52,10 +52,10 @@ jobs:
           # The NixOS test needs KVM, which only the x86 runners have.
           - name: x86_64-linux
             runner: ubuntu-latest
-            attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay buzz-desktop tests nixos
+            attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay tests nixos
           - name: aarch64-linux
             runner: ubuntu-24.04-arm
-            attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay buzz-desktop tests
+            attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay tests
           # No nightly macOS: the macOS runner budget is kept for release checks.
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
