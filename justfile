@@ -48,8 +48,3 @@ update-langfuse:
 update-buzz-source:
     @./scripts/update-buzz-source.sh
     @echo "✅ pkgs/buzz/source.json updated — review 'git diff' and commit."
-
-[group("Updates")]
-update-buzz-desktop:
-    @./scripts/update-buzz-desktop.sh
-    @echo "✅ buzz-desktop updated — review 'git diff' and commit."

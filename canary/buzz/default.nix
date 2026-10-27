@@ -2,16 +2,14 @@
 #
 # Everything comes from the nixpkgs checkout; this only swaps the source. The
 # packages take it from buzz-cli, so overriding buzz-cli's src moves them all.
-# The dependency hashes (Cargo for the workspace and the desktop, pnpm for the
-# desktop and the relay web bundle) change with the commit: run.sh learns them
+# The dependency hashes (Cargo for the workspace, pnpm for the relay web
+# bundle) change with the commit: run.sh learns them
 # first (an empty hash makes Nix print it). importCargoLock can't be used: the
 # lockfile has sqlx-core 0.9.0 from both crates.io and git.
 {
   nixpkgs,
   rev,
   workspaceCargoHash ? "",
-  desktopCargoHash ? "",
-  desktopPnpmHash ? "",
   relayWebPnpmHash ? "",
 }:
 
@@ -74,22 +72,13 @@ let
           };
         }
       )
-    )
-    // {
-      buzz-desktop = prev.buzz-desktop.overrideAttrs (old: {
-        cargoDeps = cargoDeps final "buzz-desktop-vendor" desktopCargoHash {
-          cargoRoot = "desktop/src-tauri";
-        };
-        pnpmDeps = pnpmHash desktopPnpmHash old.pnpmDeps;
-      });
-    };
+    );
 
   pkgs = import nixpkgs { overlays = [ overlay ]; };
 in
 {
   # For run.sh, to learn the hashes.
   workspaceCargoDeps = pkgs.buzz-cli.cargoDeps;
-  desktopCargoDeps = pkgs.buzz-desktop.cargoDeps;
 
   inherit (pkgs)
     buzz-cli
@@ -100,7 +89,6 @@ in
     buzz-acp
     buzz-backend-kubernetes
     buzz-relay
-    buzz-desktop
     ;
   # Every package's smoke tests (passthru.tests), in one attribute.
   tests = pkgs.linkFarm "buzz-tests" (

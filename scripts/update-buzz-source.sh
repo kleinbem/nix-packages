@@ -4,9 +4,7 @@
 # Because all 7 Rust packages (buzz-relay, buzz-cli, buzz-acp, buzz-agent,
 # buzz-dev-mcp, git-credential-nostr, git-sign-nostr) are crates in the same
 # monorepo workspace, they share the exact same source commit, SRI source hash,
-# and workspace Cargo vendor hash. (buzz-desktop is NOT part of this: it builds
-# from the desktop-v* release tag with its own sidecars — see
-# update-buzz-desktop.sh.)
+# and workspace Cargo vendor hash.
 #
 # This script:
 #   1. Queries the GitHub API for the latest commit on block/buzz main.
