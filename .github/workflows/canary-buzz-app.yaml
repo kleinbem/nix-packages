@@ -1,0 +1,119 @@
+name: "Canary: buzz-app"
+
+# Builds and tests nixpkgs' buzz-app against block/buzz-app main every night,
+# so packaging breakage, and workarounds whose upstream fix landed, show up
+# before the next desktop release reaches nixpkgs. A failure opens (or comments
+# on) one issue; the next green run closes it.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      buzz_app_rev:
+        description: buzz-app commit to build (default main)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: canary-buzz-app
+  cancel-in-progress: false
+
+env:
+  # The prep branch for the next desktop release until buzz-app lands in
+  # NixOS/nixpkgs (#577918); then NixOS/nixpkgs master.
+  NIXPKGS_REPO: kleinbem/nixpkgs
+  NIXPKGS_REF: buzz-app-next
+  ISSUE_TITLE: "Canary: buzz-app packaging fails against buzz-app main"
+
+jobs:
+  # One commit for every platform.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      rev: ${{ steps.rev.outputs.rev }}
+    steps:
+      - id: rev
+        env:
+          BUZZ_APP_REV: ${{ inputs.buzz_app_rev }}
+        run: |
+          echo "rev=${BUZZ_APP_REV:-$(git ls-remote https://github.com/block/buzz-app refs/heads/main | cut -f1)}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x86_64-linux
+            runner: ubuntu-latest
+          - name: aarch64-linux
+            runner: ubuntu-24.04-arm
+          # The tests start servers on 127.0.0.1 (__darwinAllowLocalNetworking)
+          # and need trustd (sandboxProfile): a relaxed sandbox, as on Hydra.
+          - name: aarch64-darwin
+            runner: macos-latest
+            extra-conf: sandbox = relaxed
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 340
+    steps:
+      # The Rust workspace and WebKitGTK need more than the runner's free disk.
+      - name: Free disk space
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ env.NIXPKGS_REPO }}
+          ref: ${{ env.NIXPKGS_REF }}
+          path: nixpkgs
+          persist-credentials: false
+
+      - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
+        with:
+          github-token: ${{ github.token }}
+          extra-conf: ${{ matrix.extra-conf }}
+
+      - name: Build and test
+        env:
+          NIXPKGS: nixpkgs
+          BUZZ_APP_REV: ${{ needs.plan.outputs.rev }}
+        run: canary/buzz-app/run.sh
+
+  # One issue for all platforms: opened or commented on any failure, closed
+  # only when every platform is green.
+  report:
+    needs: [plan, build]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RESULT: ${{ needs.build.result }}
+          BUZZ_APP_REV: ${{ needs.plan.outputs.rev }}
+        run: |
+          issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number // empty')"
+          if [[ $RESULT == success ]]; then
+            if [[ -n "$issue" ]]; then
+              gh issue close "$issue" --comment "Green again at buzz-app \`${BUZZ_APP_REV:0:9}\`."
+            fi
+          else
+            body="buzz-app [\`${BUZZ_APP_REV:0:9}\`](https://github.com/block/buzz-app/commit/$BUZZ_APP_REV) fails ($RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            if [[ -n "$issue" ]]; then
+              gh issue comment "$issue" --body "$body"
+            else
+              gh issue create --title "$ISSUE_TITLE" --body "$body"
+            fi
+          fi
