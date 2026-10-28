@@ -26,5 +26,15 @@
     "modules": {
       "mesh-llm": "nixos/modules/services/misc/mesh-llm.nix"
     }
+  },
+  "garage-ui": {
+    "pr": 580190,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "060d30bdd242a522ce679bfcd71fcc99cd6ef941",
+    "narHash": "sha256-re4U+AKgmQfsfxSVwgXubbBFtV8wSfqXCf7FRH+5txg=",
+    "attrs": [
+      "garage-ui"
+    ]
   }
 }
