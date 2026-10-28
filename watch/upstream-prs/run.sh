@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Prints a Markdown report of what happened on the watched upstream PRs since
+# Prints a Markdown report of what happened on the watched upstream PRs and
+# issues since
 # SINCE (ISO 8601, default 8 days ago) and exits 0. PRS_FILE overrides the list;
 # activity by the PR author and by IGNORE (space-separated logins) is skipped. Writes "changed=true" to
 # $GITHUB_OUTPUT when something needs a look: a merge conflict, the PR merged
@@ -8,7 +9,7 @@ set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
 prs_file="${PRS_FILE:-$here/prs.txt}"
-ignore="${IGNORE:-kleinbem github-actions}"
+ignore="${IGNORE:-kleinbem github-actions coderabbitai}"
 since="${SINCE:-$(date -u -d '8 days ago' +%Y-%m-%dT%H:%M:%SZ)}"
 # Checks that run on every outside PR without a maintainer's approval.
 always='Security|Semgrep|zizmor|DCO|Reconcil|Stale|Previous Base'
@@ -19,8 +20,11 @@ echo "|---|---|---|"
 while read -r ref; do
   [[ -z $ref || $ref == \#* ]] && continue
   repo="${ref%%#*}" number="${ref##*#}"
+  # An issue has no merge state, reviews or checks; fill them in empty.
   pr="$(gh pr view "$number" --repo "$repo" \
-    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup)"
+    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup 2>/dev/null)" \
+    || pr="$(gh issue view "$number" --repo "$repo" --json url,title,author,state,closedAt,comments \
+      | jq '. + {mergeable: null, mergedAt: null, reviews: [], statusCheckRollup: []}')"
   notes="$(jq -r --arg since "$since" --arg always "$always" --arg ignore "$ignore" '
     ([.author.login] + ($ignore | split(" "))) as $skip
     | [ (if .mergeable == "CONFLICTING" then "merge conflict" else empty end),

@@ -1,8 +1,24 @@
-# Upstream PRs to watch: one owner/repo#number per line.
-# Outside PRs there wait weeks for triage, so a weekly look is enough.
-block/buzz#8031
-block/buzz#8035
-block/buzz#8040
+# Upstream PRs and issues to watch: one owner/repo#number per line.
+# A weekly look is enough; the agent sessions watch the active ones closely.
+#
+# Fixes our packages or holds wait on (each removes a workaround once released):
+Mesh-LLM/mesh-llm#2528
+Mesh-LLM/mesh-llm#2577
+Mesh-LLM/mesh-llm#2605
+Mesh-LLM/mesh-llm#2629
+Mesh-LLM/mesh-llm#2630
+Mesh-LLM/mesh-llm#2648
+# Not ours: vendored as patches in skippy-native-runtime.
+ggml-org/llama.cpp#26103
+# Not ours: nix-holds waits on it (fastmcp; the posthog fix #578265 was closed 10-28).
+NixOS/nixpkgs#563493
+#
+# Our nixpkgs PRs:
+NixOS/nixpkgs#571722
+NixOS/nixpkgs#574877
+NixOS/nixpkgs#577918
+#
+# Buzz:
 block/buzz#8071
 # Not ours: the fix our closed #8091 deferred to.
 block/buzz#5292
