@@ -6,3 +6,8 @@ block/buzz#8040
 block/buzz#8071
 # Not ours: the fix our closed #8091 deferred to.
 block/buzz#5292
+# buzz-app workarounds in nixpkgs (#577918) wait on these.
+block/buzz-app#1778
+block/buzz-app#1779
+block/buzz-app#1780
+block/buzz-app#1781
