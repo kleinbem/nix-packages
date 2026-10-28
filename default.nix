@@ -98,6 +98,11 @@
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
   agent-task-queue = pkgs.callPackage ./pkgs/agent-task-queue/package.nix { };
 
+  # MCP server for GIMP 3 (tifyr/gimp3-mcp); nix-presets' mcp.nix also
+  # installs the GIMP plugin from its sdist. Own package so nix-holds can
+  # hold it while it needs mcp 1.x.
+  gimp3-mcp = pkgs.callPackage ./pkgs/gimp3-mcp/package.nix { };
+
   # CLI for ANCHORS, requirements-driven development for agents (block/anchorsmd).
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
   anchors = pkgs.callPackage ./pkgs/anchors/package.nix { };
