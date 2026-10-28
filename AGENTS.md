@@ -8,7 +8,7 @@ Custom package derivations for the fleet, structured as a
 
 | Path | What lives here |
 |---|---|
-| `pkgs/` | One directory per package: `antigravity`, `kleinbem-auth`, `kleinbem-site`, `langfuse`, `oh-my-pi`, `ricoh-driver`. |
+| `pkgs/` | One directory per package: `antigravity`, `kleinbem-site`, `langfuse`, `oh-my-pi`, `ricoh-driver`. |
 | `default.nix` | The NUR-style attrset (`pkgs.callPackage ./pkgs/<name> { }` per package) consumed by `nix-config` and other flakes. |
 | `overlay.nix` | Same packages exposed as a nixpkgs overlay, for consumers who don't want the whole NUR namespace. |
 | `modules/nixos/` | NixOS modules shipped alongside the packages (not just derivations). |
@@ -18,8 +18,8 @@ Custom package derivations for the fleet, structured as a
 
 ## Conventions
 
-- `kleinbem-site` and `kleinbem-auth` packages here are how those app
-  repos' builds reach `nix-config`/`container-factory` — a version bump
+- The `kleinbem-site` package here is how that app
+  repo's build reaches `nix-config`/`container-factory` — a version bump
   there means pinning a new revision here (see `kleinbem-site`'s own docs
   for the 4-repo update chain: site → nix-packages pin+hashes →
   nix-config flake.lock → deploy).
