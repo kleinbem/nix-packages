@@ -41,7 +41,6 @@ is everything else the fleet needs.
 | `langfuse` | Self-hosted LLM observability service. |
 | `ricoh-driver` | Printer driver package. |
 | `kleinbem-site` | Build of the `kleinbem-site` repo (kleinbem.dev). |
-| `kleinbem-auth` | Build of the `kleinbem-auth` repo (visitor login service). |
 | `google-antigravity`, `google-antigravity-ide`, `google-antigravity-ide-no-fhs`, `google-antigravity-cli` | Google Antigravity IDE/CLI, vendored from an audited derivation. Namespaced under `google-antigravity*` to avoid clobbering nixpkgs' own `antigravity` attr. |
 | `oh-my-pi` | Terminal coding-agent CLI, vendored prebuilt-binary release. |
 | `apkeep` | Downloads APKs from Google Play, F-Droid and APKPure. |
@@ -89,7 +88,7 @@ nixpkgs.overlays = [ inputs.nix-packages.overlays.default ];
 
 Add a new `pkgs/<name>/` directory with its derivation, then one line in
 `default.nix` calling it — see the existing packages for the pattern.
-`kleinbem-site`/`kleinbem-auth` are how those app repos' builds reach
-`nix-config`/`container-factory`; bumping their version is part of a
+`kleinbem-site` is how that app repo's build reaches
+`nix-config`/`container-factory`; bumping its version is part of a
 4-repo chain (site → nix-packages pin+hashes → nix-config flake.lock →
 deploy) — see `kleinbem-site`'s own docs for details.

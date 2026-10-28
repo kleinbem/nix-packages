@@ -20,10 +20,6 @@
   # procedure (pinned to a commit SHA, same pattern as langfuse above).
   kleinbem-site = pkgs.callPackage ./pkgs/kleinbem-site { };
 
-  # better-auth login service for kleinbem.dev — pinned to a commit SHA, same
-  # pattern as kleinbem-site. See pkgs/kleinbem-auth/default.nix header to bump.
-  kleinbem-auth = pkgs.callPackage ./pkgs/kleinbem-auth { };
-
   # Google Antigravity 2.0 — vendored from the audited jacopone derivation,
   # binaries pinned to Google's official CDNs in pkgs/antigravity/versions.json.
   # NOTE: namespaced under `google-antigravity*` to avoid clobbering nixpkgs'
