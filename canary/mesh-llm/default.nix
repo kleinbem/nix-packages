@@ -86,8 +86,9 @@ let
 
   # The hosts a program tries to reach while it starts serving the model, through
   # a local proxy that refuses every connection (the sandbox has no network
-  # anyway). Fails when they differ from `expected`: a new request, or one that
-  # went away.
+  # anyway). Fails on a host `expected` doesn't list: a new request. A listed
+  # host that wasn't seen is only reported: which requests fall inside the
+  # window varies with timing (the catalog retries).
   startupHosts =
     {
       name,
@@ -130,10 +131,18 @@ let
         kill $proxy
 
         # Hosts only; the iroh relay names are the mesh's own and may change.
-        awk '{ print $3 }' proxy.log | sed -E 's|^https?://||; s|[:/].*||; s|.*\.iroh\.link\.?$|<iroh relays>|' \
+        # Since iroh 1.4 its relay and net-report traffic ignores the proxy;
+        # what shows is the DNS-over-HTTPS fallback of iroh's resolver
+        # (n0-dns-resolver's public resolvers), queried when the system has
+        # no working nameserver, as in the sandbox.
+        awk '{ print $3 }' proxy.log \
+          | sed -E 's|^https?://||; s|[:/].*||; s|.*\.iroh\.link\.?$|<iroh relays>|; s|^(1\.1\.1\.1\|8\.8\.8\.8\|9\.9\.9\.9)$|<public DNS fallback>|' \
           | LC_ALL=C sort -u > $out
-        if ! diff -u ${expected} $out; then
-          echo "the hosts ${name} contacts at startup changed (- expected, + now)" >&2
+        new=$(LC_ALL=C comm -13 ${expected} $out)
+        gone=$(LC_ALL=C comm -23 ${expected} $out)
+        [ -z "$gone" ] || echo "not contacted this time: $gone"
+        if [ -n "$new" ]; then
+          echo "${name} contacts new hosts at startup:" $new >&2
           exit 1
         fi
       '';
