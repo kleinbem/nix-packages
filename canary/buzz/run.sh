@@ -31,8 +31,13 @@ learn_hash() {
   fi
   echo "$hash"
 }
+# What this platform can't build (meta.platforms), skipped instead of failing.
+unavailable=" $(nix-instantiate --eval --strict --json "$here" "${args[@]}" -A unavailable | jq -r 'join(" ")') "
+
 args+=(--argstr workspaceCargoHash "$(learn_hash workspaceCargoDeps)")
-args+=(--argstr relayWebPnpmHash "$(learn_hash buzz-relay.web.pnpmDeps)")
+if [[ $unavailable != *" buzz-relay "* ]]; then
+  args+=(--argstr relayWebPnpmHash "$(learn_hash buzz-relay.web.pnpmDeps)")
+fi
 
 if (($# == 0)); then
   set -- buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp \
@@ -40,6 +45,10 @@ if (($# == 0)); then
 fi
 attrs=()
 for attr in "$@"; do
-  attrs+=(-A "$attr")
+  if [[ $unavailable == *" $attr "* ]]; then
+    echo "skipping $attr: not available on this platform"
+  else
+    attrs+=(-A "$attr")
+  fi
 done
 nix-build "$here" "${args[@]}" "${attrs[@]}" --no-out-link --keep-going

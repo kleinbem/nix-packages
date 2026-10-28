@@ -56,7 +56,7 @@ jobs:
           # The tests start servers on 127.0.0.1 (__darwinAllowLocalNetworking)
           # and need trustd (sandboxProfile): a relaxed sandbox, as on Hydra.
           - name: aarch64-darwin
-            runner: macos-latest
+            runner: macos-15
             extra-conf: sandbox = relaxed
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
