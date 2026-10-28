@@ -1,3 +1,4 @@
 <iroh relays>
+<public DNS fallback>
 github.com
 huggingface.co

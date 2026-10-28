@@ -24,7 +24,7 @@ concurrency:
 
 env:
   # The prep branch for the next Buzz desktop release (already adapted to Buzz
-  # main) until the packages land in NixOS/nixpkgs (#570552, #571723, #574877);
+  # main) until the packages land in NixOS/nixpkgs (buzz-relay: #574877);
   # then NixOS/nixpkgs master.
   NIXPKGS_REPO: kleinbem/nixpkgs
   NIXPKGS_REF: buzz-next
@@ -56,7 +56,9 @@ jobs:
           - name: aarch64-linux
             runner: ubuntu-24.04-arm
             attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay tests
-          # No nightly macOS: the macOS runner budget is kept for release checks.
+          - name: aarch64-darwin
+            runner: macos-latest
+            attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay tests
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 340
