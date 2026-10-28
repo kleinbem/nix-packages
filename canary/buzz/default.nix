@@ -75,8 +75,17 @@ let
     );
 
   pkgs = import nixpkgs { overlays = [ overlay ]; };
+  inherit (pkgs) lib;
+  available = lib.meta.availableOn pkgs.stdenv.hostPlatform;
+  availablePackages = builtins.filter (name: available pkgs.${name}) workspacePackages;
 in
 {
+  # For run.sh, to skip what this platform can't build (buzz-relay is
+  # Linux-only, and so is the NixOS test).
+  unavailable =
+    builtins.filter (name: !available pkgs.${name}) workspacePackages
+    ++ lib.optional (!pkgs.stdenv.hostPlatform.isLinux) "nixos";
+
   # For run.sh, to learn the hashes.
   workspaceCargoDeps = pkgs.buzz-cli.cargoDeps;
 
@@ -92,13 +101,13 @@ in
     ;
   # Every package's smoke tests (passthru.tests), in one attribute.
   tests = pkgs.linkFarm "buzz-tests" (
-    pkgs.lib.concatMap (
+    lib.concatMap (
       name:
-      pkgs.lib.mapAttrsToList (test: drv: {
+      lib.mapAttrsToList (test: drv: {
         name = "${name}-${test}";
         path = drv;
-      }) (removeAttrs (pkgs.${name}.passthru.tests or { }) [ "nixos" ])
-    ) workspacePackages
+      }) (lib.filterAttrs (_: available) (removeAttrs (pkgs.${name}.passthru.tests or { }) [ "nixos" ]))
+    ) availablePackages
   );
   nixos = pkgs.nixosTests.buzz-relay;
 }

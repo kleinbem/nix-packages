@@ -61,7 +61,7 @@ jobs:
             runner: ubuntu-24.04-arm
             attrs: native-runtime mesh-llm skippy client-ready network network-skippy goose
           - name: aarch64-darwin
-            runner: macos-latest
+            runner: macos-15
             attrs: native-runtime mesh-llm skippy
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
@@ -96,8 +96,8 @@ jobs:
       - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
         with:
           github-token: ${{ github.token }}
-          extra-conf: |
-            system-features = nixos-test benchmark big-parallel kvm
+          # macOS keeps its default features; kvm and nixos-test are Linux-only.
+          extra-conf: ${{ runner.os == 'Linux' && 'system-features = nixos-test benchmark big-parallel kvm' || '' }}
 
       - name: Build
         env:

@@ -57,7 +57,7 @@ jobs:
             runner: ubuntu-24.04-arm
             attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay tests
           - name: aarch64-darwin
-            runner: macos-latest
+            runner: macos-15
             attrs: buzz-cli buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr buzz-acp buzz-backend-kubernetes buzz-relay tests
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
@@ -65,6 +65,7 @@ jobs:
     steps:
       # The Rust workspace and WebKitGTK need more than the runner's free disk.
       - name: Free disk space
+        if: runner.os == 'Linux'
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           df -h /
@@ -91,8 +92,8 @@ jobs:
       - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
         with:
           github-token: ${{ github.token }}
-          extra-conf: |
-            system-features = nixos-test benchmark big-parallel kvm
+          # macOS keeps its default features; kvm and nixos-test are Linux-only.
+          extra-conf: ${{ runner.os == 'Linux' && 'system-features = nixos-test benchmark big-parallel kvm' || '' }}
 
       - name: Build
         env:
