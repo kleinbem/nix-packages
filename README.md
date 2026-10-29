@@ -16,7 +16,6 @@ is everything else the fleet needs.
 | Attribute | What it is |
 |---|---|
 | `buzz-relay`, `buzz-cli`, `buzz-acp`, `buzz-agent`, `buzz-dev-mcp`, `git-credential-nostr`, `git-sign-nostr` | The Buzz workspace's Rust crates, one pinned source (`pkgs/buzz/source.json`). Staged for NixOS/nixpkgs#570552 and #574877; `buzz-cli` is already in nixpkgs. |
-| `berd` | Block's desktop app for AI agents (Tauri + React) on the Goose ACP backend, with nixpkgs' `goose-cli` as the `goosed` sidecar. Not in nixpkgs yet; written in nixpkgs form. |
 | `aittributor` | Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor). Not in nixpkgs yet; written in nixpkgs form. |
 | `lhm` | Merges system, user and repo lefthook configs into one set of git hooks (block/lhm). Not in nixpkgs yet; written in nixpkgs form. |
 | `block-review` | LLM code reviewer for git changes, built on Goose (block/review; binary `review`). Not in nixpkgs yet; written in nixpkgs form. |
@@ -33,6 +32,7 @@ is everything else the fleet needs.
 |---|---|
 | `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `skippy`, `skippy-native-runtime`, `skippy-native-runtime-vulkan` | MeshLLM, NixOS/nixpkgs#571722. `nixosModules.mesh-llm` is the PR's `services.mesh-llm`. |
 | `buzz-app` | The Buzz desktop app, NixOS/nixpkgs#577918. |
+| `berd` | Berd, Block's desktop app for AI agents on goose, NixOS/nixpkgs#580616. |
 
 ### Everything else
 
