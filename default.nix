@@ -74,9 +74,6 @@
 
   # Agent Control Protocol (ACP) bridge for the Buzz workspace.
   buzz-acp = pkgs.callPackage ./pkgs/buzz-acp/package.nix { };
-  # Desktop app for AI agents on Goose (block/berd). Written in nixpkgs form
-  # (by-name package.nix) for a later nixpkgs PR.
-  berd = pkgs.callPackage ./pkgs/berd/package.nix { };
 
   # Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor).
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
