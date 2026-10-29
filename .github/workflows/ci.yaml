@@ -20,3 +20,13 @@ jobs:
           attic-token: ${{ secrets.ATTIC_PULL_TOKEN }}
       - run: nix flake check --override-input nix-devshells github:kleinbem/nix-devshells
       - run: nix fmt --override-input nix-devshells github:kleinbem/nix-devshells -- --fail-on-change
+      - name: Statix check
+        run: nix run nixpkgs#statix -- check .
+      - name: Deadnix check
+        run: nix run nixpkgs#deadnix -- --fail .
+      - name: Script syntax and shellcheck
+        run: |
+          for script in scripts/*; do
+            bash -n "$script"
+          done
+          shellcheck -s bash scripts/*
