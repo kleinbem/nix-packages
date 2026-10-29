@@ -8,29 +8,14 @@ pkgs.stdenv.mkDerivation {
 
   nativeBuildInputs = [
     pkgs.rpmextract
-    pkgs.autoPatchelfHook
     pkgs.makeWrapper
   ];
 
-  buildInputs = [
-    pkgs.cups
-    pkgs.ghostscript
-    pkgs.stdenv.cc.cc.lib
-    pkgs.zlib
-    pkgs.dbus
-    pkgs.avahi
-    pkgs.libidn2
-    pkgs.libunistring
-    pkgs.libtasn1
-    pkgs.nettle
-    pkgs.gmp
-    pkgs.p11-kit
-    pkgs.libffi
-    pkgs.libcap
-    pkgs.libusb1
-  ];
-
   unpackPhase = "rpmextract $src";
+
+  # Leave the prebuilt blob byte-for-byte as shipped.
+  dontStrip = true;
+  dontPatchELF = true;
 
   installPhase = ''
     runHook preInstall
@@ -54,18 +39,24 @@ pkgs.stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  # This is the secret sauce: it wraps the filters so they can
-  # find 'gs' (Ghostscript) and 'cat' even in the restricted CUPS env.
+  # The blob is not patchelf'd: patchelf's rewrite of this old binary makes
+  # the glibc loader segfault before main. Run it through ld.so instead.
   postFixup = ''
-    for filter in $out/lib/cups/filter/*; do
-      wrapProgram "$filter" --prefix PATH : "${
+    mv $out/lib/cups/filter/rastertolilo2 $out/lib/cups/filter/.rastertolilo2-unpatched
+    makeWrapper ${pkgs.stdenv.cc.bintools.dynamicLinker} $out/lib/cups/filter/rastertolilo2 \
+      --add-flags "--argv0 \"\$0\" --library-path ${
+        lib.makeLibraryPath [
+          pkgs.cups.lib
+          pkgs.stdenv.cc.cc.lib
+        ]
+      } $out/lib/cups/filter/.rastertolilo2-unpatched" \
+      --prefix PATH : "${
         lib.makeBinPath [
           pkgs.ghostscript
           pkgs.coreutils
           pkgs.gnused
         ]
       }"
-    done
   '';
 
   meta = {
