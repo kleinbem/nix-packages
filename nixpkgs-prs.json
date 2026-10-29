@@ -3,8 +3,8 @@
     "pr": 577918,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "fb7ad41def33e2f399ce138731755481204f3df3",
-    "narHash": "sha256-+iMfSYbVlHPqFC6R1KlG1uUP/J3fzpH4nF6W6k2NnSA=",
+    "rev": "5ae300028becdaa947bf50d7063bdb9db26babe8",
+    "narHash": "sha256-KZ06bZYxcNqmyVo0cGMbxzs/UhmshqDO1KZ1DKDYKh0=",
     "attrs": [
       "buzz-app"
     ]
