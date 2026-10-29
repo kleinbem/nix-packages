@@ -1,0 +1,91 @@
+name: "Behaviour: berd"
+
+# Runs nixpkgs' berd for real on Linux and macOS: the packaged app with its
+# bundled goosed, a chat created through berdctl, a small local model answering
+# (canary/berd/behaviour.sh). For a nixpkgs branch before it goes ready, so the
+# package is proven where we have no hardware (macOS).
+
+on:
+  workflow_dispatch:
+    inputs:
+      nixpkgs_repo:
+        description: nixpkgs repository
+        type: string
+        default: kleinbem/nixpkgs
+      nixpkgs_ref:
+        description: branch or commit with berd
+        type: string
+        default: berd
+      macos:
+        description: also run on macOS (the branch must support darwin)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  behaviour:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x86_64-linux
+            runner: ubuntu-latest
+          - name: aarch64-linux
+            runner: ubuntu-24.04-arm
+          # block-catch needs macOS 26.
+          - name: aarch64-darwin
+            runner: macos-26
+            extra-conf: sandbox = relaxed
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 340
+    steps:
+      - name: Skip macOS
+        id: skip
+        if: runner.os == 'macOS' && !inputs.macos
+        run: echo "skip=true" >> "$GITHUB_OUTPUT"
+
+      - name: Free disk space
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.skip.outputs.skip != 'true'
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.skip.outputs.skip != 'true'
+        with:
+          repository: ${{ inputs.nixpkgs_repo }}
+          ref: ${{ inputs.nixpkgs_ref }}
+          path: nixpkgs
+          persist-credentials: false
+
+      - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
+        if: steps.skip.outputs.skip != 'true'
+        with:
+          github-token: ${{ github.token }}
+          # Builds from nixpkgs-review-gha runs are in this cache.
+          extra-conf: |
+            extra-substituters = https://kleinbem-nixpkgs-review.cachix.org
+            extra-trusted-public-keys = kleinbem-nixpkgs-review.cachix.org-1:JVJSauhW05AExFFqnrWtsfg4hxNieKFFq7tntGb63q4=
+            ${{ matrix.extra-conf }}
+
+      - name: Behaviour test
+        if: steps.skip.outputs.skip != 'true'
+        env:
+          NIXPKGS: nixpkgs
+          LOGS: ${{ runner.temp }}/berd-logs
+        run: canary/berd/behaviour.sh
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && steps.skip.outputs.skip != 'true'
+        with:
+          name: berd-logs-${{ matrix.name }}
+          path: ${{ runner.temp }}/berd-logs
+          if-no-files-found: ignore

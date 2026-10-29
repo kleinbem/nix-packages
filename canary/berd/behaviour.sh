@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Behaviour test for nixpkgs' berd: starts the packaged app (under Xvfb on
+# Linux, in the runner's GUI session on macOS) with its bundled goosed pointed
+# at a local llama-server, creates a chat through berdctl and waits for the
+# model's reply in goose's session store.
+#
+#   NIXPKGS=~/nixpkgs canary/berd/behaviour.sh
+#
+# NIXPKGS: a nixpkgs checkout with berd (kleinbem/nixpkgs@berd).
+set -euo pipefail
+
+nixpkgs="$(realpath "${NIXPKGS:?set NIXPKGS to a nixpkgs checkout}")"
+here="$(dirname "$(realpath "$0")")"
+build() { nix-build "$here" --arg nixpkgs "$nixpkgs" -A "$1" --no-out-link; }
+berd="$(build berd)"
+tools="$(build tools)"
+model="$(build model)"
+export PATH="$tools/bin:$PATH"
+echo "berd: $berd"
+
+work="$(mktemp -d)"
+logs="${LOGS:-$work/logs}"
+mkdir -p "$logs"
+port=18085
+
+pids=()
+cleanup() {
+  for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
+  wait 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# goose's first prompt is about 4k tokens.
+llama-server -m "$model" --host 127.0.0.1 --port "$port" --alias tiny -c 16384 \
+  >"$logs/llama-server.log" 2>&1 &
+pids+=($!)
+for _ in $(seq 120); do
+  curl -sf "http://127.0.0.1:$port/health" >/dev/null && break
+  sleep 1
+done
+curl -sf "http://127.0.0.1:$port/health" >/dev/null
+
+# A fresh home on Linux; macOS apps keep their state under the user's Library,
+# and the runner's home is fresh anyway.
+if [[ $(uname) == Linux ]]; then
+  export HOME="$work/home" XDG_RUNTIME_DIR="$work/run"
+  mkdir -p "$HOME" "$XDG_RUNTIME_DIR"
+  chmod 700 "$XDG_RUNTIME_DIR"
+fi
+mkdir -p "$HOME/.config/goose"
+# llama-server's Responses API lacks created_at; use chat completions.
+cat >"$HOME/.config/goose/config.yaml" <<YAML
+GOOSE_PROVIDER: openai
+GOOSE_MODEL: tiny
+OPENAI_HOST: http://127.0.0.1:$port
+OPENAI_BASE_PATH: chat/completions
+YAML
+export GOOSE_DISABLE_KEYRING=1 OPENAI_API_KEY=local
+
+if [[ $(uname) == Linux ]]; then
+  # No accessibility bus under Xvfb.
+  NO_AT_BRIDGE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 GDK_BACKEND=x11 \
+    xvfb-run -a -s '-screen 0 1440x900x24' "$berd/bin/berd" >"$logs/berd.log" 2>&1 &
+else
+  "$berd/bin/berd" >"$logs/berd.log" 2>&1 &
+fi
+pids+=($!)
+
+lock=""
+for _ in $(seq 90); do
+  lock="$(find "$HOME" -path '*xyz.block.berd*/berdctl/control-*.json' 2>/dev/null | head -n 1)"
+  [[ -n $lock ]] && BERDCTL_LOCK="$lock" "$berd/bin/berdctl" --json info harnesses >/dev/null 2>&1 && break
+  sleep 2
+done
+if [[ -z $lock ]]; then
+  echo "berdctl found no running Berd" >&2
+  tail -n 50 "$logs/berd.log" >&2
+  exit 1
+fi
+ctl() { BERDCTL_LOCK="$lock" "$berd/bin/berdctl" --json "$@"; }
+
+echo "== harnesses"
+ctl info harnesses
+echo "== session create"
+created="$(ctl session create --harness-id goose --prompt "Reply with exactly the word PONG.")"
+echo "$created"
+sid="$(jq -er '.session_id' <<<"$created")"
+
+reply=""
+for _ in $(seq 120); do
+  sleep 5
+  db="$(find "$HOME" -path '*goose/sessions/sessions.db' 2>/dev/null | head -n 1)"
+  [[ -n $db ]] || continue
+  reply="$(sqlite3 "$db" "select content_json from messages where session_id='$sid' and role='assistant' order by id limit 1" 2>/dev/null || true)"
+  [[ -n $reply ]] && break
+done
+echo "== assistant"
+echo "$reply"
+text="$(jq -r '[.[] | select(.type == "text") | .text] | join("")' <<<"${reply:-[]}")"
+if [[ -z $text ]]; then
+  echo "no reply from the model through Berd and goosed" >&2
+  tail -n 50 "$logs/berd.log" >&2
+  exit 1
+fi
+echo "reply: $text"
