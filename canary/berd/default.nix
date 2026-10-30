@@ -6,7 +6,13 @@ let
   pkgs = import nixpkgs { };
 in
 {
-  inherit (pkgs) berd;
+  inherit (pkgs) berd goose-cli;
+  # Berd's macOS sidecar (block/catch); only on darwin.
+  catch =
+    if pkgs.stdenv.hostPlatform.isDarwin then
+      pkgs.block-catch or (throw "this nixpkgs has no block-catch; run macOS on the berd stack branch")
+    else
+      null;
   tools = pkgs.buildEnv {
     name = "berd-behaviour-tools";
     paths =
