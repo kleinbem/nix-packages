@@ -61,7 +61,8 @@ software nobody has in nixpkgs yet, or for a channel nixpkgs doesn't carry
 The lifecycle of an entry:
 
 1. **Add:** a new entry in `nixpkgs-prs.json` (PR number, repository, the
-   attributes, any modules), by hand, then pin it.
+   attributes, any modules; `scope` for packages of the PR the attributes need
+   but that stay unexported), by hand, then pin it.
 2. **Pin:** run the *Pin nixpkgs PR* workflow with the entry and a commit
    whose packages are green on nixpkgs-review-gha. It opens a PR that
    auto-merges. The daily lock update never moves a pin, so nothing reaches

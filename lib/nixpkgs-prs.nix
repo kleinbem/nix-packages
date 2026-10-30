@@ -32,7 +32,9 @@ assert lib.assertMsg (lib.allUnique allAttrs) "nixpkgs-prs.json: an attribute is
 
   # Every entry's attributes. Each entry gets its own scope, so packages of
   # the same PR find each other (mesh-llm wants skippy-native-runtime) before
-  # falling back to nixpkgs.
+  # falling back to nixpkgs. An entry's `scope` names packages of the PR that
+  # its attributes need but that aren't exported, such as berd's darwin-only
+  # block-catch, which has its own PR.
   packages =
     pkgs:
     lib.concatMapAttrs (
@@ -40,7 +42,8 @@ assert lib.assertMsg (lib.allUnique allAttrs) "nixpkgs-prs.json: an attribute is
       let
         src = tree entry;
         scope = lib.makeScope pkgs.newScope (
-          self: lib.genAttrs entry.attrs (name: self.callPackage (byName src name) { })
+          self:
+          lib.genAttrs (entry.attrs ++ entry.scope or [ ]) (name: self.callPackage (byName src name) { })
         );
       in
       lib.getAttrs entry.attrs scope
