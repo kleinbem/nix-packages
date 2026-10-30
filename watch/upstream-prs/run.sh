@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Prints a Markdown report of what happened on the watched upstream PRs since
+# Prints a Markdown report of what happened on the watched upstream PRs and
+# issues since
 # SINCE (ISO 8601, default 8 days ago) and exits 0. PRS_FILE overrides the list;
 # activity by the PR author and by IGNORE (space-separated logins) is skipped. Writes "changed=true" to
 # $GITHUB_OUTPUT when something needs a look: a merge conflict, the PR merged
@@ -8,7 +9,7 @@ set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
 prs_file="${PRS_FILE:-$here/prs.txt}"
-ignore="${IGNORE:-kleinbem github-actions}"
+ignore="${IGNORE:-kleinbem github-actions coderabbitai}"
 since="${SINCE:-$(date -u -d '8 days ago' +%Y-%m-%dT%H:%M:%SZ)}"
 # Checks that run on every outside PR without a maintainer's approval.
 always='Security|Semgrep|zizmor|DCO|Reconcil|Stale|Previous Base'
@@ -19,8 +20,18 @@ echo "|---|---|---|"
 while read -r ref; do
   [[ -z $ref || $ref == \#* ]] && continue
   repo="${ref%%#*}" number="${ref##*#}"
-  pr="$(gh pr view "$number" --repo "$repo" \
-    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup)"
+  # gh issue view also answers for a PR, so fall back to it only when the
+  # number is no PR at all; any other error (rate limit, bad repo) fails the run.
+  # An issue has no merge state, reviews or checks; fill them in empty.
+  if ! pr="$(gh pr view "$number" --repo "$repo" \
+    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup 2>&1)"; then
+    if [[ $pr != *"Could not resolve to a PullRequest"* ]]; then
+      echo "$ref: $pr" >&2
+      exit 1
+    fi
+    pr="$(gh issue view "$number" --repo "$repo" --json url,title,author,state,closedAt,comments |
+      jq '. + {mergeable: null, mergedAt: null, reviews: [], statusCheckRollup: []}')"
+  fi
   notes="$(jq -r --arg since "$since" --arg always "$always" --arg ignore "$ignore" '
     ([.author.login] + ($ignore | split(" "))) as $skip
     | [ (if .mergeable == "CONFLICTING" then "merge conflict" else empty end),
