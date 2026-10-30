@@ -22,9 +22,9 @@ while read -r ref; do
   repo="${ref%%#*}" number="${ref##*#}"
   # An issue has no merge state, reviews or checks; fill them in empty.
   pr="$(gh pr view "$number" --repo "$repo" \
-    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup 2>/dev/null)" \
-    || pr="$(gh issue view "$number" --repo "$repo" --json url,title,author,state,closedAt,comments \
-      | jq '. + {mergeable: null, mergedAt: null, reviews: [], statusCheckRollup: []}')"
+    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup 2>/dev/null)" ||
+    pr="$(gh issue view "$number" --repo "$repo" --json url,title,author,state,closedAt,comments |
+      jq '. + {mergeable: null, mergedAt: null, reviews: [], statusCheckRollup: []}')"
   notes="$(jq -r --arg since "$since" --arg always "$always" --arg ignore "$ignore" '
     ([.author.login] + ($ignore | split(" "))) as $skip
     | [ (if .mergeable == "CONFLICTING" then "merge conflict" else empty end),
