@@ -86,8 +86,15 @@ if [[ -z $lock ]]; then
 fi
 ctl() { BERDCTL_LOCK="$lock" "$berd/bin/berdctl" --json "$@"; }
 
+# goose reports ready once goosed has answered; slower runners need a while.
+harnesses=""
+for _ in $(seq 90); do
+  harnesses="$(ctl info harnesses 2>/dev/null || true)"
+  jq -e '.harnesses[] | select(.harness_id == "goose" and .status == "ready")' <<<"$harnesses" >/dev/null 2>&1 && break
+  sleep 2
+done
 echo "== harnesses"
-ctl info harnesses
+echo "$harnesses"
 echo "== session create"
 created="$(ctl session create --harness-id goose --prompt "Reply with exactly the word PONG.")"
 echo "$created"
