@@ -34,7 +34,7 @@ while read -r ref; do
   fi
   notes="$(jq -r --arg since "$since" --arg always "$always" --arg ignore "$ignore" '
     ([.author.login] + ($ignore | split(" "))) as $skip
-    | [ (if .mergeable == "CONFLICTING" then "merge conflict" else empty end),
+    | [ (if .state == "OPEN" and .mergeable == "CONFLICTING" then "merge conflict" else empty end),
         (if (.mergedAt // "") > $since then "merged" else empty end),
         (if .mergedAt == null and (.closedAt // "") > $since then "closed" else empty end),
         ([.comments[], .reviews[]
