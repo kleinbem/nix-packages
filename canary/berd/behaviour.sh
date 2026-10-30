@@ -160,4 +160,26 @@ SH
   cp "$capture" "$logs/"
   cat "$capture"
   echo "caller PATH=$PATH"
+
+  # Again with the package's own GOOSE_BINARY default: goose-cli has to be the one serving.
+  pkill -P "$catch_pid" 2>/dev/null || true
+  kill "$catch_pid" 2>/dev/null || true
+  wait "$catch_pid" 2>/dev/null || true
+  env -u GOOSE_BINARY "$catch/bin/catch" >"$logs/catch-default.log" 2>&1 &
+  catch_pid=$!
+  pids+=("$catch_pid")
+  served=""
+  for ((i = 0; i < 60; i++)); do
+    served="$(ps -axo ppid=,command= | awk -v p="$catch_pid" '$1 == p' | grep -F "$goose/bin/" | grep -F ' serve ' || true)"
+    [[ -n $served ]] && break
+    sleep 1
+  done
+  echo "== catch (package default)"
+  if [[ -z $served ]]; then
+    echo "Catch didn't start goose-cli's goose serve by default" >&2
+    ps -axo pid=,ppid=,command= | awk -v p="$catch_pid" '$1 == p || $2 == p' >&2
+    tail -n 30 "$logs/catch-default.log" >&2
+    exit 1
+  fi
+  echo "$served"
 fi
