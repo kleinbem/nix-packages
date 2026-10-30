@@ -58,6 +58,13 @@ YAML
 export GOOSE_DISABLE_KEYRING=1 OPENAI_API_KEY=local
 
 if [[ $(uname) == Linux ]]; then
+  # Outside NixOS, Nix-built WebKit finds no EGL driver ("Could not create default EGL
+  # display"); use nixpkgs' Mesa (software rendering under Xvfb).
+  if [[ ! -e /run/opengl-driver ]]; then
+    export __EGL_VENDOR_LIBRARY_DIRS="$tools/share/glvnd/egl_vendor.d"
+    export LIBGL_DRIVERS_PATH="$tools/lib/dri" GBM_BACKENDS_PATH="$tools/lib/gbm"
+    export LIBGL_ALWAYS_SOFTWARE=1
+  fi
   # No accessibility bus under Xvfb.
   NO_AT_BRIDGE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 GDK_BACKEND=x11 \
     xvfb-run -a -s '-screen 0 1440x900x24' "$berd/bin/berd" >"$logs/berd.log" 2>&1 &
