@@ -25,6 +25,8 @@ port=18085
 
 pids=()
 cleanup() {
+  # Catch's goose isn't our child; stop it first.
+  if [[ -n ${catch_pid:-} ]]; then pkill -P "$catch_pid" 2>/dev/null || true; fi
   for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
   wait 2>/dev/null || true
 }
@@ -117,3 +119,41 @@ if [[ -z $text ]]; then
   exit 1
 fi
 echo "reply: $text"
+
+# macOS: Catch, Berd's global-shortcut sidecar, standalone. It starts `goose serve`
+# itself through GOOSE_BINARY; a stand-in records what it was started with, then
+# runs the real goose.
+if [[ "$(uname)" == Darwin ]]; then
+  catch="$(build catch)"
+  goose="$(build goose-cli)"
+  probe="$work/goose-probe"
+  capture="$work/catch-goose.txt"
+  # Written whole, then renamed, so the wait never sees a partial file.
+  cat >"$probe" <<SH
+#!/bin/sh
+{ echo "arg1: \$1"; echo "args: \$*"; echo "PATH=\$PATH"; } >"$capture.tmp" && /bin/mv "$capture.tmp" "$capture"
+exec "$goose/bin/goose" "\$@"
+SH
+  chmod +x "$probe"
+  GOOSE_BINARY="$probe" "$catch/bin/catch" >"$logs/catch.log" 2>&1 &
+  catch_pid=$!
+  pids+=("$catch_pid")
+  for ((i = 0; i < 60; i++)); do
+    [[ -s $capture ]] && break
+    sleep 1
+  done
+  echo "== catch"
+  if ! kill -0 "$catch_pid" 2>/dev/null || [[ ! -s $capture ]]; then
+    echo "Catch didn't start goose serve" >&2
+    tail -n 30 "$logs/catch.log" >&2
+    exit 1
+  fi
+  if ! grep -qx 'arg1: serve' "$capture"; then
+    echo "Catch started goose without serve:" >&2
+    cat "$capture" >&2
+    exit 1
+  fi
+  cp "$capture" "$logs/"
+  cat "$capture"
+  echo "caller PATH=$PATH"
+fi
