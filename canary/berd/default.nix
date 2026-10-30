@@ -17,7 +17,12 @@ in
         sqlite
         curl
       ]
-      ++ lib.optional stdenv.hostPlatform.isLinux xvfb-run;
+      ++ lib.optionals stdenv.hostPlatform.isLinux [
+        xvfb-run
+        # EGL for WebKit where the host has no /run/opengl-driver (GitHub's Ubuntu runners)
+        mesa
+        libglvnd
+      ];
   };
   model = pkgs.fetchurl {
     url = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/9217f5db79a29953eb74d5343926648285ec7e67/qwen2.5-0.5b-instruct-q4_k_m.gguf";
