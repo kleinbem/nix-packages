@@ -20,11 +20,18 @@ echo "|---|---|---|"
 while read -r ref; do
   [[ -z $ref || $ref == \#* ]] && continue
   repo="${ref%%#*}" number="${ref##*#}"
+  # gh issue view also answers for a PR, so fall back to it only when the
+  # number is no PR at all; any other error (rate limit, bad repo) fails the run.
   # An issue has no merge state, reviews or checks; fill them in empty.
-  pr="$(gh pr view "$number" --repo "$repo" \
-    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup 2>/dev/null)" ||
+  if ! pr="$(gh pr view "$number" --repo "$repo" \
+    --json url,title,author,state,mergeable,mergedAt,closedAt,comments,reviews,statusCheckRollup 2>&1)"; then
+    if [[ $pr != *"Could not resolve to a PullRequest"* ]]; then
+      echo "$ref: $pr" >&2
+      exit 1
+    fi
     pr="$(gh issue view "$number" --repo "$repo" --json url,title,author,state,closedAt,comments |
       jq '. + {mergeable: null, mergedAt: null, reviews: [], statusCheckRollup: []}')"
+  fi
   notes="$(jq -r --arg since "$since" --arg always "$always" --arg ignore "$ignore" '
     ([.author.login] + ($ignore | split(" "))) as $skip
     | [ (if .mergeable == "CONFLICTING" then "merge conflict" else empty end),
