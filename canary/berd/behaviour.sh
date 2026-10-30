@@ -46,6 +46,10 @@ curl -sf "http://127.0.0.1:$port/health" >/dev/null
 # and the runner's home is fresh anyway.
 if [[ $(uname) == Linux ]]; then
   export HOME="$work/home" XDG_RUNTIME_DIR="$work/run"
+  # GitHub's Ubuntu runners set XDG_CONFIG_HOME to the runner's ~/.config;
+  # goose would read its config there instead of the one written below.
+  export XDG_CONFIG_HOME="$HOME/.config" XDG_DATA_HOME="$HOME/.local/share"
+  export XDG_CACHE_HOME="$HOME/.cache" XDG_STATE_HOME="$HOME/.local/state"
   mkdir -p "$HOME" "$XDG_RUNTIME_DIR"
   chmod 700 "$XDG_RUNTIME_DIR"
 fi
