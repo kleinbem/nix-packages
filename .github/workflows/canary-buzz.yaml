@@ -81,19 +81,9 @@ jobs:
           path: nixpkgs
           persist-credentials: false
 
-      # The NixOS test runs a VM; the runner has KVM, but only root may use it.
-      - name: Enable KVM
-        if: runner.arch == 'X64'
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
       - uses: kleinbem/actions/nix-setup@d640cb482c1083235491da5ce469468a0019fc64 # v1.0.0
         with:
           github-token: ${{ github.token }}
-          # macOS keeps its default features; kvm and nixos-test are Linux-only.
-          extra-conf: ${{ runner.os == 'Linux' && 'system-features = nixos-test benchmark big-parallel kvm' || '' }}
 
       - name: Build
         env:
