@@ -53,16 +53,18 @@ is everything else the fleet needs.
 
 What we maintain in nixpkgs is consumed from there, never copied here. While
 a package only exists on a nixpkgs PR, `nixpkgs-prs.json` pins the PR at one
-commit and `lib/nixpkgs-prs.nix` builds the PR's own package files (and
-modules) against this flake's nixpkgs. Real derivations live here only for
-software nobody has in nixpkgs yet, or for a channel nixpkgs doesn't carry
-(upstream `main` for the canaries).
+commit and [nix-holds](https://github.com/kleinbem-dev/nix-holds)' `mkPrs`
+builds the PR's own package files (and modules) against this flake's
+nixpkgs. Real derivations live here only for software nobody has in nixpkgs
+yet, or for a channel nixpkgs doesn't carry (upstream `main` for the
+canaries).
 
 The lifecycle of an entry:
 
-1. **Add:** a new entry in `nixpkgs-prs.json` (PR number, repository, the
-   attributes, any modules; `scope` for packages of the PR the attributes need
-   but that stay unexported), by hand, then pin it.
+1. **Add:** `nix run github:kleinbem-dev/nix-holds -- pr add NAME --pr N
+   --repo kleinbem/nixpkgs --attrs a,b` (plus `--scope` for packages of the
+   PR the attributes need but that stay unexported, `--module` for its NixOS
+   modules), then pin it.
 2. **Pin:** run the *Pin nixpkgs PR* workflow with the entry and a commit
    whose packages are green on nixpkgs-review-gha. It opens a PR that
    auto-merges. The daily lock update never moves a pin, so nothing reaches
@@ -72,6 +74,8 @@ The lifecycle of an entry:
    removes an entry once nixpkgs has its packages in the same or a newer
    version. For an entry with modules it's a draft: switch nix-config to
    nixpkgs' module first.
+
+Both workflows are nix-holds' `pr-pin` and `pr-merged` actions.
 
 ## Usage
 

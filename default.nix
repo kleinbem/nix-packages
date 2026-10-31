@@ -8,10 +8,25 @@
 
 {
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
+  # The flake passes its input; plain imports (overlay.nix, nix-holds-fleet)
+  # take the commit in flake.lock.
+  nix-holds ?
+    let
+      lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+      locked = lock.nodes.${lock.nodes.root.inputs.nix-holds}.locked;
+    in
+    builtins.fetchTarball {
+      url = "https://github.com/${locked.owner}/${locked.repo}/archive/${locked.rev}.tar.gz";
+      sha256 = locked.narHash;
+    },
 }:
 
-# Packages from our open nixpkgs PRs (nixpkgs-prs.json, lib/nixpkgs-prs.nix).
-(import ./lib/nixpkgs-prs.nix { inherit (pkgs) lib; }).packages pkgs
+# Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-holds).
+(import "${nix-holds}/prs.nix" {
+  inherit (pkgs) lib;
+  prs = ./nixpkgs-prs.json;
+}).packages
+  pkgs
 // {
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };

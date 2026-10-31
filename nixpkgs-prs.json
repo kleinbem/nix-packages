@@ -1,4 +1,17 @@
 {
+  "berd": {
+    "pr": 580616,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "aba4b6f5dbb63574efa64004971127c15faafc4c",
+    "narHash": "sha256-eKckqoSFrVAa2fJZJh/UPZLzyCbNmE+jRhlKztq/5k4=",
+    "attrs": [
+      "berd"
+    ],
+    "scope": [
+      "block-catch"
+    ]
+  },
   "buzz-app": {
     "pr": 577918,
     "owner": "kleinbem",
@@ -7,6 +20,16 @@
     "narHash": "sha256-fylTIe7h0zTx6KClegGbmeEEO+OR47vLrfGawCSZP9c=",
     "attrs": [
       "buzz-app"
+    ]
+  },
+  "garage-ui": {
+    "pr": 580190,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "14a003c538302b3ea520c5cc919a09c096e8ff44",
+    "narHash": "sha256-qwFAQ5UHqF99gSENfiY8XvBA66b3m+QFldMt6FKpvOc=",
+    "attrs": [
+      "garage-ui"
     ]
   },
   "mesh-llm": {
@@ -26,28 +49,5 @@
     "modules": {
       "mesh-llm": "nixos/modules/services/misc/mesh-llm.nix"
     }
-  },
-  "garage-ui": {
-    "pr": 580190,
-    "owner": "kleinbem",
-    "repo": "nixpkgs",
-    "rev": "14a003c538302b3ea520c5cc919a09c096e8ff44",
-    "narHash": "sha256-qwFAQ5UHqF99gSENfiY8XvBA66b3m+QFldMt6FKpvOc=",
-    "attrs": [
-      "garage-ui"
-    ]
-  },
-  "berd": {
-    "pr": 580616,
-    "owner": "kleinbem",
-    "repo": "nixpkgs",
-    "rev": "aba4b6f5dbb63574efa64004971127c15faafc4c",
-    "narHash": "sha256-eKckqoSFrVAa2fJZJh/UPZLzyCbNmE+jRhlKztq/5k4=",
-    "attrs": [
-      "berd"
-    ],
-    "scope": [
-      "block-catch"
-    ]
   }
 }
