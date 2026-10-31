@@ -37,7 +37,7 @@ curl -sfL --retry 3 https://channels.nixos.org/nixos-unstable/packages.json.br |
 git clone -q --depth 1 --filter=blob:none --sparse https://github.com/NixOS/nixpkgs "$work/nixpkgs"
 git -C "$work/nixpkgs" sparse-checkout set nixos/modules
 (git -C "$work/nixpkgs" grep -lw "$maintainer" -- nixos/modules || true) |
-  sed -E 's|.*/||; s|\.nix$||' | sort -u >"$work/modules"
+  sed -E 's|/default\.nix$||; s|.*/||; s|\.nix$||' | sort -u >"$work/modules"
 
 if [[ ! -s $work/attrs && ! -s $work/modules ]]; then
   echo "No packages or modules list $maintainer as maintainer."
@@ -59,10 +59,11 @@ echo
 # --- PRs and issues -------------------------------------------------------------
 
 fields=number,title,url,author,createdAt,updatedAt
-# The search API allows 30 requests a minute; wait out a 403 once.
+# Most recently updated first, so a busy term's newest items aren't cut off
+# by the limit. The search API allows 30 requests a minute; wait out a 403 once.
 search() {
-  gh "$@" --repo NixOS/nixpkgs --state open --limit 50 --json "$fields" ||
-    { sleep 61 && gh "$@" --repo NixOS/nixpkgs --state open --limit 50 --json "$fields"; }
+  local args=(--repo NixOS/nixpkgs --state open --sort updated --order desc --limit 100 --json "$fields")
+  gh "$@" "${args[@]}" || { sleep 61 && gh "$@" "${args[@]}"; }
 }
 while read -r term; do
   search search issues --include-prs --match title "$term" |
@@ -146,7 +147,7 @@ found=false
 while read -r attr; do
   latest="$(curl -sL -m 30 "$logs/$attr/" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}\.log' | sort | tail -1 || true)"
   [[ -z $latest ]] && continue
-  if curl -sL -m 30 "$logs/$attr/$latest" | grep -q '^error:'; then
+  if curl -sL -m 30 "$logs/$attr/$latest" | grep '^error:' >/dev/null; then
     found=true
     mark=""
     if [[ ! ${latest%.log} < ${since%%T*} ]]; then
