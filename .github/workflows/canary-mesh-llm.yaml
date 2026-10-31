@@ -23,10 +23,11 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # The prep branch for the next MeshLLM release (already adapted to MeshLLM
-  # main) until it lands in NixOS/nixpkgs#571722; then NixOS/nixpkgs master.
+  # The three nixpkgs PRs merged into one branch (packages #571722, skippy
+  # #581182, module #581183), rebuilt when one of them changes; then
+  # NixOS/nixpkgs master once they have landed.
   NIXPKGS_REPO: kleinbem/nixpkgs
-  NIXPKGS_REF: mesh-llm-next
+  NIXPKGS_REF: mesh-llm-canary
   ISSUE_TITLE: "Canary: mesh-llm packaging fails against MeshLLM main"
 
 jobs:
