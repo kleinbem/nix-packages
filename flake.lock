@@ -482,11 +482,11 @@
         "nixpkgs-stable": "nixpkgs-stable_2"
       },
       "locked": {
-        "lastModified": 1793490010,
-        "narHash": "sha256-Ptd2awEo3ckj30Qx0b8N1kTxGBllkcvGsZPYzhRNaYM=",
+        "lastModified": 1793491559,
+        "narHash": "sha256-B1MCtfvpa0vLJNVd0gmS1ZNwe8/Z7ekopvLjmCFbLMQ=",
         "owner": "kleinbem-dev",
         "repo": "nix-holds",
-        "rev": "e9eb530738ea3023689f15d50a9241bd399b02b4",
+        "rev": "e990c354631ac19d93e9d0100e330f71f895795b",
         "type": "github"
       },
       "original": {
