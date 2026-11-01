@@ -62,12 +62,13 @@ canaries).
 The lifecycle of an entry:
 
 1. **Add:** `nix run github:kleinbem-dev/nix-holds -- pr add NAME --pr N
-   --repo kleinbem/nixpkgs --attrs a,b` (plus `--scope` for packages of the
-   PR the attributes need but that stay unexported, `--module` for its NixOS
-   modules), then pin it.
-2. **Pin:** run the *Pin nixpkgs PR* workflow with the entry and a commit
-   whose packages are green on nixpkgs-review-gha. It opens a PR that
-   auto-merges. The daily lock update never moves a pin, so nothing reaches
+   --repo kleinbem/nixpkgs --attrs a,b --rev SHA` (plus `--scope` for
+   packages of the PR the attributes need but that stay unexported,
+   `--module` for its NixOS modules), in a PR. Always with `--rev`: an
+   entry without a pin doesn't evaluate.
+2. **Pin:** to move an entry to a newer commit of its PR, run the *Pin
+   nixpkgs PR* workflow with the entry and a commit whose packages are
+   green on nixpkgs-review-gha. It opens a PR that auto-merges. The daily lock update never moves a pin, so nothing reaches
    the fleet unless it was pinned on purpose. nix-config's build-all builds
    the pinned packages with the fleet's nixpkgs before a host installs them.
 3. **Remove:** the weekly *nixpkgs PRs merged* workflow opens a PR that
