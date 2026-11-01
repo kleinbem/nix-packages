@@ -1,12 +1,7 @@
 name: "Update Langfuse"
 
-# Bumps pkgs/langfuse/default.nix to the latest Langfuse release and opens
-# a PR. Runs on ubuntu-latest — the underlying pnpm deps fetch is one-shot
-# per version bump, and the resulting build is cached to Attic for downstream
-# warm-up workflows.
-#
-# Update cadence: Langfuse releases ~2x per week. Weekly CI keeps lag ≤ 1 week.
-# For urgent security releases, trigger manually via workflow_dispatch.
+# Bumps pkgs/langfuse/default.nix to the latest Langfuse release, builds it
+# and opens a PR. Weekly; dispatch it by hand for an urgent release.
 
 on:
   schedule:
@@ -46,11 +41,8 @@ jobs:
         run: |
           chmod +x scripts/update-langfuse.sh
           ./scripts/update-langfuse.sh
-          # update-langfuse.sh's extract_hash() always `git add`s the file as
-          # part of the hash-discovery trick, so a plain (unstaged-only) git
-          # diff here would report "unchanged" even on a real, built bump —
-          # `git diff HEAD` catches staged+unstaged together against the last
-          # commit, regardless of the script's own staging.
+          # The script `git add`s the file, so diff against HEAD: a plain
+          # git diff would miss the staged bump.
           if git diff HEAD --quiet -- pkgs/langfuse/default.nix; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -59,11 +51,8 @@ jobs:
             echo "version=$VER" >> "$GITHUB_OUTPUT"
           fi
 
-      # Was peter-evans/create-pull-request, which does a plain local
-      # `git commit` — unsigned, and can never satisfy this org's
-      # required_signatures branch ruleset, so auto-merge below would never
-      # fire. createCommitOnBranch commits server-side and GitHub signs it
-      # automatically ("Verified", committer=GitHub), no key material needed.
+      # Commits through createCommitOnBranch so GitHub signs the commit;
+      # main requires signed commits, and a local `git commit` would be unsigned.
       - name: Open PR
         id: cpr
         if: steps.update.outputs.changed == 'true'

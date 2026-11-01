@@ -1,17 +1,12 @@
 name: "Update Antigravity"
 
-# Bumps pkgs/antigravity/versions.json to the latest Google Antigravity
-# releases and opens a PR. Hosted runner — this only discovers versions,
-# prefetches hashes (from Google's official CDNs) and verifies the build.
-#
-# Attic warming is NOT done here: once this PR is merged and the meta-workspace
-# (kleinbem/nix) bumps its nix-packages submodule pointer, the self-hosted
-# `build-packages.yaml` there builds + pushes the closure to cache.kleinbem.dev
-# (hosted runners hit the Cloudflare 413, so they never push).
+# Bumps pkgs/antigravity/versions.json to the latest Google releases, verifies
+# the build and opens a PR. Nothing is pushed to Attic here; nix-config's CI
+# does that when it builds the hosts after the lock bump.
 
 on:
   schedule:
-    # Saturdays 05:00 UTC — offset from the meta repo's Sunday update-and-warm.
+    # Saturdays 05:00 UTC.
     - cron: '0 5 * * 6'
   workflow_dispatch:
 
@@ -33,10 +28,8 @@ jobs:
 
       - uses: actions/checkout@v7.0.1
         with:
-          # App token (TF-distributed APP_ID + APP_PRIVATE_KEY) rather than the
-          # built-in GITHUB_TOKEN: an App identity can open + merge PRs
-          # regardless of the repo's "Allow Actions to create/approve PRs"
-          # setting, and its PRs trigger downstream workflows.
+          # App token, not GITHUB_TOKEN: the App can open and merge PRs whatever
+          # the repo's Actions PR setting, and its PRs trigger other workflows.
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 
@@ -71,11 +64,8 @@ jobs:
             .#packages.x86_64-linux.google-antigravity-ide-no-fhs \
             .#packages.x86_64-linux.google-antigravity-cli
 
-      # Was peter-evans/create-pull-request, which does a plain local
-      # `git commit` — unsigned, and can never satisfy this org's
-      # required_signatures branch ruleset, so auto-merge below would never
-      # fire. createCommitOnBranch commits server-side and GitHub signs it
-      # automatically ("Verified", committer=GitHub), no key material needed.
+      # Commits through createCommitOnBranch so GitHub signs the commit;
+      # main requires signed commits, and a local `git commit` would be unsigned.
       - name: Open PR
         id: cpr
         if: steps.update.outputs.changed == 'true'
@@ -135,9 +125,8 @@ jobs:
 
           echo "pull-request-number=$(gh pr view "$BRANCH_NAME" --json number --jq .number)" >> "$GITHUB_OUTPUT"
 
-      # Fully hands-off: the build-verify step above is the gate, so squash-merge
-      # immediately. Try repo auto-merge first; fall back to a direct merge if
-      # "Allow auto-merge" is off or nothing is blocking.
+      # The verify build above is the gate. Falls back to a direct merge when
+      # auto-merge is refused (disabled, or nothing left to wait for).
       - name: Auto-merge
         if: steps.update.outputs.changed == 'true' && steps.cpr.outputs.pull-request-number != ''
         env:

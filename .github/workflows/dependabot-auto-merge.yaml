@@ -1,11 +1,8 @@
 name: Dependabot auto-merge
 
-# Arms auto-merge on Dependabot's patch and minor updates, so they merge as
-# soon as the required checks pass. Majors stay open for a human: they are the
-# ones that break peer ranges. The app token (APP_ID/APP_PRIVATE_KEY are
-# Dependabot secrets, see nix/infra/github-secrets.tf) makes the app the
-# merger: a merge done with GITHUB_TOKEN would not trigger main's push
-# workflows.
+# Auto-merges Dependabot's patch and minor updates; majors wait for a human.
+# Merges with the app token (Dependabot secrets from nix/infra/github-secrets.tf)
+# because a GITHUB_TOKEN merge would not trigger main's push workflows.
 on: pull_request
 
 permissions:

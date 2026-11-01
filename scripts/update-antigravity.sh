@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 # Update pkgs/antigravity/versions.json to the latest Google Antigravity releases.
 #
-# Discovers the latest versions from Google's OFFICIAL Cloud Run updater
-# endpoints, then pins each artifact by prefetching its hash directly from
-# Google's CDNs (storage.googleapis.com / edgedl.me.gvt1.com). We deliberately
-# do NOT depend on any third-party flake — this script is the whole supply
-# chain, and every hash is computed from the real upstream download.
+# Versions come from Google's own updater endpoints and every hash from the
+# real download on Google's CDNs; no third-party flake in the supply chain.
 #
 # Usage:  ./scripts/update-antigravity.sh
 # Deps:   bash, curl, jq, nix (nix-prefetch-url, nix hash)

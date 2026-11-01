@@ -1,6 +1,5 @@
-# kleinbem.dev — Astro + Svelte + Tailwind static site (kleinbem/kleinbem-site).
-# Static output only (no SSR adapter), so the derivation is just the built
-# `dist/` tree — nix-config's Caddy vhost serves $out directly as its root.
+# kleinbem.dev, the static Astro site (kleinbem/kleinbem-site). $out is the
+# built dist/ tree; nix-config bind-mounts it into core-pi's Caddy as the root.
 #
 # Bump: grab the new commit SHA from the kleinbem-site repo, then
 #   nix run nixpkgs#nix-prefetch-github -- kleinbem kleinbem-site --rev <sha>

@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
 # Update pkgs/buzz/source.json to the latest block/buzz commit.
 #
-# Because all 7 Rust packages (buzz-relay, buzz-cli, buzz-acp, buzz-agent,
-# buzz-dev-mcp, git-credential-nostr, git-sign-nostr) are crates in the same
-# monorepo workspace, they share the exact same source commit, SRI source hash,
-# and workspace Cargo vendor hash.
-#
-# This script:
-#   1. Queries the GitHub API for the latest commit on block/buzz main.
-#   2. Prefetches the source tarball and computes the SRI hash.
-#   3. Temporarily sets a dummy cargoHash to discover the new vendor hash.
-#   4. Updates pkgs/buzz/source.json atomically (updating all 7 packages).
-#   5. Builds all 7 packages, so a broken bump never reaches the auto-merged PR.
+# The 7 Buzz packages are crates of one workspace, so they share this one
+# commit, source hash and Cargo vendor hash. All of them are built at the end,
+# so a broken bump never reaches the auto-merged PR.
 #
 # Usage:  ./scripts/update-buzz-source.sh
 # Deps:   bash, curl, jq, nix (nix-prefetch-url, nix hash)

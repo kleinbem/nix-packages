@@ -1,10 +1,7 @@
 # nixpkgs' Buzz packages, built from a Buzz commit instead of a release.
-#
-# Everything comes from the nixpkgs checkout; this only swaps the source. The
-# packages take it from buzz-cli, so overriding buzz-cli's src moves them all.
-# The dependency hashes (Cargo for the workspace, pnpm for the relay web
-# bundle) change with the commit: run.sh learns them
-# first (an empty hash makes Nix print it). importCargoLock can't be used: the
+# Only the source changes; the packages take it from buzz-cli, so overriding
+# buzz-cli's src moves them all. run.sh learns the Cargo and relay-web pnpm
+# hashes first (an empty hash makes Nix print it). Not importCargoLock: the
 # lockfile has sqlx-core 0.9.0 from both crates.io and git.
 {
   nixpkgs,
