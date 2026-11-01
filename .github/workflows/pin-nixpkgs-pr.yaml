@@ -18,9 +18,6 @@ on:
 jobs:
   pin:
     runs-on: ubuntu-latest
-    env:
-      NAME: ${{ inputs.name }}
-      REV: ${{ inputs.rev }}
     steps:
       - name: Mint GitHub App installation token
         id: app-token
@@ -38,23 +35,8 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           nix-path: nixpkgs=channel:nixos-unstable
 
-      - name: Pin
-        run: ./scripts/pin-nixpkgs-pr.sh "$NAME" "$REV"
-
-      - name: Evaluate the pinned packages
-        run: |
-          for attr in $(jq -r --arg n "$NAME" '.[$n].attrs[]' nixpkgs-prs.json); do
-            nix eval --raw ".#legacyPackages.x86_64-linux.$attr.drvPath"
-            echo
-          done
-
-      - name: Open the PR
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          pr=$(jq -r --arg n "$NAME" '.[$n].pr' nixpkgs-prs.json)
-          ./scripts/open-signed-pr.sh "pin/$NAME" "chore($NAME): pin to ${REV:0:12}" \
-            "Pins \`$NAME\` to $REV, the state of NixOS/nixpkgs#$pr this fleet runs. nix-config's build-all builds it with the fleet's nixpkgs before it reaches a host.
-
-          🤖 Opened by the pin-nixpkgs-pr workflow." \
-            nixpkgs-prs.json
+      - uses: kleinbem-dev/nix-holds/pr-pin@e990c354631ac19d93e9d0100e330f71f895795b
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          name: ${{ inputs.name }}
+          rev: ${{ inputs.rev }}

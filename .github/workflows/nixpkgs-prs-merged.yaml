@@ -28,28 +28,6 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           nix-path: nixpkgs=channel:nixos-unstable
 
-      - name: Open a PR per merged entry
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          for name in $(./scripts/nixpkgs-prs-merged.sh); do
-            git checkout -- nixpkgs-prs.json
-            pr=$(jq -r --arg n "$name" '.[$n].pr' nixpkgs-prs.json)
-            modules=$(jq -r --arg n "$name" '.[$n].modules // {} | keys | join(", ")' nixpkgs-prs.json)
-            jq --indent 2 --arg n "$name" 'del(.[$n])' nixpkgs-prs.json > nixpkgs-prs.json.new
-            mv nixpkgs-prs.json.new nixpkgs-prs.json
-            body="nixpkgs has \`$name\`'s packages in the same or a newer version (NixOS/nixpkgs#$pr), so this uses nixpkgs' packages instead."
-            if [ -n "$modules" ]; then
-              ./scripts/open-signed-pr.sh "nixpkgs-merged/$name" "chore($name): use nixpkgs' packages" \
-                "$body
-
-          Draft: nix-config imports the module(s) $modules from this flake. Switch nix-config to nixpkgs' own module first, then mark this ready.
-
-          🤖 Opened by the nixpkgs-prs-merged workflow." --draft nixpkgs-prs.json
-            else
-              ./scripts/open-signed-pr.sh "nixpkgs-merged/$name" "chore($name): use nixpkgs' packages" \
-                "$body
-
-          🤖 Opened by the nixpkgs-prs-merged workflow." nixpkgs-prs.json
-            fi
-          done
+      - uses: kleinbem-dev/nix-holds/pr-merged@e990c354631ac19d93e9d0100e330f71f895795b
+        with:
+          token: ${{ steps.app-token.outputs.token }}

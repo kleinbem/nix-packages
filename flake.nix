@@ -10,29 +10,48 @@
     git-hooks.inputs.nixpkgs.follows = "nixpkgs";
     nix-devshells.url = "github:kleinbem/nix-devshells";
     nix-devshells.inputs.nixpkgs.follows = "nixpkgs";
+    # Packages from our open nixpkgs PRs (nixpkgs-prs.json).
+    nix-holds.url = "github:kleinbem-dev/nix-holds";
+    nix-holds.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
     inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
+    let
       systems = [
         "x86_64-linux"
         "aarch64-linux"
         "x86_64-darwin"
         "aarch64-darwin"
       ];
+      prs = inputs.nix-holds.lib.mkPrs { prs = ./nixpkgs-prs.json; };
+    in
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      inherit systems;
       imports = [ ];
 
       flake = {
         overlays.default = import ./overlay.nix;
         # Plus the modules of our open nixpkgs PRs (services.mesh-llm), exactly
         # as in the PR; they need the overlay (or the packages) for their
-        # packages. See lib/nixpkgs-prs.nix.
+        # packages. See nix-holds' mkPrs.
         nixosModules = {
           langfuse = import ./modules/nixos/langfuse.nix;
           buzz-relay = import ./modules/nixos/buzz-relay.nix;
         }
-        // (import ./lib/nixpkgs-prs.nix { inherit (inputs.nixpkgs) lib; }).nixosModules;
+        // prs.nixosModules;
+
+        # For nix-holds' pr-pin and pr-merged actions: the PR packages and
+        # whether nixpkgs has caught up with them.
+        nixpkgsPrs = inputs.nixpkgs.lib.genAttrs systems (
+          system:
+          prs.checks (
+            import inputs.nixpkgs {
+              inherit system;
+              config.allowUnfree = true;
+            }
+          )
+        );
       };
 
       perSystem =
@@ -48,7 +67,10 @@
             inherit system;
             config.allowUnfree = true;
           };
-          legacyPkgs = import ./default.nix { pkgs = pkgsUnfree; };
+          legacyPkgs = import ./default.nix {
+            pkgs = pkgsUnfree;
+            inherit (inputs) nix-holds;
+          };
         in
         {
           formatter = inputs.nix-devshells.formatter.${system};
