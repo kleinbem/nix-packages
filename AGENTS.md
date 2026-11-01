@@ -15,6 +15,7 @@ Custom package derivations for the fleet, structured as a
 | `ci.nix` | CI build set. |
 | `canary/` | Nightly canaries building nixpkgs packages against upstream main (`canary/mesh-llm`, `canary/buzz`, `canary/buzz-app`; workflows `canary-<app>.yaml`), to catch packaging breakage before the next release. |
 | `watch/upstream-prs/` | Weekly look at our open upstream PRs (`prs.txt`, workflow `watch-upstream-prs.yaml`): conflicts, merges, new reviews or CI runs go into one issue. |
+| `watch/maintained/` | Daily look at the nixpkgs packages and modules Martin maintains, listed from nixpkgs itself (workflow `watch-maintained.yaml`): PRs and issues by others, review requests, failed Hydra builds and nixpkgs-update runs go into one issue. |
 
 ## Conventions
 

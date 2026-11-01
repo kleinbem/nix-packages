@@ -1,0 +1,61 @@
+name: "Watch: maintained nixpkgs packages"
+
+# Checks the nixpkgs packages and modules Martin maintains once a day: open PRs
+# and issues by others (r-ryantm updates included), review requests, failed
+# Hydra builds and failed nixpkgs-update runs. When something is new, the
+# report goes into one issue (opened or commented on). Committers merge
+# unanswered PRs after about a week, so a daily look keeps that window.
+# Quiet days leave no trace.
+
+on:
+  schedule:
+    - cron: '41 6 * * *'
+  workflow_dispatch:
+    inputs:
+      since:
+        description: Report activity since this ISO date (default 26 hours ago)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: watch-maintained
+  cancel-in-progress: false
+
+env:
+  ISSUE_TITLE: "Watch: maintained nixpkgs packages"
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install brotli
+        run: command -v brotli || sudo apt-get install -y --no-install-recommends brotli
+
+      - name: Check packages
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SINCE: ${{ inputs.since }}
+        run: watch/maintained/run.sh | tee report.md
+
+      - name: Report
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --limit 100 --json number,title \
+            --jq "map(select(.title == \"$ISSUE_TITLE\"))[0].number // empty")"
+          if [[ -n "$issue" ]]; then
+            gh issue comment "$issue" --body-file report.md
+          else
+            gh issue create --title "$ISSUE_TITLE" --body-file report.md
+          fi
