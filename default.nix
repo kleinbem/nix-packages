@@ -10,10 +10,10 @@
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
   # The flake passes its input; plain imports (overlay.nix, nix-holds-fleet)
   # take the commit in flake.lock.
-  nix-holds ?
+  nix-detour ?
     let
       lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-      locked = lock.nodes.${lock.nodes.root.inputs.nix-holds}.locked;
+      locked = lock.nodes.${lock.nodes.root.inputs.nix-detour}.locked;
     in
     builtins.fetchTarball {
       url = "https://github.com/${locked.owner}/${locked.repo}/archive/${locked.rev}.tar.gz";
@@ -21,8 +21,8 @@
     },
 }:
 
-# Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-holds).
-(import "${nix-holds}/prs.nix" {
+# Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-detour).
+(import "${nix-detour}/prs.nix" {
   inherit (pkgs) lib;
   prs = ./nixpkgs-prs.json;
 }).packages
@@ -107,7 +107,7 @@
   agent-task-queue = pkgs.callPackage ./pkgs/agent-task-queue/package.nix { };
 
   # MCP server for GIMP 3 (tifyr/gimp3-mcp); nix-presets' mcp.nix also
-  # installs the GIMP plugin from its sdist. Own package so nix-holds can
+  # installs the GIMP plugin from its sdist. Own package so nix-detour can
   # hold it while it needs mcp 1.x.
   gimp3-mcp = pkgs.callPackage ./pkgs/gimp3-mcp/package.nix { };
 
