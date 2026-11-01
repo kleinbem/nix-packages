@@ -62,9 +62,9 @@ canaries).
 The lifecycle of an entry:
 
 1. **Add:** `nix run github:kleinbem-dev/nix-holds -- pr add NAME --pr N
-   --repo kleinbem/nixpkgs --attrs a,b --rev SHA` (plus `--scope` for
+   --repo kleinbem/nixpkgs --attrs a,b --rev SHA` (plus `--scope c,d` for
    packages of the PR the attributes need but that stay unexported,
-   `--module` for its NixOS modules), in a PR. Always with `--rev`: an
+   `--module NAME=PATH` for its NixOS modules), in a PR. Always with `--rev`: an
    entry without a pin doesn't evaluate.
 2. **Pin:** to move an entry to a newer commit of its PR, run the *Pin
    nixpkgs PR* workflow with the entry and a commit whose packages are
