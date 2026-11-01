@@ -10,8 +10,14 @@ Mesh-LLM/mesh-llm#2630
 Mesh-LLM/mesh-llm#2648
 # Not ours: vendored as patches in skippy-native-runtime.
 ggml-org/llama.cpp#26103
-# Not ours: nix-detour waits on it (fastmcp; the posthog fix #578265 was closed 10-28).
+# Not ours: the fixes behind nix-detour-fleet's holds.
+# fastmcp (agent-task-queue, oterm):
 NixOS/nixpkgs#563493
+# posthog (aider-chat, open-webui):
+NixOS/nixpkgs#578265
+NixOS/nixpkgs#581270
+# qdrant's build failure:
+NixOS/nixpkgs#553191
 #
 # Our nixpkgs PRs:
 NixOS/nixpkgs#571722
