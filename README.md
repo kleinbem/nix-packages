@@ -53,7 +53,7 @@ is everything else the fleet needs.
 
 What we maintain in nixpkgs is consumed from there, never copied here. While
 a package only exists on a nixpkgs PR, `nixpkgs-prs.json` pins the PR at one
-commit and [nix-holds](https://github.com/kleinbem-dev/nix-holds)' `mkPrs`
+commit and [nix-detour](https://github.com/kleinbem-dev/nix-detour)'s `mkPrs`
 builds the PR's own package files (and modules) against this flake's
 nixpkgs. Real derivations live here only for software nobody has in nixpkgs
 yet, or for a channel nixpkgs doesn't carry (upstream `main` for the
@@ -61,7 +61,7 @@ canaries).
 
 The lifecycle of an entry:
 
-1. **Add:** `nix run github:kleinbem-dev/nix-holds -- pr add NAME --pr N
+1. **Add:** `nix run github:kleinbem-dev/nix-detour -- pr add NAME --pr N
    --repo kleinbem/nixpkgs --attrs a,b --rev SHA` (plus `--scope c,d` for
    packages of the PR the attributes need but that stay unexported,
    `--module NAME=PATH` for its NixOS modules), in a PR. Always with `--rev`: an
@@ -76,7 +76,7 @@ The lifecycle of an entry:
    version. For an entry with modules it's a draft: switch nix-config to
    nixpkgs' module first.
 
-Both workflows are nix-holds' `pr-pin` and `pr-merged` actions.
+Both workflows are nix-detour's `pr-pin` and `pr-merged` actions.
 
 ## Usage
 

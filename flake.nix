@@ -11,8 +11,8 @@
     nix-devshells.url = "github:kleinbem/nix-devshells";
     nix-devshells.inputs.nixpkgs.follows = "nixpkgs";
     # Packages from our open nixpkgs PRs (nixpkgs-prs.json).
-    nix-holds.url = "github:kleinbem-dev/nix-holds";
-    nix-holds.inputs.nixpkgs.follows = "nixpkgs";
+    nix-detour.url = "github:kleinbem-dev/nix-detour";
+    nix-detour.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -24,7 +24,7 @@
         "x86_64-darwin"
         "aarch64-darwin"
       ];
-      prs = inputs.nix-holds.lib.mkPrs { prs = ./nixpkgs-prs.json; };
+      prs = inputs.nix-detour.lib.mkPrs { prs = ./nixpkgs-prs.json; };
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
       inherit systems;
@@ -34,14 +34,14 @@
         overlays.default = import ./overlay.nix;
         # Plus the modules of our open nixpkgs PRs (services.mesh-llm), exactly
         # as in the PR; they need the overlay (or the packages) for their
-        # packages. See nix-holds' mkPrs.
+        # packages. See nix-detour's mkPrs.
         nixosModules = {
           langfuse = import ./modules/nixos/langfuse.nix;
           buzz-relay = import ./modules/nixos/buzz-relay.nix;
         }
         // prs.nixosModules;
 
-        # For nix-holds' pr-pin and pr-merged actions: the PR packages and
+        # For nix-detour's pr-pin and pr-merged actions: the PR packages and
         # whether nixpkgs has caught up with them.
         nixpkgsPrs = inputs.nixpkgs.lib.genAttrs systems (
           system:
@@ -69,7 +69,7 @@
           };
           legacyPkgs = import ./default.nix {
             pkgs = pkgsUnfree;
-            inherit (inputs) nix-holds;
+            inherit (inputs) nix-detour;
           };
         in
         {
