@@ -1,20 +1,10 @@
 #!/usr/bin/env bash
 # Prints a Markdown report on the nixpkgs packages and NixOS modules MAINTAINER
-# (default kleinbem) maintains, and exits 0. The list comes from nixpkgs itself:
-# packages from the nixos-unstable channel's packages.json, modules from a
-# git grep of nixos/modules on master. So it grows on its own as PRs merge.
-#
-# For each one it lists:
-# - open PRs and issues by others that name it in the title (r-ryantm updates,
-#   fixes, build failure reports), plus open PRs requesting MAINTAINER's review;
-# - failed builds on Hydra (nixpkgs/trunk; the module's NixOS test on
-#   nixos/trunk-combined);
-# - a failed nixpkgs-update (r-ryantm) run.
-#
-# Writes "changed=true" to $GITHUB_OUTPUT when something is new since SINCE
-# (ISO 8601, default 26 hours ago): a PR or issue created or updated, a build
-# that failed, an update run that failed. Old items stay in the report while
-# they are open, but alone they don't make it post.
+# (default kleinbem) maintains, read from nixpkgs itself so the list grows on
+# its own: others' open PRs and issues naming them, review requests, failed
+# Hydra builds and failed nixpkgs-update runs.
+# Writes "changed=true" to $GITHUB_OUTPUT only when something is new since
+# SINCE (ISO 8601, default 26 hours ago); old open items stay in the report.
 set -euo pipefail
 
 maintainer="${MAINTAINER:-kleinbem}"

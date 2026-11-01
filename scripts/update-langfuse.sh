@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
-# Update pkgs/langfuse/default.nix to the latest Langfuse release.
-#
-# Langfuse releases roughly 2x per week. This script:
-#   1. Queries GitHub for the latest release tag.
-#   2. Zeroes the source hash, runs nix build, parses the "got:" hash.
-#   3. Checks if the pnpm major version changed and updates pnpm_NN.
-#   4. Zeroes the pnpm deps hash, runs nix build again, parses the "got:" hash.
-#   5. Verifies the full build succeeds.
+# Update pkgs/langfuse/default.nix to the latest Langfuse release: version,
+# source hash, pnpm major and pnpm deps hash, then a full build.
 #
 # Usage:  ./scripts/update-langfuse.sh
 # Deps:   bash, curl, jq, nix, python3
@@ -40,13 +34,8 @@ PY
 }
 
 # Run nix build and extract the "got:" hash from the mismatch error.
-# Must git-add first: Nix evaluates from the git index, not the working tree.
-# nix build is *expected* to fail here (that's how the real hash gets
-# revealed) — under `set -o pipefail` its non-zero exit would otherwise
-# propagate through the pipe and trip `set -e` on the `SRC_HASH=$(...)`/
-# `PNPM_HASH=$(...)` assignment before the friendly `err` check below ever
-# runs, aborting the script with no message. `|| true` absorbs that expected
-# failure so only a genuinely absent hash reaches the check.
+# The build is meant to fail; `|| true` keeps pipefail from aborting the script
+# before the caller's own error check.
 extract_hash() {
   git add "$PKG"
   (nix build ".#langfuse" 2>&1 || true) | grep -oP '(?<=got:    )sha256-\S+' | head -1
@@ -83,13 +72,9 @@ if [[ $PNPM_FIELD =~ pnpm@([0-9]+)\. ]]; then
   NEW_MAJOR="${BASH_REMATCH[1]}"
   CURRENT_MAJOR=$(grep -oP 'pnpm_\K[0-9]+' "$PKG" | head -1)
   if [[ $NEW_MAJOR != "$CURRENT_MAJOR" ]]; then
-    # nixpkgs doesn't always package the newest pnpm major the moment
-    # upstream adopts it (e.g. pnpm 12 landed in langfuse well before
-    # nixpkgs had a pnpm_12 attribute — see the 2026-09-06 outage). Renaming
-    # to a nonexistent attribute turns step 4 into a silent-ish eval-error
-    # exit instead of a real hash mismatch, so probe first and fall back to
-    # the current major — the lockfile is usually forward-compatible; if it
-    # truly isn't, the verify build in step 5 will fail loudly and honestly.
+    # nixpkgs can lag behind upstream's pnpm major, and a missing pnpm_NN
+    # breaks the hash step with an eval error. Keep the current major then;
+    # if the lockfile really needs the new one, the verify build fails.
     SYSTEM=$(nix eval --impure --raw --expr 'builtins.currentSystem')
     if nix eval ".#legacyPackages.${SYSTEM}.pnpm_${NEW_MAJOR}" >/dev/null 2>&1; then
       log "pnpm major changed: $CURRENT_MAJOR → $NEW_MAJOR"

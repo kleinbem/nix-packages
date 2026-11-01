@@ -1,11 +1,9 @@
 name: "Watch: maintained nixpkgs packages"
 
-# Checks the nixpkgs packages and modules Martin maintains once a day: open PRs
-# and issues by others (r-ryantm updates included), review requests, failed
-# Hydra builds and failed nixpkgs-update runs. When something is new, the
-# report goes into one issue (opened or commented on). Committers merge
-# unanswered PRs after about a week, so a daily look keeps that window.
-# Quiet days leave no trace.
+# Daily check of the nixpkgs packages and modules Martin maintains: others'
+# PRs and issues, review requests, failed Hydra and nixpkgs-update runs. New
+# findings go into one issue. Daily because committers merge unanswered PRs
+# after about a week.
 
 on:
   schedule:

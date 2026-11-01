@@ -1,12 +1,6 @@
-# Google Antigravity (agentic IDE / 2.0 app) — vendored, self-owned package.
-#
-# Provenance: derivation logic adapted from jacopone/antigravity-nix (audited
-# 2026-05-31). All binaries are fetched from Google's official CDNs
-# (storage.googleapis.com/antigravity-public and edgedl.me.gvt1.com) with
-# SHA hashes pinned in ./versions.json. We deliberately do NOT depend on the
-# upstream flake or its auto-update bot — bump ./versions.json yourself and
-# re-verify hashes with:
-#   nix store prefetch-file --hash-type sha256 <url>
+# Google Antigravity, adapted from jacopone/antigravity-nix but without its
+# flake or update bot: binaries come straight from Google's CDNs, pinned in
+# ./versions.json, which scripts/update-antigravity.sh bumps.
 #
 # `appType` selects which product this derivation builds:
 #   "Antigravity 2.0"  -> the standalone 2.0 orchestration app  (binary: antigravity)
@@ -373,10 +367,8 @@ let
   };
 
   # ── Non-FHS variant (Linux) ────────────────────────────────
-  # Uses autoPatchelfHook instead of buildFHSEnv.
-  # This avoids the bubblewrap sandbox that sets the kernel
-  # "no new privileges" flag, which prevents sudo from working
-  # in the integrated terminal.
+  # autoPatchelfHook instead of buildFHSEnv: the bubblewrap sandbox sets
+  # no-new-privileges, which breaks sudo in the integrated terminal.
 
   no-fhs-package = stdenv.mkDerivation {
     inherit pname version meta;

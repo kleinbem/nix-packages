@@ -2,12 +2,8 @@
 # Update pkgs/oh-my-pi/{default.nix,versions.json} to the latest
 # can1357/oh-my-pi GitHub release.
 #
-# oh-my-pi is vendored as a prebuilt-binary derivation (see
-# pkgs/oh-my-pi/default.nix's header comment for why) — upstream publishes
-# real GitHub Releases binaries (omp-<platform>-<arch>) rather than requiring
-# a build from source. This script re-derives the per-platform hashes
-# directly from those release assets and bumps both the `version = "..."`
-# literal in default.nix and the versions.json entry it reads from.
+# Hashes each platform's release binary and bumps both the version in
+# default.nix and the versions.json entry it reads.
 #
 # Usage:  ./scripts/update-oh-my-pi.sh
 # Deps:   bash, curl, jq, nix (nix-prefetch-url, nix hash)

@@ -1,23 +1,11 @@
-# Oh My Pi (omp, github.com/can1357/oh-my-pi) — terminal coding-agent CLI.
+# Oh My Pi (omp), upstream's prebuilt release binaries, pinned in
+# ./versions.json; scripts/update-oh-my-pi.sh bumps them.
 #
-# Vendored as a prebuilt-binary derivation (same pattern as
-# pkgs/antigravity/cli.nix): upstream publishes real GitHub Releases binaries
-# (omp-<platform>-<arch>) rather than requiring a build from source — the
-# project's own multi-stage Dockerfile (Rust/Bazel/Bun toolchain) exists for
-# their own release pipeline, not as the intended way to obtain the tool.
-# Hashes pinned in ./versions.json. Bump the version + re-fetch hashes with:
-#   nix hash file --sri <url>
-#
-# NOT autoPatchelfHook: the binary is a `bun build --compile` output, which
-# embeds its actual application bytecode as a fixed-offset-from-EOF trailer
-# appended to the plain bun executable. patchelf rewriting the ELF interpreter
-# to a (much longer) Nix store path grows the file — confirmed live
-# 2026-08-05 (+2480 bytes vs the original download) — which shifts that
-# trailer's expected offset and silently breaks the embedded-payload lookup:
-# the binary still runs, but falls through to plain bun's own generic CLI
-# instead of omp's. Wrapping with an explicit dynamic-linker invocation
-# (`ld-linux-x86-64.so.2 --library-path ... <unmodified binary>`) leaves the
-# original bytes completely untouched and was confirmed working.
+# No patchelf: the binary is a `bun build --compile` output whose app payload
+# sits at a fixed offset from EOF. Changing the file size breaks the lookup and
+# omp silently runs as plain bun. So the wrapper runs the untouched binary
+# through glibc's dynamic linker instead. Fixed in oven-sh/bun#26923
+# (oven-sh/bun#4103); patchelf works once omp ships a bun with it.
 {
   lib,
   stdenv,
@@ -50,11 +38,7 @@ stdenv.mkDerivation {
 
   # Not an archive — the release asset IS the binary.
   dontUnpack = true;
-  # stdenv's default fixupPhase strips ELF binaries even without
-  # autoPatchelfHook — that alone was enough to break the embedded-payload
-  # trailer (see top-of-file comment), confirmed live 2026-08-05 via a raw
-  # byte comparison (e_shoff moved) even after switching away from
-  # patchelf entirely.
+  # Stripping also moves the payload (see the top of the file).
   dontStrip = true;
 
   nativeBuildInputs = [ makeWrapper ];

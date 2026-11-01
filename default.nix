@@ -1,10 +1,5 @@
-# This file describes your repository contents.
-# It should return a set of nix derivations
-# and optionally the special attributes `lib`, `modules` and `overlays`.
-# It should NOT import <nixpkgs>. Instead, you should take pkgs as an argument.
-# Having pkgs default to <nixpkgs> is fine though, and it lets you use short
-# commands such as:
-#     nix-build -A mypackage
+# The package set. Takes pkgs as an argument; the default only makes
+# `nix-build -A <package>` work without one.
 
 {
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
@@ -31,14 +26,11 @@
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
 
-  # kleinbem.dev — see pkgs/kleinbem-site/default.nix header for the bump
-  # procedure (pinned to a commit SHA, same pattern as langfuse above).
+  # kleinbem.dev; pkgs/kleinbem-site/default.nix's header has the bump steps.
   kleinbem-site = pkgs.callPackage ./pkgs/kleinbem-site { };
 
-  # Google Antigravity 2.0 — vendored from the audited jacopone derivation,
-  # binaries pinned to Google's official CDNs in pkgs/antigravity/versions.json.
-  # NOTE: namespaced under `google-antigravity*` to avoid clobbering nixpkgs'
-  # own `antigravity` attr (which derives `antigravity-fhs = antigravity.fhs`).
+  # Google Antigravity. Named google-antigravity* so it doesn't clobber
+  # nixpkgs' own `antigravity`.
   google-antigravity = pkgs.callPackage ./pkgs/antigravity/package.nix {
     appType = "Antigravity 2.0";
   };
@@ -53,9 +45,7 @@
   };
   google-antigravity-cli = pkgs.callPackage ./pkgs/antigravity/cli.nix { };
 
-  # Terminal coding-agent CLI. See pkgs/oh-my-pi/default.nix header for
-  # provenance (vendored prebuilt-binary release, same pattern as
-  # google-antigravity-cli above).
+  # Terminal coding-agent CLI (prebuilt release binary).
   oh-my-pi = pkgs.callPackage ./pkgs/oh-my-pi { };
 
   # Command-line tool for downloading APK files from Google Play, F-Droid, and APKPure

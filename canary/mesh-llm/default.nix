@@ -84,11 +84,10 @@ let
     hash = "sha256-Jwy6G9UQn0LQM1D2BAYCRWBGTbFzwOOH2R8EJtO9JW0=";
   };
 
-  # The hosts a program tries to reach while it starts serving the model, through
-  # a local proxy that refuses every connection (the sandbox has no network
-  # anyway). Fails on a host `expected` doesn't list: a new request. A listed
-  # host that wasn't seen is only reported: which requests fall inside the
-  # window varies with timing (the catalog retries).
+  # The hosts a program tries to reach while it starts serving the model, seen
+  # through a local proxy that refuses every connection. A host missing from
+  # `expected` fails the build; a listed host not seen is only reported, since
+  # timing decides which requests fall inside the window.
   startupHosts =
     {
       name,

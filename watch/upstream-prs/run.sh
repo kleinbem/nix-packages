@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # Prints a Markdown report of what happened on the watched upstream PRs and
-# issues since
-# SINCE (ISO 8601, default 8 days ago) and exits 0. PRS_FILE overrides the list;
-# activity by the PR author and by IGNORE (space-separated logins) is skipped. Writes "changed=true" to
-# $GITHUB_OUTPUT when something needs a look: a merge conflict, the PR merged
-# or closed, new comments or reviews, or CI runs beyond the security checks.
+# issues since SINCE (ISO 8601, default 8 days ago). PRS_FILE overrides the
+# list; comments and reviews by the author and IGNORE (logins) are skipped.
+# Writes "changed=true" to $GITHUB_OUTPUT on a conflict, merge or close, new
+# comments or reviews, or CI runs beyond the always-on checks.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
