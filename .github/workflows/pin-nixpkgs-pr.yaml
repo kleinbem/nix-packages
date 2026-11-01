@@ -35,7 +35,7 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           nix-path: nixpkgs=channel:nixos-unstable
 
-      - uses: kleinbem-dev/nix-holds/pr-pin@e990c354631ac19d93e9d0100e330f71f895795b
+      - uses: kleinbem-dev/nix-holds/pr-pin@f34fae3a16d9e22e8e09a1e300255eef16288bbe # v0.2.0
         with:
           token: ${{ steps.app-token.outputs.token }}
           name: ${{ inputs.name }}
