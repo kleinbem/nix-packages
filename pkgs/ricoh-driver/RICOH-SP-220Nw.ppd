@@ -1,0 +1,67 @@
+*PPD-Adobe: "4.3"
+*FormatVersion: "4.3"
+*FileVersion: "2.0"
+*LanguageVersion: English
+*LanguageEncoding: ISOLatin1
+*PCFileName: "RSP220PW.PPD"
+*Manufacturer: "Ricoh"
+*Product: "(SP 220Nw)"
+*ModelName: "Ricoh SP 220Nw"
+*ShortNickName: "Ricoh SP 220Nw"
+*NickName: "Ricoh SP 220Nw (Driverless PWG Raster)"
+*PSVersion: "(3010.000) 0"
+*LanguageLevel: "3"
+*ColorDevice: False
+*DefaultColorSpace: Gray
+*FileSystem: False
+*Throughput: "23"
+*LandscapeOrientation: Plus90
+*TTRasterizer: Type42
+*cupsVersion: 2.4
+*cupsFilter2: "image/pwg-raster image/pwg-raster 0 -"
+
+*OpenUI *PageSize/Media Size: PickOne
+*OrderDependency: 10 AnySetup *PageSize
+*DefaultPageSize: A4
+*PageSize A4/A4 (210 x 297 mm): "<</PageSize[595 842]/ImagingBBox null>>setpagedevice"
+*PageSize Letter/Letter (8.5" x 11"): "<</PageSize[612 792]/ImagingBBox null>>setpagedevice"
+*PageSize Legal/Legal (8.5" x 14"): "<</PageSize[612 1008]/ImagingBBox null>>setpagedevice"
+*PageSize A5/A5 (148 x 210 mm): "<</PageSize[420 595]/ImagingBBox null>>setpagedevice"
+*PageSize B5/B5 JIS (182 x 257 mm): "<</PageSize[516 729]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageSize
+
+*OpenUI *PageRegion/Media Size: PickOne
+*OrderDependency: 10 AnySetup *PageRegion
+*DefaultPageRegion: A4
+*PageRegion A4/A4 (210 x 297 mm): "<</PageSize[595 842]/ImagingBBox null>>setpagedevice"
+*PageRegion Letter/Letter (8.5" x 11"): "<</PageSize[612 792]/ImagingBBox null>>setpagedevice"
+*PageRegion Legal/Legal (8.5" x 14"): "<</PageSize[612 1008]/ImagingBBox null>>setpagedevice"
+*PageRegion A5/A5 (148 x 210 mm): "<</PageSize[420 595]/ImagingBBox null>>setpagedevice"
+*PageRegion B5/B5 JIS (182 x 257 mm): "<</PageSize[516 729]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageRegion
+
+*DefaultImageableArea: A4
+*ImageableArea A4/A4 (210 x 297 mm): "12 12 583 830"
+*ImageableArea Letter/Letter (8.5" x 11"): "12 12 600 780"
+*ImageableArea Legal/Legal (8.5" x 14"): "12 12 600 996"
+*ImageableArea A5/A5 (148 x 210 mm): "12 12 408 583"
+*ImageableArea B5/B5 JIS (182 x 257 mm): "12 12 504 717"
+
+*DefaultPaperDimension: A4
+*PaperDimension A4/A4 (210 x 297 mm): "595 842"
+*PaperDimension Letter/Letter (8.5" x 11"): "612 792"
+*PaperDimension Legal/Legal (8.5" x 14"): "612 1008"
+*PaperDimension A5/A5 (148 x 210 mm): "420 595"
+*PaperDimension B5/B5 JIS (182 x 257 mm): "516 729"
+
+*OpenUI *ColorModel/Color Mode: PickOne
+*OrderDependency: 10 AnySetup *ColorModel
+*DefaultColorModel: Gray
+*ColorModel Gray/Grayscale: "<</cupsColorSpace 18/cupsBitsPerColor 8/cupsColorOrder 0/cupsCompression 0/HWResolution[600 600]>>setpagedevice"
+*CloseUI: *ColorModel
+
+*OpenUI *Resolution/Resolution: PickOne
+*OrderDependency: 20 AnySetup *Resolution
+*DefaultResolution: 600dpi
+*Resolution 600dpi/600 dpi: "<</HWResolution[600 600]>>setpagedevice"
+*CloseUI: *Resolution
