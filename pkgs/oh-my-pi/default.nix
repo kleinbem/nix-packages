@@ -4,7 +4,8 @@
 # No patchelf: the binary is a `bun build --compile` output whose app payload
 # sits at a fixed offset from EOF. Changing the file size breaks the lookup and
 # omp silently runs as plain bun. So the wrapper runs the untouched binary
-# through glibc's dynamic linker instead.
+# through glibc's dynamic linker instead. Fixed in oven-sh/bun#26923
+# (oven-sh/bun#4103); patchelf works once omp ships a bun with it.
 {
   lib,
   stdenv,

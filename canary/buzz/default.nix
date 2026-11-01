@@ -2,7 +2,8 @@
 # Only the source changes; the packages take it from buzz-cli, so overriding
 # buzz-cli's src moves them all. run.sh learns the Cargo and relay-web pnpm
 # hashes first (an empty hash makes Nix print it). Not importCargoLock: the
-# lockfile has sqlx-core 0.9.0 from both crates.io and git.
+# lockfile has sqlx-core 0.9.0 from both crates.io and git, and it keys crates
+# by name-version (NixOS/nixpkgs#183344).
 {
   nixpkgs,
   rev,
