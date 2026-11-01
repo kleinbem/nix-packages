@@ -8,7 +8,7 @@
 
 {
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
-  # The flake passes its input; plain imports (overlay.nix, nix-holds-fleet)
+  # The flake passes its input; plain imports (overlay.nix, nix-detour-fleet)
   # take the commit in flake.lock.
   nix-detour ?
     let
