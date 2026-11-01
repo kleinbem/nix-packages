@@ -15,9 +15,15 @@ python3Packages.buildPythonApplication (finalAttrs: {
     hash = "sha256-OVFKg9q7KZQcToiRpagphQ3ucXB/ymuRsPzsEwSBiHk=";
   };
 
+  # mcp 2: FastMCP is MCPServer, and only a ToolError's message reaches the
+  # client. Upstream still pins mcp<2; with mcp 1 (a held nixpkgs) the
+  # package builds unpatched.
+  # no-link: not reported upstream yet; drop with a gimp3-mcp release that
+  # supports mcp 2.
+  patches = lib.optional (lib.versionAtLeast python3Packages.mcp.version "2") ./mcp-2.patch;
+
   build-system = [ python3Packages.hatchling ];
 
-  # Needs mcp 1.x: mcp 2 removed mcp.server.fastmcp, which the server imports.
   dependencies = [ python3Packages.mcp ];
 
   pythonImportsCheck = [ "gimp3_mcp" ];
