@@ -26,8 +26,8 @@
     "pr": 580190,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "ca384397156ea59eabc406c58c07564f124b8d8c",
-    "narHash": "sha256-rDCluiNtVUHS8ZxLD12sfuA9j8yQs1c2PdcTSZgysqg=",
+    "rev": "d1ab63ede384d95074f7e8a7b29f84515a2111d9",
+    "narHash": "sha256-TYLEQrtmeBIAkZwzH5zuhdBGXTijXoUDRQ49fyMH/fA=",
     "attrs": [
       "garage-ui"
     ]
