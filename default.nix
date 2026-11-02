@@ -84,6 +84,12 @@
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
   aittributor = pkgs.callPackage ./pkgs/aittributor/package.nix { };
 
+  # Proof-of-origin token server Music Assistant's YouTube Music provider needs
+  # (the HAOS add-on ships it; nixpkgs only has the yt-dlp plugin side).
+  bgutil-ytdlp-pot-provider-server =
+    pkgs.callPackage ./pkgs/bgutil-ytdlp-pot-provider-server/package.nix
+      { };
+
   # Merges system, user and repo lefthook configs into one set of git hooks (block/lhm).
   # In nixpkgs form (by-name package.nix) for a later nixpkgs PR.
   lhm = pkgs.callPackage ./pkgs/lhm/package.nix { };
