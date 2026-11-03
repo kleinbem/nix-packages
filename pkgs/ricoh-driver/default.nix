@@ -7,15 +7,17 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ricoh-sp220-driver";
-  version = "2.0";
+  version = "2.1";
 
-  src = ./RICOH-SP-220Nw.ppd;
-  dontUnpack = true;
+  src = ./.;
 
   installPhase = ''
     runHook preInstall
-    mkdir -p $out/share/cups/model/ricoh
-    cp $src $out/share/cups/model/ricoh/RICOH-SP-220Nw.ppd
+    mkdir -p $out/share/cups/model/ricoh $out/lib/cups/backend
+    cp RICOH-SP-220Nw.ppd $out/share/cups/model/ricoh/RICOH-SP-220Nw.ppd
+    substitute ricoh-sp220.sh $out/lib/cups/backend/ricoh-sp220 \
+      --subst-var-by cups ${cups}
+    chmod 0755 $out/lib/cups/backend/ricoh-sp220
     runHook postInstall
   '';
 
@@ -32,7 +34,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   };
 
   meta = {
-    description = "Driverless PWG Raster profile for Ricoh SP 220Nw series";
+    description = "Driverless PWG Raster profile and sanitizing IPP backend for Ricoh SP 220Nw series";
     license = lib.licenses.mit;
     platforms = lib.platforms.all;
   };
