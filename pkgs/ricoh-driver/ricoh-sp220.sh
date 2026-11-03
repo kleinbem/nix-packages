@@ -13,12 +13,10 @@ if [ "$#" -eq 0 ]; then
   exit 0
 fi
 
-ORIG_OPTS="${5:-}"
 CLEAN_OPTS="print-color-mode=monochrome"
 
-# Disable pathname expansion while splitting options
-set -f
-for opt in $ORIG_OPTS; do
+read -r -a opts <<<"${5:-}"
+for opt in "${opts[@]}"; do
   opt_lower="${opt,,}"
   case "$opt_lower" in
   pagesize=* | colormodel=* | finishings=* | print-color-mode=* | media=* | media-col=*)
@@ -28,7 +26,6 @@ for opt in $ORIG_OPTS; do
     ;;
   esac
 done
-set +f
 
 REAL_URI="${DEVICE_URI#ricoh-sp220:}"
 export DEVICE_URI="ipp:${REAL_URI}"
