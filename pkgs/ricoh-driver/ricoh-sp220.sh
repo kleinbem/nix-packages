@@ -3,9 +3,10 @@ set -euo pipefail
 
 # CUPS backend for Ricoh SP 220Nw:
 # Sanitizes options passed by CUPS/applications before delegating to the native IPP backend.
-# The Ricoh SP 220Nw IPP firmware rejects Validate-Job with client-error-attributes-or-values-not-supported
+# no-link: Ricoh SP 220Nw is proprietary printer firmware with no public issue tracker or upstream repository
+# The firmware rejects Validate-Job with client-error-attributes-or-values-not-supported
 # when unrecognized vendor attributes (PageSize, ColorModel, finishings) are passed as job attributes,
-# and redirects to the empty bypass tray if PageSize A4 creates rounded media-col dimensions.
+# and redirects to the empty bypass tray if PageSize or media A4 creates rounded media-col dimensions.
 
 if [ "$#" -eq 0 ]; then
   echo 'network ricoh-sp220 "Ricoh SP 220Nw" "Ricoh SP 220Nw Sanitizing IPP Backend"'
@@ -15,15 +16,19 @@ fi
 ORIG_OPTS="${5:-}"
 CLEAN_OPTS="print-color-mode=monochrome"
 
+# Disable pathname expansion while splitting options
+set -f
 for opt in $ORIG_OPTS; do
-  case "$opt" in
-  PageSize=* | ColorModel=* | finishings=* | print-color-mode=*)
+  opt_lower="${opt,,}"
+  case "$opt_lower" in
+  pagesize=* | colormodel=* | finishings=* | print-color-mode=* | media=* | media-col=*)
     ;;
   *)
     CLEAN_OPTS="$CLEAN_OPTS $opt"
     ;;
   esac
 done
+set +f
 
 REAL_URI="${DEVICE_URI#ricoh-sp220:}"
 export DEVICE_URI="ipp:${REAL_URI}"
