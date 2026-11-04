@@ -2,6 +2,7 @@
 # Builds and tests nixpkgs' buzz-app against a block/buzz-app commit (default:
 # main), so packaging breakage and dropped workarounds show up before the next
 # desktop release reaches nixpkgs.
+# no-link: canary test harness detecting dropped upstream workarounds.
 #
 #   NIXPKGS=~/nixpkgs canary/buzz-app/run.sh
 #

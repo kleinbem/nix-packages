@@ -4,6 +4,7 @@ name: "Canary: buzz-app"
 # so packaging breakage, and workarounds whose upstream fix landed, show up
 # before the next desktop release reaches nixpkgs. A failure opens (or comments
 # on) one issue; the next green run closes it.
+# no-link: canary test harness detecting dropped upstream workarounds.
 
 on:
   schedule:

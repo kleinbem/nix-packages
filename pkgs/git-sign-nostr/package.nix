@@ -14,7 +14,7 @@ rustPlatform.buildRustPackage {
   inherit (buzzSource) version src cargoHash;
 
   patches = [
-    # Fix BIP-340 curve point validation under nostr 0.44 (upstream issue #6175)
+    # Fix BIP-340 curve point validation under nostr 0.44 (upstream block/buzz#6175)
     ./fix-bip340-pubkey-validation.patch
   ];
 
