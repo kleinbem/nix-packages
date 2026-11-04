@@ -109,8 +109,6 @@ jobs:
 
           ✅ `nix flake check` + `nix build` (no-FHS IDE, CLI) passed on CI.
 
-          After merge, bump the `nix-packages` submodule in `kleinbem/nix` to warm Attic via `build-packages`.
-
           ---
           🤖 Opened automatically by the update-antigravity workflow.
           EOF

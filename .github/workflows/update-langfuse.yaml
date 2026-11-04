@@ -41,9 +41,7 @@ jobs:
         run: |
           chmod +x scripts/update-langfuse.sh
           ./scripts/update-langfuse.sh
-          # The script `git add`s the file, so diff against HEAD: a plain
-          # git diff would miss the staged bump.
-          if git diff HEAD --quiet -- pkgs/langfuse/default.nix; then
+          if git diff --quiet pkgs/langfuse/default.nix; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -91,9 +89,6 @@ jobs:
           Source hash and pnpm deps hash updated; pnpm major version checked.
 
           ✅ Full `nix build .#langfuse` passed on the hosted runner.
-
-          After merge, bump the `nix-packages` submodule in `kleinbem/nix` to
-          warm Attic via `build-packages`.
 
           ---
           🤖 Opened automatically by the update-langfuse workflow.
