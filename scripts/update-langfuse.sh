@@ -37,7 +37,6 @@ PY
 # The build is meant to fail; `|| true` keeps pipefail from aborting the script
 # before the caller's own error check.
 extract_hash() {
-  git add "$PKG"
   (nix build ".#langfuse" 2>&1 || true) | grep -oP '(?<=got:    )sha256-\S+' | head -1
 }
 
@@ -96,6 +95,5 @@ set_hash 2 "$PNPM_HASH"
 
 # ── 5. Verify ────────────────────────────────────────────────────────────────
 log "Verifying full build..."
-git add "$PKG"
 nix build ".#langfuse" 2>&1 | tail -3
 log "Done. langfuse $LATEST ready."
