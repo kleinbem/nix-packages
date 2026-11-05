@@ -1,6 +1,8 @@
 """Logs the destination of each proxied connection; with --refuse it answers 403."""
 
-import asyncio, sys, time
+import asyncio
+import sys
+import time
 
 REFUSE = "--refuse" in sys.argv
 PORT = int(sys.argv[1])
@@ -11,8 +13,8 @@ async def pipe(r, w):
         while data := await r.read(65536):
             w.write(data)
             await w.drain()
-    except Exception:
-        pass
+    except OSError:
+        pass  # a peer hung up; finally closes our side of the pipe
     finally:
         w.close()
 

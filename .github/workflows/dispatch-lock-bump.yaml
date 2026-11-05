@@ -3,8 +3,10 @@ name: Dispatch nix-config lock bump
 # Hosts deploy from nix-config's flake.lock, so a merge here reaches no device
 # until that lock moves (nightly at 03:00 UTC otherwise). Once main is green,
 # ask nix-config's Maintain Flake to bump just this input right away.
+# workflow_run is safe here: the job checks out nothing and runs no code from
+# the triggering run, and it only acts on pushes to this repo's main.
 on:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: ["Check Flake"]
     branches: [main]
     types: [completed]
