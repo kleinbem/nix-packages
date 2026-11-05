@@ -22,12 +22,14 @@ jobs:
     steps:
       - name: Mint GitHub App installation token
         id: app-token
-        uses: actions/create-github-app-token@v3.3.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
 
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
@@ -61,6 +63,8 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.update.outputs.version }}
+          REV: ${{ steps.update.outputs.rev }}
         run: |
           BRANCH_NAME="auto-update/buzz-source"
           REPO="${{ github.repository }}"
@@ -76,7 +80,7 @@ jobs:
             --arg repo "$REPO" \
             --arg branch "$BRANCH_NAME" \
             --arg sha "$MAIN_SHA" \
-            --arg headline "chore(buzz): update source to ${{ steps.update.outputs.version }} (${{ steps.update.outputs.rev }})" \
+            --arg headline "chore(buzz): update source to ${VERSION} (${REV})" \
             --arg content "$(base64 -w0 pkgs/buzz/source.json)" \
             --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
             '{query: $query, variables: {input: {
@@ -108,7 +112,7 @@ jobs:
           EOF
 
           gh pr create \
-            --title "chore(buzz): update source to ${{ steps.update.outputs.version }}" \
+            --title "chore(buzz): update source to ${VERSION}" \
             --body-file "$BODY_FILE" \
             --head "$BRANCH_NAME" \
             --base main \

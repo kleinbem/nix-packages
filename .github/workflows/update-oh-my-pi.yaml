@@ -22,20 +22,21 @@ jobs:
     steps:
       - name: Mint GitHub App installation token
         id: app-token
-        uses: actions/create-github-app-token@v3.3.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
 
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 
-      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: kleinbem/actions/nix-setup@7ec628296d5194e6e10031706387b992a10a1638 # v1.0.1
         with:
-          extra-conf: |
-            experimental-features = nix-command flakes
+          github-token: ${{ steps.app-token.outputs.token }}
 
       - name: Run updater
         id: update
@@ -55,6 +56,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.update.outputs.version }}
         run: |
           BRANCH_NAME="auto-update/oh-my-pi"
           REPO="${{ github.repository }}"
@@ -70,7 +72,7 @@ jobs:
             --arg repo "$REPO" \
             --arg branch "$BRANCH_NAME" \
             --arg sha "$MAIN_SHA" \
-            --arg headline "chore: update oh-my-pi to ${{ steps.update.outputs.version }}" \
+            --arg headline "chore: update oh-my-pi to ${VERSION}" \
             --arg defaultNix "$(base64 -w0 pkgs/oh-my-pi/default.nix)" \
             --arg versionsJson "$(base64 -w0 pkgs/oh-my-pi/versions.json)" \
             --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
@@ -99,7 +101,7 @@ jobs:
           EOF
 
           gh pr create \
-            --title "chore: update oh-my-pi to ${{ steps.update.outputs.version }}" \
+            --title "chore: update oh-my-pi to ${VERSION}" \
             --body-file "$BODY_FILE" \
             --head "$BRANCH_NAME" \
             --base main \
