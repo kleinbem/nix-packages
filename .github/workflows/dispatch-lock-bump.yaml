@@ -13,7 +13,11 @@ permissions: {}
 
 jobs:
   dispatch:
-    if: github.event.workflow_run.conclusion == 'success'
+    # Fork PRs from a branch named main also match the branches filter.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Mint GitHub App token for nix-config
@@ -24,6 +28,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: nix-config
+          permission-contents: write
 
       - name: Ask Maintain Flake to bump this input
         env:

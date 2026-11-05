@@ -29,6 +29,15 @@ cleanup() {
   if [[ -n ${catch_pid:-} ]]; then pkill -P "$catch_pid" 2>/dev/null || true; fi
   for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
   wait 2>/dev/null || true
+  # On macOS the config below goes into the real home; put the user's back.
+  if [[ -n ${goose_config:-} ]]; then
+    if [[ -e $work/goose-config.orig ]]; then
+      # cp writes through a symlinked config; mv would replace the link.
+      cp -p "$work/goose-config.orig" "$goose_config" && rm -f "$work/goose-config.orig"
+    else
+      rm -f "$goose_config"
+    fi
+  fi
 }
 trap cleanup EXIT
 
@@ -54,8 +63,17 @@ if [[ $(uname) == Linux ]]; then
   chmod 700 "$XDG_RUNTIME_DIR"
 fi
 mkdir -p "$HOME/.config/goose"
+# Set goose_config only once the backup exists: cleanup removes it otherwise.
+config_path="$HOME/.config/goose/config.yaml"
+if [[ -L $config_path && ! -e $config_path ]]; then
+  echo "refusing to write through the dangling symlink $config_path" >&2
+  exit 1
+elif [[ -e $config_path ]]; then
+  cp -p "$config_path" "$work/goose-config.orig"
+fi
+goose_config=$config_path
 # llama-server's Responses API lacks created_at; use chat completions.
-cat >"$HOME/.config/goose/config.yaml" <<YAML
+cat >"$goose_config" <<YAML
 GOOSE_PROVIDER: openai
 GOOSE_MODEL: tiny
 OPENAI_HOST: http://127.0.0.1:$port

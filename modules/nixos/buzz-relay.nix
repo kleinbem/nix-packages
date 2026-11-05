@@ -170,6 +170,26 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    systemd = {
+      # StateDirectory covers only the default; a custom dataDir needs creating.
+      tmpfiles.settings.buzz-relay = lib.mkIf (toString cfg.dataDir != "/var/lib/buzz-relay") {
+        ${toString cfg.dataDir}.d = {
+          inherit (cfg) user group;
+          mode = "0750";
+        };
+      };
+
+      # ensureDBOwnership only covers a database named after the role.
+      services.postgresql-setup.postStart =
+        lib.mkIf (cfg.database.createLocally && cfg.database.name != cfg.user)
+          ''
+            # A standby is read-only; postgresql-setup skips it the same way.
+            if [[ ! -f "${config.services.postgresql.dataDir}/standby.signal" ]]; then
+              psql -tAc 'ALTER DATABASE "${cfg.database.name}" OWNER TO "${cfg.user}";'
+            fi
+          '';
+    };
+
     networking.firewall.allowedTCPPorts = lib.optional cfg.openFirewall cfg.port;
 
     users.users.${cfg.user} = {

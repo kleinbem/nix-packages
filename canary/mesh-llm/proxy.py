@@ -17,19 +17,47 @@ async def pipe(r, w):
         w.close()
 
 
-async def handle(reader, writer):
-    head = await reader.readuntil(b"\r\n\r\n")
-    line = head.split(b"\r\n", 1)[0].decode(errors="replace")
-    method, target = line.split(" ")[:2]
+def log(method, target):
     print(f"{time.strftime('%H:%M:%S')} {method} {target}", flush=True)
+
+
+async def handle(reader, writer):
+    # A traceback in the log would be read as contacted hosts. A request we
+    # can't read is logged as <unparsed-request>, which the check reports.
+    errors = (asyncio.IncompleteReadError, asyncio.LimitOverrunError, ValueError)
+    try:
+        line = (await reader.readuntil(b"\r\n")).decode(errors="replace").strip()
+        method, target = line.split(" ")[:2]
+    except asyncio.IncompleteReadError as e:
+        if e.partial:
+            log("?", "<unparsed-request>")
+        writer.close()
+        return
+    except errors:
+        log("?", "<unparsed-request>")
+        writer.close()
+        return
+    log(method, target)
+    try:
+        while await reader.readuntil(b"\r\n") != b"\r\n":
+            pass
+    except errors:
+        writer.close()
+        return
     if REFUSE:
         writer.write(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n")
         await writer.drain()
         writer.close()
         return
     if method == "CONNECT":
-        host, port = target.rsplit(":", 1)
-        ur, uw = await asyncio.open_connection(host, int(port))
+        try:
+            host, port = target.rsplit(":", 1)
+            ur, uw = await asyncio.open_connection(host, int(port))
+        except (OSError, ValueError):
+            writer.write(b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\n\r\n")
+            await writer.drain()
+            writer.close()
+            return
         writer.write(b"HTTP/1.1 200 Connection established\r\n\r\n")
         await writer.drain()
         await asyncio.gather(pipe(reader, uw), pipe(ur, writer))

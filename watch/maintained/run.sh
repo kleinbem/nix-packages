@@ -87,25 +87,42 @@ echo
 
 # --- Hydra ------------------------------------------------------------------------
 
-# Prints "<job>\t<build url>\t<stoptime>" for the latest finished build of a job
-# that failed; nothing when it succeeded or the job doesn't exist.
+# Prints "<job>\t<build url>\t<stoptime>" when the latest finished build of
+# <project>/<jobset>/<job> failed; nothing when it succeeded or the job has no
+# builds. /job/.../latest-finished only ever returns successful builds, so this
+# asks api/latestbuilds, which needs the jobset's real name (trunk is now
+# unstable). Any other answer goes to $work/unchecked, so an outage isn't read
+# as "None".
 hydra_failed() {
-  local build
-  build="$(curl -sL --retry 2 -m 30 -H 'Accept: application/json' \
-    "https://hydra.nixos.org/job/$1/latest-finished" || true)"
-  jq -r --arg job "$1" 'select(type == "object" and .buildstatus != null and .buildstatus != 0)
-    | "\($job)\thttps://hydra.nixos.org/build/\(.id)\t\(.stoptime)"' <<<"$build" 2>/dev/null || true
+  local project=$1 jobset=$2 job=$3 code id
+  code="$(curl -sL --retry 2 -m 30 -o "$work/build.json" -w '%{http_code}' -H 'Accept: application/json' \
+    "https://hydra.nixos.org/api/latestbuilds?nr=1&project=$project&jobset=$jobset&job=$job" || true)"
+  if [[ $code != 200 ]] || ! jq -e 'type == "array"' "$work/build.json" >/dev/null 2>&1; then
+    echo "$project/$jobset/$job (HTTP ${code:-none})" >>"$work/unchecked"
+    return 0
+  fi
+  id="$(jq -r '.[0] | select(.buildstatus != null and .buildstatus != 0) | .id' "$work/build.json")"
+  [[ -n $id ]] || return 0
+  # latestbuilds has no stoptime; the build page does.
+  code="$(curl -sL --retry 2 -m 30 -o "$work/build.json" -w '%{http_code}' -H 'Accept: application/json' \
+    "https://hydra.nixos.org/build/$id" || true)"
+  if [[ $code != 200 ]] || ! jq -e 'type == "object"' "$work/build.json" >/dev/null 2>&1; then
+    echo "$project/$jobset/$job (HTTP ${code:-none})" >>"$work/unchecked"
+    return 0
+  fi
+  jq -r --arg job "$project/$jobset/$job" \
+    '"\($job)\thttps://hydra.nixos.org/build/\(.id)\t\(.stoptime // .timestamp)"' "$work/build.json"
 }
 
 {
   while read -r attr; do
     for system in $systems; do
-      hydra_failed "nixpkgs/trunk/$attr.$system"
+      hydra_failed nixpkgs unstable "$attr.$system"
     done
   done <"$work/attrs"
   while read -r module; do
     for system in x86_64-linux aarch64-linux; do
-      hydra_failed "nixos/trunk-combined/nixos.tests.$module.$system"
+      hydra_failed nixos unstable "nixos.tests.$module.$system"
     done
   done <"$work/modules"
 } >"$work/failed"
@@ -124,6 +141,13 @@ else
     echo "- ${mark}[$job]($url), $(date -u -d "@$stoptime" +%F)"
   done <"$work/failed"
 fi
+if [[ -s $work/unchecked ]]; then
+  echo
+  echo "Hydra didn't answer for:"
+  sed 's/^/- /' "$work/unchecked"
+  # Post the report: an outage mustn't look like a quiet day.
+  changed=true
+fi
 echo
 
 # --- nixpkgs-update ---------------------------------------------------------------
@@ -137,10 +161,18 @@ found=false
 while read -r attr; do
   latest="$(curl -sL -m 30 "$logs/$attr/" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}\.log' | sort | tail -1 || true)"
   [[ -z $latest ]] && continue
-  if curl -sL -m 30 "$logs/$attr/$latest" | grep '^error:' >/dev/null; then
+  if curl -sL -m 30 -D "$work/headers" "$logs/$attr/$latest" | grep '^error:' >/dev/null; then
     found=true
     mark=""
-    if [[ ! ${latest%.log} < ${since%%T*} ]]; then
+    # The file name has only the date; Last-Modified has the time.
+    modified="$(sed -n 's/^last-modified: *//Ip' "$work/headers" | tr -d '\r' | tail -1)"
+    if [[ -n $modified ]] && modified_epoch="$(date -u -d "$modified" +%s 2>/dev/null)"; then
+      is_new=$((modified_epoch > since_epoch))
+    else
+      # Date only: a log from since's day counts as new.
+      is_new=$((since_epoch < $(date -u -d "${latest%.log} 23:59:59" +%s)))
+    fi
+    if ((is_new)); then
       mark="new: "
       changed=true
     fi
@@ -151,4 +183,8 @@ $found || echo "None."
 
 if [[ -n ${GITHUB_OUTPUT:-} ]]; then
   echo "changed=$changed" >>"$GITHUB_OUTPUT"
+fi
+if [[ -s $work/unchecked ]]; then
+  echo "::error::Hydra didn't answer for $(wc -l <"$work/unchecked") jobs" >&2
+  exit 1
 fi

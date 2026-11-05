@@ -91,6 +91,7 @@
             '';
             buildInputs = [
               pkgs.nixfmt
+              pkgs.jq
               pkgs.statix
               pkgs.deadnix
             ];
