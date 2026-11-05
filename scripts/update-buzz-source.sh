@@ -58,14 +58,16 @@ jq --arg v "$NEW_VERSION" \
   --arg h "$SRC_HASH" \
   --arg c "$FAKE_HASH" \
   '.version = $v | .rev = $r | .hash = $h | .cargoHash = $c' \
-  "$PKG_JSON" >"$PKG_JSON.tmp" && mv "$PKG_JSON.tmp" "$PKG_JSON"
+  "$PKG_JSON" >"$PKG_JSON.tmp"
+mv "$PKG_JSON.tmp" "$PKG_JSON"
 
 GOT_CARGO_HASH=$( (nix build .#buzz-cli 2>&1 || true) | sed -nE 's/^[[:space:]]*got:[[:space:]]*(sha256-[A-Za-z0-9+/=]+).*/\1/p' | head -1)
 [[ -n $GOT_CARGO_HASH ]] || err "Could not extract cargoHash from nix build"
 log "Discovered cargoHash: $GOT_CARGO_HASH"
 
 # ── 4. Save canonical hashes ──────────────────────────────────────────────────
-jq --arg c "$GOT_CARGO_HASH" '.cargoHash = $c' "$PKG_JSON" >"$PKG_JSON.tmp" && mv "$PKG_JSON.tmp" "$PKG_JSON"
+jq --arg c "$GOT_CARGO_HASH" '.cargoHash = $c' "$PKG_JSON" >"$PKG_JSON.tmp"
+mv "$PKG_JSON.tmp" "$PKG_JSON"
 trap - EXIT
 rm -f "$backup"
 

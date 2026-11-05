@@ -33,7 +33,7 @@ cleanup() {
   if [[ -n ${goose_config:-} ]]; then
     if [[ -e $work/goose-config.orig ]]; then
       # cp writes through a symlinked config; mv would replace the link.
-      cp -p "$work/goose-config.orig" "$goose_config"
+      cp -p "$work/goose-config.orig" "$goose_config" && rm -f "$work/goose-config.orig"
     else
       rm -f "$goose_config"
     fi
