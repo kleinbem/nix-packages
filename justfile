@@ -27,8 +27,11 @@ build pkg:
 
 [group("Build")]
 list:
-    @echo "📋 Available packages:"
-    @nix flake show . --json 2>/dev/null | jq -r '.packages."x86_64-linux" | keys[]' 2>/dev/null || nix flake show .
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📋 Available packages:"
+    system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+    nix eval --json ".#packages.$system" --apply builtins.attrNames | jq -r '.[]'
 
 # --- Upstream version bumps ---
 # Each updater queries the upstream and rewrites versions.json (or equivalent).
