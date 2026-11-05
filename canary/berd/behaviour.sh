@@ -63,8 +63,10 @@ if [[ $(uname) == Linux ]]; then
   chmod 700 "$XDG_RUNTIME_DIR"
 fi
 mkdir -p "$HOME/.config/goose"
-goose_config="$HOME/.config/goose/config.yaml"
-if [[ -e $goose_config ]]; then cp -p "$goose_config" "$work/goose-config.orig"; fi
+# Set goose_config only once the backup exists: cleanup removes it otherwise.
+config_path="$HOME/.config/goose/config.yaml"
+if [[ -e $config_path ]]; then cp -p "$config_path" "$work/goose-config.orig"; fi
+goose_config=$config_path
 # llama-server's Responses API lacks created_at; use chat completions.
 cat >"$goose_config" <<YAML
 GOOSE_PROVIDER: openai

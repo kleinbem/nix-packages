@@ -87,31 +87,42 @@ echo
 
 # --- Hydra ------------------------------------------------------------------------
 
-# Prints "<job>\t<build url>\t<stoptime>" for the latest finished build of a job
-# that failed; nothing when it succeeded or the job doesn't exist (404). Any
-# other answer goes to $work/unchecked, so an outage isn't read as "None".
+# Prints "<job>\t<build url>\t<stoptime>" when the latest finished build of
+# <project>/<jobset>/<job> failed; nothing when it succeeded or the job has no
+# builds. /job/.../latest-finished only ever returns successful builds, so this
+# asks api/latestbuilds, which needs the jobset's real name (trunk is now
+# unstable). Any other answer goes to $work/unchecked, so an outage isn't read
+# as "None".
 hydra_failed() {
-  local code
-  code="$(curl -sL --retry 2 -m 30 -o "$work/build.json" -w '%{http_code}' \
-    -H 'Accept: application/json' "https://hydra.nixos.org/job/$1/latest-finished" || true)"
-  [[ $code == 404 ]] && return 0
-  if [[ $code != 200 ]] || ! jq -e 'type == "object"' "$work/build.json" >/dev/null 2>&1; then
-    echo "$1 (HTTP ${code:-none})" >>"$work/unchecked"
+  local project=$1 jobset=$2 job=$3 code id
+  code="$(curl -sL --retry 2 -m 30 -o "$work/build.json" -w '%{http_code}' -H 'Accept: application/json' \
+    "https://hydra.nixos.org/api/latestbuilds?nr=1&project=$project&jobset=$jobset&job=$job" || true)"
+  if [[ $code != 200 ]] || ! jq -e 'type == "array"' "$work/build.json" >/dev/null 2>&1; then
+    echo "$project/$jobset/$job (HTTP ${code:-none})" >>"$work/unchecked"
     return 0
   fi
-  jq -r --arg job "$1" 'select(.buildstatus != null and .buildstatus != 0)
-    | "\($job)\thttps://hydra.nixos.org/build/\(.id)\t\(.stoptime)"' "$work/build.json"
+  id="$(jq -r '.[0] | select(.buildstatus != null and .buildstatus != 0) | .id' "$work/build.json")"
+  [[ -n $id ]] || return 0
+  # latestbuilds has no stoptime; the build page does.
+  code="$(curl -sL --retry 2 -m 30 -o "$work/build.json" -w '%{http_code}' -H 'Accept: application/json' \
+    "https://hydra.nixos.org/build/$id" || true)"
+  if [[ $code != 200 ]] || ! jq -e 'type == "object"' "$work/build.json" >/dev/null 2>&1; then
+    echo "$project/$jobset/$job (HTTP ${code:-none})" >>"$work/unchecked"
+    return 0
+  fi
+  jq -r --arg job "$project/$jobset/$job" \
+    '"\($job)\thttps://hydra.nixos.org/build/\(.id)\t\(.stoptime // .timestamp)"' "$work/build.json"
 }
 
 {
   while read -r attr; do
     for system in $systems; do
-      hydra_failed "nixpkgs/trunk/$attr.$system"
+      hydra_failed nixpkgs unstable "$attr.$system"
     done
   done <"$work/attrs"
   while read -r module; do
     for system in x86_64-linux aarch64-linux; do
-      hydra_failed "nixos/trunk-combined/nixos.tests.$module.$system"
+      hydra_failed nixos unstable "nixos.tests.$module.$system"
     done
   done <"$work/modules"
 } >"$work/failed"

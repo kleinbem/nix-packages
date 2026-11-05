@@ -183,7 +183,10 @@ in
       services.postgresql-setup.postStart =
         lib.mkIf (cfg.database.createLocally && cfg.database.name != cfg.user)
           ''
-            psql -tAc 'ALTER DATABASE "${cfg.database.name}" OWNER TO "${cfg.user}";'
+            # A standby is read-only; postgresql-setup skips it the same way.
+            if [[ ! -f "${config.services.postgresql.dataDir}/standby.signal" ]]; then
+              psql -tAc 'ALTER DATABASE "${cfg.database.name}" OWNER TO "${cfg.user}";'
+            fi
           '';
     };
 
