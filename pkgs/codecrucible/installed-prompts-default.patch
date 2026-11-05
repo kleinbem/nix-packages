@@ -1,0 +1,32 @@
+From: Martin Kleinberger <kleinbem@users.noreply.github.com>
+Subject: [PATCH] cli: fall back to a build-time prompt set directory
+
+Without --prompts-dir the scanner only looks for prompts/default relative
+to the current directory, which exists in a checkout but not for an
+installed binary. Let a build set a default (go build -ldflags
+"-X .../internal/cli.defaultPromptsDir=/usr/share/codecrucible/prompts/default")
+that is tried after the working directory.
+
+--- a/internal/cli/scan_helpers.go
++++ b/internal/cli/scan_helpers.go
+@@ -209,6 +209,10 @@ func resolveModelDefaults(name string) config.ModelDefaults {
+ 	return config.UnknownModelDefaults(name)
+ }
+ 
++// defaultPromptsDir is an installed prompt set directory, set at build time
++// with -ldflags "-X .../internal/cli.defaultPromptsDir=<dir>".
++var defaultPromptsDir string
++
+ // resolvePromptLoader creates a PromptLoader from --prompts-dir or the default location.
+ func resolvePromptLoader(promptsDir string) (*llm.PromptLoader, error) {
+ 	if promptsDir != "" {
+@@ -218,6 +222,9 @@ func resolvePromptLoader(promptsDir string) (*llm.PromptLoader, error) {
+ 	if info, err := os.Stat("prompts/default"); err == nil && info.IsDir() {
+ 		return llm.NewPromptLoader(os.DirFS("prompts/default")), nil
+ 	}
++	if defaultPromptsDir != "" {
++		return llm.NewPromptLoader(os.DirFS(defaultPromptsDir)), nil
++	}
+ 	return nil, fmt.Errorf("prompts directory not found; use --prompts-dir to specify a prompt set (e.g. prompts/default)")
+ }
+ 

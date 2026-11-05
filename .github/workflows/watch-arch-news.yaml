@@ -1,0 +1,52 @@
+name: "Watch: Arch news about the AUR"
+
+# Checks the Arch Linux news feed once a day for items about the AUR (for now:
+# when account registration reopens, so Martin can create his account). Each
+# new item opens one issue; quiet days leave no trace.
+
+on:
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Look back this many days (default 3)
+        type: string
+        default: '3'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: watch-arch-news
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the feed
+        env:
+          DAYS: ${{ inputs.days || '3' }}
+        run: watch/arch-news/run.sh | tee items.tsv
+
+      - name: Open an issue per new item
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          while IFS=$'\t' read -r title link; do
+            [[ -z $title ]] && continue
+            issue_title="Arch news: $title"
+            if gh issue list --state all --search "in:title \"$issue_title\"" --json title \
+                --jq '.[].title' | grep -qxF "$issue_title"; then
+              continue
+            fi
+            gh issue create --title "$issue_title" \
+              --body "New on the Arch Linux news feed: $link"$'\n\n'"Watched for the AUR account (kleinbem/aur-packages). Close when read."
+          done < items.tsv
