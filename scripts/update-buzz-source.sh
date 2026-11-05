@@ -44,7 +44,15 @@ log "Source SRI hash: $SRC_HASH"
 # ── 3. Discover cargo vendor hash ─────────────────────────────────────────────
 log "Setting dummy cargoHash to extract vendor hash from compiler..."
 backup="$(mktemp)"
+# Until the real cargoHash is written, any exit (an error, Ctrl-C) restores
+# source.json: a left-over dummy hash at the new rev looks up to date next run.
+restore() {
+  cp "$backup" "$PKG_JSON"
+  rm -f "$backup"
+}
+trap 'rm -f "$backup"' EXIT
 cp "$PKG_JSON" "$backup"
+trap restore EXIT
 jq --arg v "$NEW_VERSION" \
   --arg r "$LATEST_REV" \
   --arg h "$SRC_HASH" \
@@ -53,15 +61,12 @@ jq --arg v "$NEW_VERSION" \
   "$PKG_JSON" >"$PKG_JSON.tmp" && mv "$PKG_JSON.tmp" "$PKG_JSON"
 
 GOT_CARGO_HASH=$( (nix build .#buzz-cli 2>&1 || true) | sed -nE 's/^[[:space:]]*got:[[:space:]]*(sha256-[A-Za-z0-9+/=]+).*/\1/p' | head -1)
-if [[ -z $GOT_CARGO_HASH ]]; then
-  cp "$backup" "$PKG_JSON"
-  rm -f "$backup"
-  err "Could not extract cargoHash from nix build"
-fi
+[[ -n $GOT_CARGO_HASH ]] || err "Could not extract cargoHash from nix build"
 log "Discovered cargoHash: $GOT_CARGO_HASH"
 
 # ── 4. Save canonical hashes ──────────────────────────────────────────────────
 jq --arg c "$GOT_CARGO_HASH" '.cargoHash = $c' "$PKG_JSON" >"$PKG_JSON.tmp" && mv "$PKG_JSON.tmp" "$PKG_JSON"
+trap - EXIT
 rm -f "$backup"
 
 # ── 5. Verify builds ──────────────────────────────────────────────────────────

@@ -65,7 +65,12 @@ fi
 mkdir -p "$HOME/.config/goose"
 # Set goose_config only once the backup exists: cleanup removes it otherwise.
 config_path="$HOME/.config/goose/config.yaml"
-if [[ -e $config_path ]]; then cp -p "$config_path" "$work/goose-config.orig"; fi
+if [[ -L $config_path && ! -e $config_path ]]; then
+  echo "refusing to write through the dangling symlink $config_path" >&2
+  exit 1
+elif [[ -e $config_path ]]; then
+  cp -p "$config_path" "$work/goose-config.orig"
+fi
 goose_config=$config_path
 # llama-server's Responses API lacks created_at; use chat completions.
 cat >"$goose_config" <<YAML

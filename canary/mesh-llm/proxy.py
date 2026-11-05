@@ -17,16 +17,33 @@ async def pipe(r, w):
         w.close()
 
 
+def log(method, target):
+    print(f"{time.strftime('%H:%M:%S')} {method} {target}", flush=True)
+
+
 async def handle(reader, writer):
-    # A traceback in the log would be read as contacted hosts.
+    # A traceback in the log would be read as contacted hosts. A request we
+    # can't read is logged as <unparsed-request>, which the check reports.
+    errors = (asyncio.IncompleteReadError, asyncio.LimitOverrunError, ValueError)
     try:
-        head = await reader.readuntil(b"\r\n\r\n")
-        line = head.split(b"\r\n", 1)[0].decode(errors="replace")
+        line = (await reader.readuntil(b"\r\n")).decode(errors="replace").strip()
         method, target = line.split(" ")[:2]
-    except (asyncio.IncompleteReadError, asyncio.LimitOverrunError, ValueError):
+    except asyncio.IncompleteReadError as e:
+        if e.partial:
+            log("?", "<unparsed-request>")
         writer.close()
         return
-    print(f"{time.strftime('%H:%M:%S')} {method} {target}", flush=True)
+    except errors:
+        log("?", "<unparsed-request>")
+        writer.close()
+        return
+    log(method, target)
+    try:
+        while await reader.readuntil(b"\r\n") != b"\r\n":
+            pass
+    except errors:
+        writer.close()
+        return
     if REFUSE:
         writer.write(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n")
         await writer.drain()
