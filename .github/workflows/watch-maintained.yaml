@@ -43,10 +43,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SINCE: ${{ inputs.since }}
-        run: watch/maintained/run.sh | tee report.md
+        # A failed check still posts what it found, then fails the run.
+        run: |
+          set -o pipefail
+          watch/maintained/run.sh | tee report.md
 
       - name: Report
-        if: steps.check.outputs.changed == 'true'
+        if: always() && steps.check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

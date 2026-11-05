@@ -88,13 +88,19 @@ echo
 # --- Hydra ------------------------------------------------------------------------
 
 # Prints "<job>\t<build url>\t<stoptime>" for the latest finished build of a job
-# that failed; nothing when it succeeded or the job doesn't exist.
+# that failed; nothing when it succeeded or the job doesn't exist (404). Any
+# other answer goes to $work/unchecked, so an outage isn't read as "None".
 hydra_failed() {
-  local build
-  build="$(curl -sL --retry 2 -m 30 -H 'Accept: application/json' \
-    "https://hydra.nixos.org/job/$1/latest-finished" || true)"
-  jq -r --arg job "$1" 'select(type == "object" and .buildstatus != null and .buildstatus != 0)
-    | "\($job)\thttps://hydra.nixos.org/build/\(.id)\t\(.stoptime)"' <<<"$build" 2>/dev/null || true
+  local code
+  code="$(curl -sL --retry 2 -m 30 -o "$work/build.json" -w '%{http_code}' \
+    -H 'Accept: application/json' "https://hydra.nixos.org/job/$1/latest-finished" || true)"
+  [[ $code == 404 ]] && return 0
+  if [[ $code != 200 ]] || ! jq -e 'type == "object"' "$work/build.json" >/dev/null 2>&1; then
+    echo "$1 (HTTP ${code:-none})" >>"$work/unchecked"
+    return 0
+  fi
+  jq -r --arg job "$1" 'select(.buildstatus != null and .buildstatus != 0)
+    | "\($job)\thttps://hydra.nixos.org/build/\(.id)\t\(.stoptime)"' "$work/build.json"
 }
 
 {
@@ -124,6 +130,11 @@ else
     echo "- ${mark}[$job]($url), $(date -u -d "@$stoptime" +%F)"
   done <"$work/failed"
 fi
+if [[ -s $work/unchecked ]]; then
+  echo
+  echo "Hydra didn't answer for:"
+  sed 's/^/- /' "$work/unchecked"
+fi
 echo
 
 # --- nixpkgs-update ---------------------------------------------------------------
@@ -137,10 +148,13 @@ found=false
 while read -r attr; do
   latest="$(curl -sL -m 30 "$logs/$attr/" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}\.log' | sort | tail -1 || true)"
   [[ -z $latest ]] && continue
-  if curl -sL -m 30 "$logs/$attr/$latest" | grep '^error:' >/dev/null; then
+  if curl -sL -m 30 -D "$work/headers" "$logs/$attr/$latest" | grep '^error:' >/dev/null; then
     found=true
     mark=""
-    if [[ ! ${latest%.log} < ${since%%T*} ]]; then
+    # The file name has only the date; Last-Modified has the time.
+    modified="$(sed -n 's/^last-modified: *//Ip' "$work/headers" | tr -d '\r' | tail -1)"
+    modified_epoch="$({ [[ -n $modified ]] && date -u -d "$modified" +%s 2>/dev/null; } || date -u -d "${latest%.log}" +%s)"
+    if ((modified_epoch > since_epoch)); then
       mark="new: "
       changed=true
     fi
@@ -151,4 +165,8 @@ $found || echo "None."
 
 if [[ -n ${GITHUB_OUTPUT:-} ]]; then
   echo "changed=$changed" >>"$GITHUB_OUTPUT"
+fi
+if [[ -s $work/unchecked ]]; then
+  echo "::error::Hydra didn't answer for $(wc -l <"$work/unchecked") jobs" >&2
+  exit 1
 fi
