@@ -29,6 +29,14 @@ cleanup() {
   if [[ -n ${catch_pid:-} ]]; then pkill -P "$catch_pid" 2>/dev/null || true; fi
   for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
   wait 2>/dev/null || true
+  # On macOS the config below goes into the real home; put the user's back.
+  if [[ -n ${goose_config:-} ]]; then
+    if [[ -e $work/goose-config.orig ]]; then
+      mv -f "$work/goose-config.orig" "$goose_config"
+    else
+      rm -f "$goose_config"
+    fi
+  fi
 }
 trap cleanup EXIT
 
@@ -54,8 +62,10 @@ if [[ $(uname) == Linux ]]; then
   chmod 700 "$XDG_RUNTIME_DIR"
 fi
 mkdir -p "$HOME/.config/goose"
+goose_config="$HOME/.config/goose/config.yaml"
+if [[ -e $goose_config ]]; then cp -p "$goose_config" "$work/goose-config.orig"; fi
 # llama-server's Responses API lacks created_at; use chat completions.
-cat >"$HOME/.config/goose/config.yaml" <<YAML
+cat >"$goose_config" <<YAML
 GOOSE_PROVIDER: openai
 GOOSE_MODEL: tiny
 OPENAI_HOST: http://127.0.0.1:$port

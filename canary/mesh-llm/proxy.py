@@ -18,9 +18,14 @@ async def pipe(r, w):
 
 
 async def handle(reader, writer):
-    head = await reader.readuntil(b"\r\n\r\n")
-    line = head.split(b"\r\n", 1)[0].decode(errors="replace")
-    method, target = line.split(" ")[:2]
+    # A traceback in the log would be read as contacted hosts.
+    try:
+        head = await reader.readuntil(b"\r\n\r\n")
+        line = head.split(b"\r\n", 1)[0].decode(errors="replace")
+        method, target = line.split(" ")[:2]
+    except (asyncio.IncompleteReadError, asyncio.LimitOverrunError, ValueError):
+        writer.close()
+        return
     print(f"{time.strftime('%H:%M:%S')} {method} {target}", flush=True)
     if REFUSE:
         writer.write(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n")
@@ -28,8 +33,14 @@ async def handle(reader, writer):
         writer.close()
         return
     if method == "CONNECT":
-        host, port = target.rsplit(":", 1)
-        ur, uw = await asyncio.open_connection(host, int(port))
+        try:
+            host, port = target.rsplit(":", 1)
+            ur, uw = await asyncio.open_connection(host, int(port))
+        except (OSError, ValueError):
+            writer.write(b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\n\r\n")
+            await writer.drain()
+            writer.close()
+            return
         writer.write(b"HTTP/1.1 200 Connection established\r\n\r\n")
         await writer.drain()
         await asyncio.gather(pipe(reader, uw), pipe(ur, writer))
