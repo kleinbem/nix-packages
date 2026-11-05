@@ -32,7 +32,8 @@ cleanup() {
   # On macOS the config below goes into the real home; put the user's back.
   if [[ -n ${goose_config:-} ]]; then
     if [[ -e $work/goose-config.orig ]]; then
-      mv -f "$work/goose-config.orig" "$goose_config"
+      # cp writes through a symlinked config; mv would replace the link.
+      cp -p "$work/goose-config.orig" "$goose_config"
     else
       rm -f "$goose_config"
     fi

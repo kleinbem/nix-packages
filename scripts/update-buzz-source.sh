@@ -54,7 +54,8 @@ jq --arg v "$NEW_VERSION" \
 
 GOT_CARGO_HASH=$( (nix build .#buzz-cli 2>&1 || true) | sed -nE 's/^[[:space:]]*got:[[:space:]]*(sha256-[A-Za-z0-9+/=]+).*/\1/p' | head -1)
 if [[ -z $GOT_CARGO_HASH ]]; then
-  mv "$backup" "$PKG_JSON"
+  cp "$backup" "$PKG_JSON"
+  rm -f "$backup"
   err "Could not extract cargoHash from nix build"
 fi
 log "Discovered cargoHash: $GOT_CARGO_HASH"

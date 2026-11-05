@@ -97,7 +97,8 @@ jobs:
   # only when every platform is green.
   report:
     needs: [plan, build]
-    if: always() && needs.plan.result == 'success'
+    # A failed plan (upstream main unresolved) is reported too.
+    if: always() && needs.plan.result != 'cancelled'
     runs-on: ubuntu-latest
     # Only the report touches issues; build runs upstream main.
     permissions:
@@ -106,7 +107,7 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RESULT: ${{ needs.build.result }}
+          RESULT: ${{ needs.plan.result == 'success' && needs.build.result || 'plan failed' }}
           BUZZ_APP_REV: ${{ needs.plan.outputs.rev }}
         run: |
           issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --limit 100 --json number,title \
@@ -116,7 +117,11 @@ jobs:
               gh issue close "$issue" --comment "Green again at buzz-app \`${BUZZ_APP_REV:0:9}\`."
             fi
           else
-            body="buzz-app [\`${BUZZ_APP_REV:0:9}\`](https://github.com/block/buzz-app/commit/$BUZZ_APP_REV) fails ($RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            if [[ -n $BUZZ_APP_REV ]]; then
+              body="buzz-app [\`${BUZZ_APP_REV:0:9}\`](https://github.com/block/buzz-app/commit/$BUZZ_APP_REV) fails ($RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            else
+              body="buzz-app: could not resolve the upstream revision ($RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            fi
             if [[ -n "$issue" ]]; then
               gh issue comment "$issue" --body "$body"
             else

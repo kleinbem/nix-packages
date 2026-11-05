@@ -170,20 +170,21 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        # ensureDBOwnership only works for a database named after the role.
-        assertion = cfg.database.createLocally -> cfg.database.name == cfg.user;
-        message = "services.buzz-relay.database.name must equal services.buzz-relay.user when database.createLocally is enabled.";
-      }
-    ];
-
-    # StateDirectory covers only the default; a custom dataDir needs creating.
-    systemd.tmpfiles.settings.buzz-relay = lib.mkIf (toString cfg.dataDir != "/var/lib/buzz-relay") {
-      ${toString cfg.dataDir}.d = {
-        inherit (cfg) user group;
-        mode = "0750";
+    systemd = {
+      # StateDirectory covers only the default; a custom dataDir needs creating.
+      tmpfiles.settings.buzz-relay = lib.mkIf (toString cfg.dataDir != "/var/lib/buzz-relay") {
+        ${toString cfg.dataDir}.d = {
+          inherit (cfg) user group;
+          mode = "0750";
+        };
       };
+
+      # ensureDBOwnership only covers a database named after the role.
+      services.postgresql-setup.postStart =
+        lib.mkIf (cfg.database.createLocally && cfg.database.name != cfg.user)
+          ''
+            psql -tAc 'ALTER DATABASE "${cfg.database.name}" OWNER TO "${cfg.user}";'
+          '';
     };
 
     networking.firewall.allowedTCPPorts = lib.optional cfg.openFirewall cfg.port;
@@ -203,7 +204,7 @@ in
       ensureUsers = [
         {
           name = cfg.user;
-          ensureDBOwnership = true;
+          ensureDBOwnership = cfg.database.name == cfg.user;
         }
       ];
     };

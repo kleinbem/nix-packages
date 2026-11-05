@@ -134,6 +134,8 @@ if [[ -s $work/unchecked ]]; then
   echo
   echo "Hydra didn't answer for:"
   sed 's/^/- /' "$work/unchecked"
+  # Post the report: an outage mustn't look like a quiet day.
+  changed=true
 fi
 echo
 
@@ -153,8 +155,13 @@ while read -r attr; do
     mark=""
     # The file name has only the date; Last-Modified has the time.
     modified="$(sed -n 's/^last-modified: *//Ip' "$work/headers" | tr -d '\r' | tail -1)"
-    modified_epoch="$({ [[ -n $modified ]] && date -u -d "$modified" +%s 2>/dev/null; } || date -u -d "${latest%.log}" +%s)"
-    if ((modified_epoch > since_epoch)); then
+    if [[ -n $modified ]] && modified_epoch="$(date -u -d "$modified" +%s 2>/dev/null)"; then
+      is_new=$((modified_epoch > since_epoch))
+    else
+      # Date only: a log from since's day counts as new.
+      is_new=$((since_epoch < $(date -u -d "${latest%.log} 23:59:59" +%s)))
+    fi
+    if ((is_new)); then
       mark="new: "
       changed=true
     fi
