@@ -36,15 +36,25 @@
     "pr": 571722,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "6c68a12adbb8c969a9693c5cdc8fb2ccd6343c90",
-    "narHash": "sha256-ZDXSa4ocLOVDQMG800FBKXSFvaHfy/RpIRYZEMwY4tA=",
+    "rev": "5dbf85707b6d12583976d5b72d659b1c6718a624",
+    "narHash": "sha256-V/nic/L39a/tkMrGe7AIsifZ1EU+N44nnd9AQsmXhTc=",
     "attrs": [
       "mesh-llm",
       "mesh-llm-cuda",
       "mesh-llm-rocm",
+      "mesh-llm-ffi",
+      "mesh-llm-nodejs",
+      "mesh-llmPlugins",
       "skippy",
       "skippy-native-runtime",
-      "skippy-native-runtime-vulkan"
+      "skippy-native-runtime-vulkan",
+      "skippy-tools"
+    ],
+    "paths": {
+      "mesh-llmPlugins": "pkgs/by-name/me/mesh-llm/plugins/default.nix"
+    },
+    "pythonPackages": [
+      "mesh-llm"
     ],
     "modules": {
       "mesh-llm": "nixos/modules/services/misc/mesh-llm.nix"
