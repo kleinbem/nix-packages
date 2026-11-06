@@ -30,6 +30,7 @@ stdenv.mkDerivation {
   # Not an archive — the release asset IS the binary.
   dontUnpack = true;
   # Strip still loses the payload: omp runs as plain bun.
+  # no-link: cause not tracked down, no bun report yet.
   dontStrip = true;
 
   nativeBuildInputs = [ autoPatchelfHook ];
