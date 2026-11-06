@@ -2,18 +2,18 @@
 # case where you don't want to add the whole NUR namespace to your
 # configuration.
 
-_final: prev:
+final: prev:
 let
+  inherit (prev) lib;
   isReserved = n: n == "lib" || n == "overlays" || n == "modules";
-  nameValuePair = n: v: {
-    name = n;
-    value = v;
+  # The packages of our open nixpkgs PRs come from nix-detour's overlay: it
+  # builds them against the final package set and adds their Python packages
+  # to every Python set, which an attrset of packages can't.
+  prs = import "${import ./nix-detour-src.nix}/prs.nix" {
+    inherit lib;
+    prs = ./nixpkgs-prs.json;
   };
+  prAttrs = lib.concatMap (entry: entry.attrs) (lib.attrValues prs.entries);
   nurAttrs = import ./default.nix { pkgs = prev; };
-
 in
-builtins.listToAttrs (
-  map (n: nameValuePair n nurAttrs.${n}) (
-    builtins.filter (n: !isReserved n) (builtins.attrNames nurAttrs)
-  )
-)
+prs.overlay final prev // lib.filterAttrs (n: _: !isReserved n && !lib.elem n prAttrs) nurAttrs

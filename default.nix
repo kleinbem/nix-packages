@@ -5,15 +5,7 @@
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
   # The flake passes its input; plain imports (overlay.nix, nix-detour-fleet)
   # take the commit in flake.lock.
-  nix-detour ?
-    let
-      lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-      locked = lock.nodes.${lock.nodes.root.inputs.nix-detour}.locked;
-    in
-    builtins.fetchTarball {
-      url = "https://github.com/${locked.owner}/${locked.repo}/archive/${locked.rev}.tar.gz";
-      sha256 = locked.narHash;
-    },
+  nix-detour ? import ./nix-detour-src.nix,
 }:
 
 # Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-detour).
