@@ -1,17 +1,15 @@
 # Oh My Pi (omp), upstream's prebuilt release binaries, pinned in
 # ./versions.json; scripts/update-oh-my-pi.sh bumps them.
 #
-# No patchelf: the binary is a `bun build --compile` output whose app payload
-# sits at a fixed offset from EOF. Changing the file size breaks the lookup and
-# omp silently runs as plain bun. So the wrapper runs the untouched binary
-# through glibc's dynamic linker instead. Fixed in oven-sh/bun#26923
-# (oven-sh/bun#4103); patchelf works once omp ships a bun with it.
+# A `bun build --compile` binary. Its app payload sits in a `.bun` ELF
+# section (oven-sh/bun#26923), so patchelf keeps it intact. The install check
+# fails if omp ever falls back to plain bun.
 {
   lib,
   stdenv,
   fetchurl,
-  glibc,
-  makeWrapper,
+  autoPatchelfHook,
+  versionCheckHook,
 }:
 let
   pname = "oh-my-pi";
@@ -20,13 +18,6 @@ let
 
   versions = builtins.fromJSON (builtins.readFile ./versions.json);
   manifest = versions.${version}.${system} or (throw "Unsupported system for oh-my-pi: ${system}");
-
-  dynamicLinker =
-    {
-      x86_64-linux = "ld-linux-x86-64.so.2";
-      aarch64-linux = "ld-linux-aarch64.so.1";
-    }
-    .${system} or (throw "Unsupported system for oh-my-pi: ${system}");
 in
 stdenv.mkDerivation {
   inherit pname version;
@@ -38,25 +29,19 @@ stdenv.mkDerivation {
 
   # Not an archive — the release asset IS the binary.
   dontUnpack = true;
-  # Stripping also moves the payload (see the top of the file).
+  # Strip still loses the payload: omp runs as plain bun.
   dontStrip = true;
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ autoPatchelfHook ];
 
   installPhase = ''
     runHook preInstall
-
-    mkdir -p $out/bin $out/libexec
-    # Untouched, byte-for-byte as downloaded — see the top-of-file comment
-    # for why this must NOT go through patchelf.
-    install -m755 $src $out/libexec/omp-unwrapped
-
-    makeWrapper "${glibc}/lib/${dynamicLinker}" $out/bin/omp \
-      --add-flags "--library-path ${glibc}/lib" \
-      --add-flags "$out/libexec/omp-unwrapped"
-
+    install -Dm755 $src $out/bin/omp
     runHook postInstall
   '';
+
+  doInstallCheck = true;
+  nativeInstallCheckInputs = [ versionCheckHook ];
 
   meta = with lib; {
     description = "Terminal coding-agent CLI — IDE capabilities (LSP, Python/JS execution, browser, subagents) wired into a single terminal tool";
