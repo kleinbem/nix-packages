@@ -18,9 +18,6 @@
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
 
-  # kleinbem.dev; pkgs/kleinbem-site/default.nix's header has the bump steps.
-  kleinbem-site = pkgs.callPackage ./pkgs/kleinbem-site { };
-
   # Google Antigravity. Named google-antigravity* so it doesn't clobber
   # nixpkgs' own `antigravity`.
   google-antigravity = pkgs.callPackage ./pkgs/antigravity/package.nix {
