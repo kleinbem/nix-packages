@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Update pkgs/langfuse/default.nix to the latest Langfuse release: version,
-# source hash, pnpm major and pnpm deps hash, then a full build.
+# Update pkgs/langfuse/default.nix to the newest Langfuse release nixpkgs'
+# pnpm can install: version, pnpm major, then the src, pnpmDeps and cargoDeps
+# hashes (the hash = lines, in that order), then a full build.
 #
 # Usage:  ./scripts/update-langfuse.sh
 # Deps:   bash, curl, jq, nix, python3
@@ -33,21 +34,55 @@ open(path, 'w').write(text[:m.start()] + f'hash = "{value}"' + text[m.end():])
 PY
 }
 
-# Run nix build and extract the "got:" hash from the mismatch error.
-# The build is meant to fail; `|| true` keeps pipefail from aborting the script
-# before the caller's own error check.
+# Build one fixed-output attribute of langfuse (src, pnpmDeps, cargoDeps) and
+# extract the "got:" hash. Building the whole package could report another
+# stale hash first. The build is meant to fail; on any other failure, show why.
 extract_hash() {
-  (nix build ".#langfuse" 2>&1 || true) | grep -oP '(?<=got:    )sha256-\S+' | head -1
+  local out
+  out=$(nix build --no-link ".#langfuse.$1" 2>&1 || true)
+  if ! grep -oP '(?<=got:    )sha256-\S+' <<<"$out" | head -1; then
+    echo "$out" | tail -40 >&2
+  fi
 }
 
-# ── 1. Latest release ────────────────────────────────────────────────────────
-LATEST=$(curl -fsSL "https://api.github.com/repos/langfuse/langfuse/releases/latest" |
-  jq -r '.tag_name' | sed 's/^v//')
-[[ -n $LATEST && $LATEST != "null" ]] || err "Could not fetch latest release"
+# pnpm version a release needs: engines.pnpm, or packageManager before
+# Langfuse dropped it (v4.51.0).
+required_pnpm() {
+  curl -fsSL "https://raw.githubusercontent.com/langfuse/langfuse/v$1/package.json" |
+    jq -r '.engines.pnpm // (.packageManager // "" | ltrimstr("pnpm@") | split("+")[0])'
+}
+
+# Version of pnpm_<major> in the flake's locked nixpkgs, empty if missing.
+nixpkgs_pnpm() {
+  nix eval --raw --inputs-from . "nixpkgs#pnpm_$1.version" 2>/dev/null || true
+}
+
+# ── 1. Newest release our nixpkgs' pnpm can install ───────────────────────
+# Langfuse pins pnpm close to its newest release, and an older pnpm can't
+# parse a newer pnpm-workspace.yaml, so wait for nixpkgs rather than fail.
+RELEASES=$(curl -fsSL "https://api.github.com/repos/langfuse/langfuse/releases?per_page=30" |
+  jq -r '.[] | select(.draft or .prerelease | not) | .tag_name | ltrimstr("v")' | sort -rV) ||
+  err "Could not fetch releases"
+[[ -n $RELEASES ]] || err "No releases found"
+
+LATEST=""
+for v in $RELEASES; do
+  want=$(required_pnpm "$v") || err "Could not read v$v/package.json"
+  [[ $want =~ ^([0-9]+)\. ]] || err "No pnpm version in v$v/package.json"
+  major="${BASH_REMATCH[1]}"
+  have=$(nixpkgs_pnpm "$major")
+  if [[ -n $have && $(printf '%s\n' "$want" "$have" | sort -V | head -1) == "$want" ]]; then
+    LATEST="$v"
+    PNPM_MAJOR="$major"
+    break
+  fi
+  log "Skipping $v: needs pnpm $want, nixpkgs has pnpm_$major ${have:-(none)}"
+done
+[[ -n $LATEST ]] || err "No recent release fits nixpkgs' pnpm"
 
 CURRENT=$(grep -oP 'version = "\K[^"]+' "$PKG" | head -1)
-if [[ $CURRENT == "$LATEST" ]]; then
-  log "Langfuse already at $LATEST — nothing to do."
+if [[ $(printf '%s\n' "$CURRENT" "$LATEST" | sort -V | tail -1) == "$CURRENT" ]]; then
+  log "Langfuse already at $CURRENT (newest usable: $LATEST) — nothing to do."
   exit 0
 fi
 log "Updating $CURRENT → $LATEST"
@@ -57,43 +92,38 @@ sed -i "s/version = \"${CURRENT}\"/version = \"${LATEST}\"/" "$PKG"
 set_hash 1 "$FAKE"
 
 log "Fetching source hash..."
-SRC_HASH=$(extract_hash)
-[[ -n $SRC_HASH ]] || err "Could not get source hash — run: nix build .#langfuse"
+SRC_HASH=$(extract_hash src)
+[[ -n $SRC_HASH ]] || err "Could not get source hash"
 log "Source hash: $SRC_HASH"
 set_hash 1 "$SRC_HASH"
 
 # ── 3. pnpm major version ────────────────────────────────────────────────────
-PNPM_FIELD=$(curl -fsSL \
-  "https://raw.githubusercontent.com/langfuse/langfuse/v${LATEST}/package.json" |
-  jq -r '.packageManager // ""')
-
-if [[ $PNPM_FIELD =~ pnpm@([0-9]+)\. ]]; then
-  NEW_MAJOR="${BASH_REMATCH[1]}"
-  CURRENT_MAJOR=$(grep -oP 'pnpm_\K[0-9]+' "$PKG" | head -1)
-  if [[ $NEW_MAJOR != "$CURRENT_MAJOR" ]]; then
-    # nixpkgs can lag behind upstream's pnpm major, and a missing pnpm_NN
-    # breaks the hash step with an eval error. Keep the current major then;
-    # if the lockfile really needs the new one, the verify build fails.
-    SYSTEM=$(nix eval --impure --raw --expr 'builtins.currentSystem')
-    if nix eval ".#legacyPackages.${SYSTEM}.pnpm_${NEW_MAJOR}" >/dev/null 2>&1; then
-      log "pnpm major changed: $CURRENT_MAJOR → $NEW_MAJOR"
-      sed -i "s/pnpm_${CURRENT_MAJOR}/pnpm_${NEW_MAJOR}/g" "$PKG"
-    else
-      log "Langfuse wants pnpm ${NEW_MAJOR}, but nixpkgs has no pnpm_${NEW_MAJOR} yet — keeping pnpm_${CURRENT_MAJOR}."
-    fi
-  fi
+CURRENT_MAJOR=$(grep -oP 'pnpm_\K[0-9]+' "$PKG" | head -1)
+if [[ $PNPM_MAJOR != "$CURRENT_MAJOR" ]]; then
+  log "pnpm major changed: $CURRENT_MAJOR → $PNPM_MAJOR"
+  sed -i "s/pnpm_${CURRENT_MAJOR}/pnpm_${PNPM_MAJOR}/g" "$PKG"
 fi
 
 # ── 4. Discover pnpm deps hash ───────────────────────────────────────────────
 set_hash 2 "$FAKE"
 
 log "Fetching pnpm deps hash (downloads all dependencies)..."
-PNPM_HASH=$(extract_hash)
-[[ -n $PNPM_HASH ]] || err "Could not get pnpm deps hash — run: nix build .#langfuse"
+PNPM_HASH=$(extract_hash pnpmDeps)
+[[ -n $PNPM_HASH ]] || err "Could not get pnpm deps hash"
 log "pnpm deps hash: $PNPM_HASH"
 set_hash 2 "$PNPM_HASH"
 
-# ── 5. Verify ────────────────────────────────────────────────────────────────
+# ── 5. Discover cargo deps hash (the Rust addon in packages/native) ─────────
+if grep -q 'cargoDeps' "$PKG"; then
+  set_hash 3 "$FAKE"
+  log "Fetching cargo deps hash..."
+  CARGO_HASH=$(extract_hash cargoDeps)
+  [[ -n $CARGO_HASH ]] || err "Could not get cargo deps hash"
+  log "cargo deps hash: $CARGO_HASH"
+  set_hash 3 "$CARGO_HASH"
+fi
+
+# ── 6. Verify ────────────────────────────────────────────────────────────────
 log "Verifying full build..."
-nix build ".#langfuse" 2>&1 | tail -3
+nix build --no-link ".#langfuse" 2>&1 | tail -40
 log "Done. langfuse $LATEST ready."
