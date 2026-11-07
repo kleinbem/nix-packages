@@ -29,8 +29,8 @@ jobs:
       - uses: kleinbem/actions/nix-setup@7ec628296d5194e6e10031706387b992a10a1638 # v1.0.1
         with:
           nix-path: nixpkgs=channel:nixos-unstable
-          free-disk-space: 'true'
-          configure-auto-gc: 'true'
+          # No free-disk-space: it removes the swap, and the web build then
+          # gets OOM-killed (exit 143). The updater builds fine without it.
           netbird-setup-key: ${{ secrets.NETBIRD_SETUP_KEY_EPHEMERAL }}
           attic-token: ${{ secrets.ATTIC_PULL_TOKEN }}
       - name: Build and run the VM test

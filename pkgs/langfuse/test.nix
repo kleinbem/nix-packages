@@ -15,22 +15,43 @@ testers.runNixOSTest {
         diskSize = 8192;
       };
 
-      services.postgresql = {
-        enable = true;
-        ensureDatabases = [ "langfuse" ];
-        ensureUsers = [
-          {
-            name = "langfuse";
-            ensureDBOwnership = true;
-          }
-        ];
-        authentication = "host langfuse langfuse 127.0.0.1/32 trust";
+      services = {
+        postgresql = {
+          enable = true;
+          ensureDatabases = [ "langfuse" ];
+          ensureUsers = [
+            {
+              name = "langfuse";
+              ensureDBOwnership = true;
+            }
+          ];
+          authentication = "host langfuse langfuse 127.0.0.1/32 trust";
+        };
+        redis.servers.langfuse = {
+          enable = true;
+          port = 6379;
+        };
+        clickhouse.enable = true;
+        langfuse = {
+          enable = true;
+          package = langfuse;
+          environmentFile = pkgs.writeText "langfuse.env" ''
+            DATABASE_URL=postgresql://langfuse@127.0.0.1:5432/langfuse
+            NEXTAUTH_URL=http://localhost:3000
+            NEXTAUTH_SECRET=test-secret
+            SALT=test-salt
+            ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
+            CLICKHOUSE_URL=http://127.0.0.1:8123
+            CLICKHOUSE_MIGRATION_URL=clickhouse://127.0.0.1:9000
+            CLICKHOUSE_USER=langfuse
+            CLICKHOUSE_PASSWORD=langfuse
+            CLICKHOUSE_CLUSTER_ENABLED=false
+            REDIS_CONNECTION_STRING=redis://127.0.0.1:6379
+            LANGFUSE_S3_EVENT_UPLOAD_BUCKET=langfuse
+            TELEMETRY_ENABLED=false
+          '';
+        };
       };
-      services.redis.servers.langfuse = {
-        enable = true;
-        port = 6379;
-      };
-      services.clickhouse.enable = true;
       environment.systemPackages = [ pkgs.clickhouse ];
       # up.sh refuses an empty CLICKHOUSE_PASSWORD.
       environment.etc."clickhouse-server/users.d/langfuse.xml".text = ''
@@ -42,25 +63,6 @@ testers.runNixOSTest {
         </langfuse></users></clickhouse>
       '';
 
-      services.langfuse = {
-        enable = true;
-        package = langfuse;
-        environmentFile = pkgs.writeText "langfuse.env" ''
-          DATABASE_URL=postgresql://langfuse@127.0.0.1:5432/langfuse
-          NEXTAUTH_URL=http://localhost:3000
-          NEXTAUTH_SECRET=test-secret
-          SALT=test-salt
-          ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
-          CLICKHOUSE_URL=http://127.0.0.1:8123
-          CLICKHOUSE_MIGRATION_URL=clickhouse://127.0.0.1:9000
-          CLICKHOUSE_USER=langfuse
-          CLICKHOUSE_PASSWORD=langfuse
-          CLICKHOUSE_CLUSTER_ENABLED=false
-          REDIS_CONNECTION_STRING=redis://127.0.0.1:6379
-          LANGFUSE_S3_EVENT_UPLOAD_BUCKET=langfuse
-          TELEMETRY_ENABLED=false
-        '';
-      };
       systemd.services.langfuse = {
         after = [
           "clickhouse.service"

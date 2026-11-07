@@ -138,12 +138,16 @@ stdenv.mkDerivation (finalAttrs: {
     cp packages/shared/scripts/cleanup.sql $lf/packages/shared/scripts/
 
     # Worker: its own production node_modules with the workspace packages
-    # (@langfuse/shared, the @langfuse/native addon) materialised, as
-    # worker/Dockerfile does. The deploy reinstalls @prisma/client, so the
-    # generated client is copied over from the build tree.
+    # (@langfuse/shared, the @langfuse/native addon) materialised. The deploy
+    # reinstalls @prisma/client without the generated client, so that comes
+    # from the build tree. no-link: mirrors upstream's worker/Dockerfile.
     pnpm --offline --filter worker deploy --prod $lf/worker
-    builder_client=$(find node_modules/.pnpm -path '*/node_modules/@prisma/client' -type d | head -n 1)
-    deployed_client=$(find $lf/worker/node_modules/.pnpm -path '*/node_modules/@prisma/client' -type d | head -n 1)
+    # The client @langfuse/shared resolves; other @prisma/client copies may be stubs.
+    prismaClientOf() {
+      node -p "require('path').dirname(require.resolve('@prisma/client/package.json', { paths: [require('fs').realpathSync('$1')] }))"
+    }
+    builder_client=$(prismaClientOf packages/shared)
+    deployed_client=$(prismaClientOf $lf/worker/node_modules/@langfuse/shared)
     rm -rf "$deployed_client" "$(dirname "$(dirname "$deployed_client")")/.prisma"
     cp -R "$builder_client" "$deployed_client"
     cp -R "$(dirname "$(dirname "$builder_client")")/.prisma" "$(dirname "$(dirname "$deployed_client")")/.prisma"
