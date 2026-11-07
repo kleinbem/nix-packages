@@ -69,7 +69,7 @@
           };
           legacyPkgs = import ./default.nix {
             pkgs = pkgsUnfree;
-            inherit (inputs) nix-detour;
+            inherit (inputs) nix-detour nix-devshells;
           };
         in
         {

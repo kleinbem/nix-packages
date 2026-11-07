@@ -5,7 +5,8 @@
   pkgs ? import (builtins.getFlake "nixpkgs") { system = "x86_64-linux"; },
   # The flake passes its input; plain imports (overlay.nix, nix-detour-fleet)
   # take the commit in flake.lock.
-  nix-detour ? import ./nix-detour-src.nix,
+  nix-detour ? import ./locked-input.nix "nix-detour",
+  nix-devshells ? import ./locked-input.nix "nix-devshells",
 }:
 
 # Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-detour).
@@ -34,8 +35,9 @@
   };
   google-antigravity-cli = pkgs.callPackage ./pkgs/antigravity/cli.nix { };
 
-  # Terminal coding-agent CLI (prebuilt release binary).
-  oh-my-pi = pkgs.callPackage ./pkgs/oh-my-pi { };
+  # Terminal coding-agent CLI. nix-devshells owns it (and its updater), since
+  # that repo can't depend on this one without a cycle.
+  oh-my-pi = pkgs.callPackage "${nix-devshells}/pkgs/oh-my-pi" { };
 
   # Command-line tool for downloading APK files from Google Play, F-Droid, and APKPure
   apkeep = pkgs.callPackage ./pkgs/apkeep { };

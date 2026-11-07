@@ -8,7 +8,7 @@ Custom package derivations for the fleet, structured as a
 
 | Path | What lives here |
 |---|---|
-| `pkgs/` | One directory per package (`ls pkgs/`; `just list` shows what builds on this system), e.g. `antigravity`, `buzz-*`, `langfuse`, `oh-my-pi`. |
+| `pkgs/` | One directory per package (`ls pkgs/`; `just list` shows what builds on this system), e.g. `antigravity`, `buzz-*`, `langfuse`. `oh-my-pi` comes from `nix-devshells` (`default.nix`). |
 | `default.nix` | The NUR-style attrset (`pkgs.callPackage ./pkgs/<name> { }` per package) consumed by `nix-config` and other flakes. |
 | `overlay.nix` | Same packages exposed as a nixpkgs overlay, for consumers who don't want the whole NUR namespace. |
 | `modules/nixos/` | NixOS modules shipped alongside the packages (not just derivations). |

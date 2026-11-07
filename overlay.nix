@@ -9,7 +9,7 @@ let
   # The packages of our open nixpkgs PRs come from nix-detour's overlay: it
   # builds them against the final package set and adds their Python packages
   # to every Python set, which an attrset of packages can't.
-  prs = import "${import ./nix-detour-src.nix}/prs.nix" {
+  prs = import "${import ./locked-input.nix "nix-detour"}/prs.nix" {
     inherit lib;
     prs = ./nixpkgs-prs.json;
   };
