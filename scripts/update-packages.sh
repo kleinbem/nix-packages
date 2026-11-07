@@ -14,7 +14,8 @@ SYSTEM="${SYSTEM:-x86_64-linux}"
 list() {
   # Only packages defined in this repo: nix-detour's PR packages carry
   # nixpkgs' updateScript too, but their files live in nixpkgs. Match on the
-  # file, not the store path: with lazy trees the source path is virtual.
+  # file, not the store path: with lazy trees the source path is virtual
+  # (https://github.com/DeterminateSystems/nix-src/issues/171).
   # shellcheck disable=SC2016 # Nix, not shell
   nix eval --json ".#legacyPackages.$SYSTEM" --apply '
     ps: builtins.concatMap (n:
@@ -33,7 +34,7 @@ list() {
       in if r.success then r.value else [ ]) (builtins.attrNames ps)' |
     jq -c '.[] | .file = (.position | sub("^/nix/store/[^/]+/"; "") | sub(":[0-9]+$"; ""))' |
     while read -r entry; do
-      if [[ -f $(jq -r .file <<<"$entry") ]]; then
+      if [[ -f "$(jq -r .file <<<"$entry")" ]]; then
         jq -c '{attr, args, tests}' <<<"$entry"
       fi
     done | jq -sc .
@@ -50,7 +51,7 @@ update() {
   local -a extra
   mapfile -t extra < <(jq -r '.args[]' <<<"$entry")
   # nix-update --test fails outright on a package without passthru.tests.
-  [[ $(jq .tests <<<"$entry") == false ]] || extra+=(--test)
+  [[ "$(jq .tests <<<"$entry")" == false ]] || extra+=(--test)
   nix run --inputs-from . nixpkgs#nix-update -- \
     --flake --system "$SYSTEM" --build "${extra[@]}" "$@" "$attr"
 }
