@@ -80,11 +80,11 @@ build_log="$(mktemp)"
 if ! nix build --no-link --keep-going "${PACKAGES[@]/#/.#}" >"$build_log" 2>&1; then
   # nix only prints the last lines of a failed build; show each failed log.
   cat "$build_log" >&2
-  for drv in $(grep -oE '/nix/store/[a-z0-9]{32}-[^ ]+\.drv' "$build_log" | sort -u); do
+  grep -oE '/nix/store/[a-z0-9]{32}-[^ ]+\.drv' "$build_log" | sort -u | while read -r drv; do
     echo "::group::nix log $drv" >&2
     nix log "$drv" 2>&1 | tail -150 >&2 || true
     echo "::endgroup::" >&2
-  done
+  done || true
   rm -f "$build_log"
   err "Build failed at ${LATEST_REV:0:9}"
 fi
