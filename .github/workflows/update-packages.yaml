@@ -2,7 +2,8 @@ name: "Update packages"
 
 # One PR per package for everything whose passthru.updateScript is
 # nix-update-script (scripts/update-packages.sh list). Packages with their
-# own updater (langfuse, buzz, oh-my-pi, antigravity) don't use it.
+# own updater (langfuse, buzz, oh-my-pi, antigravity) don't use it. A package
+# that needs something nixpkgs marks broken is skipped with a warning.
 
 on:
   schedule:

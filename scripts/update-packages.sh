@@ -48,6 +48,25 @@ update() {
     echo "no nix-update updateScript for $attr" >&2
     exit 1
   }
+  # A package whose dependency nixpkgs marks broken can't build here until
+  # nixpkgs fixes it; the fleet holds it meanwhile (nix-detour-fleet), and
+  # the hold's release check watches the same breakage. Any other error fails.
+  local err
+  if ! err=$(nix eval --raw ".#legacyPackages.$SYSTEM.$attr.drvPath" 2>&1 >/dev/null); then
+    if grep -qE '^ *- broken: |is marked as broken' <<<"$err"; then
+      local dep
+      dep=$(sed -nE "s/.*[Pp]ackage '([^']+)'.*/\1/p" <<<"$err" | head -1)
+      local msg="${dep:-a dependency} is marked broken in nixpkgs"
+      echo "skip $attr: $msg" >&2
+      if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+        echo "::warning title=Skipped $attr::$msg"
+        echo "- skipped \`$attr\`: $msg" >>"${GITHUB_STEP_SUMMARY:-/dev/null}"
+      fi
+      return 0
+    fi
+    echo "$err" >&2
+    exit 1
+  fi
   local -a extra
   mapfile -t extra < <(jq -r '.args[]' <<<"$entry")
   # nix-update --test fails outright on a package without passthru.tests.
