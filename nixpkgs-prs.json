@@ -36,8 +36,8 @@
     "pr": 571722,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "5dbf85707b6d12583976d5b72d659b1c6718a624",
-    "narHash": "sha256-V/nic/L39a/tkMrGe7AIsifZ1EU+N44nnd9AQsmXhTc=",
+    "rev": "41d4b670532ff83be10beb95321d2e6bea53d81d",
+    "narHash": "sha256-BgGmDsRWSAN7lY+sORrXzE1JVJyC4DuKGbieA1BcqIc=",
     "attrs": [
       "mesh-llm",
       "mesh-llm-cuda",
