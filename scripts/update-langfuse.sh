@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Update pkgs/langfuse/default.nix to the latest Langfuse release: version,
-# source hash, pnpm major and pnpm deps hash, then a full build.
+# Update pkgs/langfuse/default.nix to the newest Langfuse release nixpkgs'
+# pnpm can install: version, pnpm major, then the src, pnpmDeps and cargoDeps
+# hashes (the hash = lines, in that order), then a full build.
 #
 # Usage:  ./scripts/update-langfuse.sh
 # Deps:   bash, curl, jq, nix, python3
@@ -33,12 +34,12 @@ open(path, 'w').write(text[:m.start()] + f'hash = "{value}"' + text[m.end():])
 PY
 }
 
-# Run nix build and extract the "got:" hash from the mismatch error.
-# The build is meant to fail; on any other failure, show why instead of
-# leaving the caller with an empty hash.
+# Build one fixed-output attribute of langfuse (src, pnpmDeps, cargoDeps) and
+# extract the "got:" hash. Building the whole package could report another
+# stale hash first. The build is meant to fail; on any other failure, show why.
 extract_hash() {
   local out
-  out=$(nix build ".#langfuse" 2>&1 || true)
+  out=$(nix build --no-link ".#langfuse.$1" 2>&1 || true)
   if ! grep -oP '(?<=got:    )sha256-\S+' <<<"$out" | head -1; then
     echo "$out" | tail -40 >&2
   fi
@@ -90,8 +91,8 @@ sed -i "s/version = \"${CURRENT}\"/version = \"${LATEST}\"/" "$PKG"
 set_hash 1 "$FAKE"
 
 log "Fetching source hash..."
-SRC_HASH=$(extract_hash)
-[[ -n $SRC_HASH ]] || err "Could not get source hash — run: nix build .#langfuse"
+SRC_HASH=$(extract_hash src)
+[[ -n $SRC_HASH ]] || err "Could not get source hash"
 log "Source hash: $SRC_HASH"
 set_hash 1 "$SRC_HASH"
 
@@ -106,12 +107,22 @@ fi
 set_hash 2 "$FAKE"
 
 log "Fetching pnpm deps hash (downloads all dependencies)..."
-PNPM_HASH=$(extract_hash)
-[[ -n $PNPM_HASH ]] || err "Could not get pnpm deps hash — run: nix build .#langfuse"
+PNPM_HASH=$(extract_hash pnpmDeps)
+[[ -n $PNPM_HASH ]] || err "Could not get pnpm deps hash"
 log "pnpm deps hash: $PNPM_HASH"
 set_hash 2 "$PNPM_HASH"
 
-# ── 5. Verify ────────────────────────────────────────────────────────────────
+# ── 5. Discover cargo deps hash (the Rust addon in packages/native) ─────────
+if grep -q 'cargoDeps' "$PKG"; then
+  set_hash 3 "$FAKE"
+  log "Fetching cargo deps hash..."
+  CARGO_HASH=$(extract_hash cargoDeps)
+  [[ -n $CARGO_HASH ]] || err "Could not get cargo deps hash"
+  log "cargo deps hash: $CARGO_HASH"
+  set_hash 3 "$CARGO_HASH"
+fi
+
+# ── 6. Verify ────────────────────────────────────────────────────────────────
 log "Verifying full build..."
-nix build ".#langfuse" 2>&1 | tail -40
+nix build --no-link ".#langfuse" 2>&1 | tail -40
 log "Done. langfuse $LATEST ready."
