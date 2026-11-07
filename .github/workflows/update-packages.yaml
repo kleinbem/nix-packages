@@ -47,27 +47,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    # A scheduled run and a dispatch must not reset the same PR branch at once.
+    concurrency:
+      group: update-packages-${{ matrix.attr }}
     strategy:
       fail-fast: false
       matrix:
         attr: ${{ fromJSON(needs.list.outputs.matrix) }}
     steps:
-      - name: Mint GitHub App installation token
-        id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      # The build runs upstream code: only the read-only job token until here.
       - uses: kleinbem/actions/nix-setup@7ec628296d5194e6e10031706387b992a10a1638 # v1.0.1
         with:
-          github-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ github.token }}
 
       # nix-update builds the new version and runs passthru.tests; that is
       # the gate before the PR auto-merges.
@@ -90,6 +85,16 @@ jobs:
             echo EOF_BODY
           } >> "$GITHUB_OUTPUT"
 
+      - name: Mint GitHub App installation token
+        id: app-token
+        if: steps.update.outputs.changed == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
       # Commits through createCommitOnBranch so GitHub signs the commit;
       # main requires signed commits.
       - name: Open PR
@@ -109,18 +114,20 @@ jobs:
             gh api "repos/$REPO/git/refs" -f ref="refs/heads/$branch" -f sha="$main_sha" >/dev/null
           fi
 
-          additions=$(git ls-files -m -o --exclude-standard | while read -r f; do
-            jq -n --arg p "$f" --arg c "$(base64 -w0 "$f")" '{path: $p, contents: $c}'
-          done | jq -s .)
+          # Files go through temp files: argv can't hold a large base64 blob.
+          additions=$(mktemp)
+          git ls-files -m -o --exclude-standard | while read -r f; do
+            base64 -w0 "$f" | jq -Rs --arg p "$f" '{path: $p, contents: .}'
+          done | jq -s . > "$additions"
           jq -n \
             --arg repo "$REPO" --arg branch "$branch" --arg sha "$main_sha" \
-            --arg headline "$TITLE" --argjson additions "$additions" \
+            --arg headline "$TITLE" --slurpfile additions "$additions" \
             --arg query 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }' \
             '{query: $query, variables: {input: {
                 branch: {repositoryNameWithOwner: $repo, branchName: $branch},
                 message: {headline: $headline},
                 expectedHeadOid: $sha,
-                fileChanges: {additions: $additions}
+                fileChanges: {additions: $additions[0]}
             }}}' | gh api graphql --input -
 
           body=$(printf '%s\n\n%s\n\n---\n%s\n' "$BODY" \
