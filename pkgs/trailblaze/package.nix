@@ -65,7 +65,13 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       ${lib.getExe finalAttrs.finalPackage} --help 2>&1 | grep -qi 'trail'
       touch $out
     '';
-    updateScript = nix-update-script { };
+    # The launcher is a second release asset with its own hash.
+    updateScript = nix-update-script {
+      extraArgs = [
+        "--custom-dep"
+        "launcher"
+      ];
+    };
   };
 
   meta = {

@@ -9,15 +9,14 @@
   nix-update-script,
 }:
 
-# Upstream has no releases or tags yet; the version is the commit's date.
 buildGoModule (finalAttrs: {
   pname = "block-review";
-  version = "0-unstable-2026-10-11";
+  version = "0.2.1";
 
   src = fetchFromGitHub {
     owner = "block";
     repo = "review";
-    rev = "0c13293f6f2dff3ee859bca29dd9b815da4314bf";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-AFVC7MngBNl8QEE8tKOEwxujcnU4EOJyb7ckteEgC+4=";
   };
 
@@ -51,7 +50,7 @@ buildGoModule (finalAttrs: {
       ${lib.getExe finalAttrs.finalPackage} review -h 2>&1 | grep -q -- '-base'
       touch $out
     '';
-    updateScript = nix-update-script { extraArgs = [ "--version=branch" ]; };
+    updateScript = nix-update-script { };
   };
 
   meta = {
