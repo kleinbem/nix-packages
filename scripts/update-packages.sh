@@ -55,7 +55,8 @@ update() {
   if ! err=$(nix eval --raw ".#legacyPackages.$SYSTEM.$attr.drvPath" 2>&1 >/dev/null); then
     if grep -qE '^ *- broken: |is marked as broken' <<<"$err"; then
       local dep
-      dep=$(sed -nE "s/.*[Pp]ackage '([^']+)'.*/\1/p" <<<"$err" | head -1)
+      # Older nixpkgs quote the name with ‘’.
+      dep=$(sed -nE "s/.*[Pp]ackage ('|‘)([^'’]+)('|’).*/\2/p" <<<"$err" | head -1)
       local msg="${dep:-a dependency} is marked broken in nixpkgs"
       echo "skip $attr: $msg" >&2
       if [[ -n ${GITHUB_ACTIONS:-} ]]; then
