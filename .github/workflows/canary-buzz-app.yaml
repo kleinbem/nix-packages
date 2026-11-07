@@ -15,6 +15,10 @@ on:
         description: buzz-app commit to build (default main)
         type: string
         default: ''
+      nixpkgs_ref:
+        description: kleinbem/nixpkgs branch to build with (default chosen by the MeshLLM match)
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -24,11 +28,15 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # The branch of NixOS/nixpkgs#577918, so the canary tests the recipe under
-  # review; NixOS/nixpkgs master once buzz-app has landed there.
+  # Two recipes for NixOS/nixpkgs#577918 until buzz-app lands there: the
+  # latest release's, and the same on top of nixpkgs' mesh-llm (#571722) with
+  # Shared compute on its runtimes. The second builds once buzz-app pins a
+  # MeshLLM of the same stage generation and skippy ABI.
   NIXPKGS_REPO: kleinbem/nixpkgs
-  NIXPKGS_REF: buzz-app-init
+  NIXPKGS_RELEASE_REF: buzz-app-prep
+  NIXPKGS_MESH_REF: buzz-app-mesh
   ISSUE_TITLE: "Canary: buzz-app packaging fails against buzz-app main"
+  MATCH_ISSUE_TITLE: "Canary: buzz-app main pins a MeshLLM that matches nixpkgs'"
 
 jobs:
   # One commit for every platform.
@@ -36,6 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rev: ${{ steps.rev.outputs.rev }}
+      match: ${{ steps.mesh.outputs.match }}
+      nixpkgs_ref: ${{ steps.ref.outputs.nixpkgs_ref }}
     steps:
       - id: rev
         env:
@@ -44,6 +54,32 @@ jobs:
           rev="${BUZZ_APP_REV:-$(git ls-remote https://github.com/block/buzz-app refs/heads/main | cut -f1)}"
           [[ -n $rev ]] || { echo "could not resolve block/buzz-app main" >&2; exit 1; }
           echo "rev=$rev" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: mesh
+        env:
+          BUZZ_APP_REV: ${{ steps.rev.outputs.rev }}
+          NIXPKGS_REF: ${{ env.NIXPKGS_MESH_REF }}
+        run: |
+          canary/buzz-app/mesh-match.sh | tee -a "$GITHUB_OUTPUT"
+
+      - id: ref
+        env:
+          INPUT_REF: ${{ inputs.nixpkgs_ref }}
+          MATCH: ${{ steps.mesh.outputs.match }}
+          APP: ${{ steps.mesh.outputs.app_generation }} / ${{ steps.mesh.outputs.app_abi }}
+          NIXPKGS: ${{ steps.mesh.outputs.nixpkgs_generation }} / ${{ steps.mesh.outputs.nixpkgs_abi }}
+        run: |
+          if [[ $MATCH == true ]]; then ref=$NIXPKGS_MESH_REF; else ref=$NIXPKGS_RELEASE_REF; fi
+          ref="${INPUT_REF:-$ref}"
+          echo "nixpkgs_ref=$ref" >> "$GITHUB_OUTPUT"
+          {
+            echo "MeshLLM stage generation / skippy ABI: buzz-app main $APP, nixpkgs $NIXPKGS (match: $MATCH)."
+            echo "Building with kleinbem/nixpkgs@$ref."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build:
     needs: plan
@@ -78,7 +114,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ env.NIXPKGS_REPO }}
-          ref: ${{ env.NIXPKGS_REF }}
+          ref: ${{ needs.plan.outputs.nixpkgs_ref }}
           path: nixpkgs
           persist-credentials: false
 
@@ -109,7 +145,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RESULT: ${{ needs.plan.result == 'success' && needs.build.result || 'plan failed' }}
           BUZZ_APP_REV: ${{ needs.plan.outputs.rev }}
+          MATCH: ${{ needs.plan.outputs.match }}
+          BUILT_WITH: ${{ needs.plan.outputs.nixpkgs_ref }}
         run: |
+          # Once: the day buzz-app main's MeshLLM matches nixpkgs', Shared compute
+          # can run on nixpkgs' runtime and buzz-app can follow mesh-llm.
+          if [[ $MATCH == true ]] && [[ -z "$(gh issue list --state all --search "in:title \"$MATCH_ISSUE_TITLE\"" --limit 100 --json title \
+            --jq "map(select(.title == \"$MATCH_ISSUE_TITLE\"))[0].title // empty")" ]]; then
+            gh issue create --title "$MATCH_ISSUE_TITLE" --body "buzz-app [\`${BUZZ_APP_REV:0:9}\`](https://github.com/block/buzz-app/commit/$BUZZ_APP_REV) pins a MeshLLM with the stage generation and skippy ABI of kleinbem/nixpkgs@$NIXPKGS_MESH_REF; built with @$BUILT_WITH ($RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
           issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --limit 100 --json number,title \
             --jq "map(select(.title == \"$ISSUE_TITLE\"))[0].number // empty")"
           if [[ $RESULT == success ]]; then
