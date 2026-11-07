@@ -8,7 +8,7 @@ Custom package derivations for the fleet, structured as a
 
 | Path | What lives here |
 |---|---|
-| `pkgs/` | One directory per package (`ls pkgs/`; `just list` shows what builds on this system), e.g. `antigravity`, `buzz-*`, `kleinbem-site`, `langfuse`, `oh-my-pi`. |
+| `pkgs/` | One directory per package (`ls pkgs/`; `just list` shows what builds on this system), e.g. `antigravity`, `buzz-*`, `langfuse`, `oh-my-pi`. |
 | `default.nix` | The NUR-style attrset (`pkgs.callPackage ./pkgs/<name> { }` per package) consumed by `nix-config` and other flakes. |
 | `overlay.nix` | Same packages exposed as a nixpkgs overlay, for consumers who don't want the whole NUR namespace. |
 | `modules/nixos/` | NixOS modules shipped alongside the packages (not just derivations). |
@@ -18,11 +18,6 @@ Custom package derivations for the fleet, structured as a
 
 ## Conventions
 
-- The `kleinbem-site` package here is how that app
-  repo's build reaches `nix-config`/`container-factory` — a version bump
-  there means pinning a new revision here (see `kleinbem-site`'s own docs
-  for the 4-repo update chain: site → nix-packages pin+hashes →
-  nix-config flake.lock → deploy).
 - Add a new package as its own `pkgs/<name>/` directory + one line in
   `default.nix`, following the existing packages' structure — don't
   inline a derivation directly in `default.nix`.
