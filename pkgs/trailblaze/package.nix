@@ -17,19 +17,19 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "trailblaze";
-  version = "2026.10.13";
+  version = "2026.10.30";
 
   # Upstream ships the CLI as an uber JAR plus a bash launcher (its Homebrew
   # formula installs the same two files). A build from the Kotlin/Gradle
   # sources is the next step for nixpkgs.
   src = fetchurl {
     url = "https://github.com/block/trailblaze/releases/download/v${finalAttrs.version}/trailblaze.jar";
-    hash = "sha256-+75EicY5WgiR1kWjqv+pQw2PizUg4qO3ELiLJAX9jxw=";
+    hash = "sha256-AhjFGTVHCjHClqa45vFeAqZGm6zhG3sbEh/qKztZtp8=";
   };
 
   launcher = fetchurl {
     url = "https://github.com/block/trailblaze/releases/download/v${finalAttrs.version}/trailblaze";
-    hash = "sha256-s/iRoINPIziG+BV3kArNxnbTV/G+TzQFfkjewapOIKY=";
+    hash = "sha256-pHFJvpFIPoFmLT60P5Ipcr2ongRCOqYLM1FdPTM0LeA=";
   };
 
   dontUnpack = true;
