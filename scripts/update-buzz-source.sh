@@ -76,5 +76,19 @@ rm -f "$backup"
 # substitutions and test suite that a new upstream commit can break.
 PACKAGES=(buzz-relay buzz-cli buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr)
 log "Verifying builds of ${PACKAGES[*]}..."
-nix build --no-link "${PACKAGES[@]/#/.#}" 2>&1 | tail -3
+build_log="$(mktemp)"
+if ! nix build --no-link --keep-going "${PACKAGES[@]/#/.#}" >"$build_log" 2>&1; then
+  # nix only prints the last lines of a failed build; show each failed log.
+  cat "$build_log" >&2
+  # Only the failed builders; nix also lists every planned derivation.
+  grep -E "builder for '|nix log /nix/store" "$build_log" |
+    grep -oE '/nix/store/[a-z0-9]{32}-[^ ]+\.drv' | sort -u | while read -r drv; do
+    echo "::group::nix log $drv" >&2
+    nix log "$drv" 2>&1 | tail -150 >&2 || true
+    echo "::endgroup::" >&2
+  done || true
+  rm -f "$build_log"
+  err "Build failed at ${LATEST_REV:0:9}"
+fi
+rm -f "$build_log"
 log "Build verified! Buzz ecosystem bumped to $NEW_VERSION."
