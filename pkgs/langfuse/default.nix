@@ -5,7 +5,10 @@
   nodejs_22,
   pnpmConfigHook,
   fetchPnpmDeps,
-  pnpm_11,
+  pnpm_12,
+  rustPlatform,
+  cargo,
+  rustc,
   prisma-engines_6,
   python3,
   pkg-config,
@@ -18,17 +21,17 @@
 
 let
   node = nodejs_22;
-  pnpm = pnpm_11;
+  pnpm = pnpm_12;
 in
 stdenv.mkDerivation rec {
   pname = "langfuse";
-  version = "4.24.0";
+  version = "4.75.0";
 
   src = fetchFromGitHub {
     owner = "langfuse";
     repo = "langfuse";
     rev = "v${version}";
-    hash = "sha256-mJ96DtuXeb5O66o1k5CPHnVHNMdEaHweL1UZVLc7HOY=";
+    hash = "sha256-Y7OGygQwxIYwBLBUrl4vkhpvf5Fro6xgH8kuda1AhF4=";
   };
 
   nativeBuildInputs = [
@@ -36,6 +39,9 @@ stdenv.mkDerivation rec {
     pnpm
     pnpmConfigHook
     prisma-engines_6
+    rustPlatform.cargoSetupHook
+    cargo
+    rustc
     python3 # Required for some node-gyp builds
     pkg-config
   ];
@@ -48,13 +54,26 @@ stdenv.mkDerivation rec {
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
     inherit pnpm;
-    hash = "sha256-MA9RMvG4GHmFdby5XBDpAtPKTAtQRzGEA3x8BWZd6Jk=";
+    hash = "sha256-hPPWLWKWwnJbG78QFavkMbitEoM9YzMN2xD6KysKpsI=";
     # fetcherVersion 3 was rejected for pnpm 11 in nixpkgs ≥ 2026-06; 4 uses the
     # SQLite-dump store format (nixpkgs #522703) — hash computed against it.
     fetcherVersion = 4;
     prePnpmInstall = ''
       cp -r ${src}/patches .
     '';
+  };
+
+  # Rust addon (napi-rs) the worker loads, built by turbo through `napi build`.
+  # Its hash = stays after pnpmDeps': the updater sets them by position.
+  cargoRoot = "packages/native";
+  cargoDeps = rustPlatform.fetchCargoVendor {
+    inherit
+      pname
+      version
+      src
+      cargoRoot
+      ;
+    hash = "sha256-P6yuIy/sVJN0efu/Kr952QnfpE+QfnOkYPRg2TCI8wo=";
   };
 
   preConfigure = ''
@@ -82,9 +101,9 @@ stdenv.mkDerivation rec {
     # Generate Prisma client
     pnpm run db:generate
 
-    # Build the monorepo using Turbo
-    # We build both web and worker
-    npx turbo run build --filter=web --filter=worker
+    # Build web and worker with Turbo. Through pnpm: npx refuses to run since
+    # Langfuse declares devEngines.packageManager = pnpm (EBADDEVENGINES).
+    pnpm exec turbo run build --filter=web --filter=worker
 
     runHook postBuild
   '';
