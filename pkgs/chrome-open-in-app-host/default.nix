@@ -3,7 +3,7 @@
 # manifest whose `path` points at it; nix-config links that manifest into
 # each browser's NativeMessagingHosts dir.
 #
-# Updated by scripts/update-packages.sh (no upstream tags, so branch head).
+# Updated by scripts/update-packages.sh from upstream release tags.
 {
   lib,
   buildGoModule,
@@ -15,12 +15,12 @@
 
 buildGoModule (finalAttrs: {
   pname = "chrome-open-in-app-host";
-  version = "0-unstable-2026-11-07";
+  version = "1.5.2";
 
   src = fetchFromGitHub {
     owner = "kleinbem";
     repo = "chrome-open-in-app";
-    rev = "16554af66092d534dc8a688de90cc2c676d7a32c";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-Ji5IzZBsNd+99E7ofaUEqU7HS4UqgNzbso/3ayIVsQI=";
   };
 
@@ -49,7 +49,7 @@ buildGoModule (finalAttrs: {
       --replace-fail @out@ $out
   '';
 
-  passthru.updateScript = nix-update-script { extraArgs = [ "--version=branch" ]; };
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Native messaging host for the Open in App browser extension";
