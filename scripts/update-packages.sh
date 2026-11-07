@@ -13,9 +13,8 @@ SYSTEM="${SYSTEM:-x86_64-linux}"
 
 list() {
   # Only packages defined in this repo: nix-detour's PR packages carry
-  # nixpkgs' updateScript too, but their files live in nixpkgs.
-  local self
-  self=$(nix flake metadata --json . | jq -r .path)
+  # nixpkgs' updateScript too, but their files live in nixpkgs. Match on the
+  # file, not the store path: with lazy trees the source path is virtual.
   # shellcheck disable=SC2016 # Nix, not shell
   nix eval --json ".#legacyPackages.$SYSTEM" --apply '
     ps: builtins.concatMap (n:
@@ -31,8 +30,10 @@ list() {
         } ]
         else [ ]);
       in if r.success then r.value else [ ]) (builtins.attrNames ps)' |
-    jq -c --arg self "$self/" \
-      '[.[] | select(.position | startswith($self)) | {attr, args}]'
+    jq -c '.[] | .file = (.position | sub("^/nix/store/[^/]+/"; "") | sub(":[0-9]+$"; ""))' |
+    while read -r entry; do
+      [[ -f $(jq -r .file <<<"$entry") ]] && jq -c '{attr, args}' <<<"$entry"
+    done | jq -sc .
 }
 
 update() {
