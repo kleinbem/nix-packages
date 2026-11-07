@@ -113,5 +113,5 @@ set_hash 2 "$PNPM_HASH"
 
 # ── 5. Verify ────────────────────────────────────────────────────────────────
 log "Verifying full build..."
-nix build ".#langfuse" 2>&1 | tail -3
+nix build ".#langfuse" 2>&1 | tail -40
 log "Done. langfuse $LATEST ready."
