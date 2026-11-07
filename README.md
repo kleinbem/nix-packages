@@ -41,7 +41,7 @@ is everything else the fleet needs.
 | `langfuse` | Self-hosted LLM observability service. |
 | `ricoh-driver` | Printer driver package. |
 | `google-antigravity`, `google-antigravity-ide`, `google-antigravity-ide-no-fhs`, `google-antigravity-cli` | Google Antigravity IDE/CLI, vendored from an audited derivation. Namespaced under `google-antigravity*` to avoid clobbering nixpkgs' own `antigravity` attr. |
-| `oh-my-pi` | Terminal coding-agent CLI, vendored prebuilt-binary release. |
+| `oh-my-pi` | Terminal coding-agent CLI, prebuilt release binary. Packaged and updated in `kleinbem/nix-devshells`, re-exported here. |
 | `apkeep` | Downloads APKs from Google Play, F-Droid and APKPure. |
 | `chrome-open-in-app-host` | Native messaging host for `kleinbem/chrome-open-in-app`. |
 
