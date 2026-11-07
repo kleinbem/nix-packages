@@ -154,10 +154,12 @@ jobs:
           BUZZ_APP_REV: ${{ needs.plan.outputs.rev }}
           MATCH: ${{ needs.plan.outputs.match }}
           BUILT_WITH: ${{ needs.plan.outputs.nixpkgs_ref }}
+          # Only a run on main (no buzz_app_rev) speaks for main.
+          ON_MAIN: ${{ inputs.buzz_app_rev == '' }}
         run: |
           # Once: the day buzz-app main's MeshLLM matches nixpkgs', Shared compute
           # can run on nixpkgs' runtime and buzz-app can follow mesh-llm.
-          if [[ $MATCH == true ]] && [[ -z "$(gh issue list --state all --search "in:title \"$MATCH_ISSUE_TITLE\"" --limit 100 --json title \
+          if [[ $MATCH == true && $ON_MAIN == true ]] && [[ -z "$(gh issue list --state all --search "in:title \"$MATCH_ISSUE_TITLE\"" --limit 100 --json title \
             --jq "map(select(.title == \"$MATCH_ISSUE_TITLE\"))[0].title // empty")" ]]; then
             gh issue create --title "$MATCH_ISSUE_TITLE" --body "buzz-app [\`${BUZZ_APP_REV:0:9}\`](https://github.com/block/buzz-app/commit/$BUZZ_APP_REV) pins a MeshLLM with the stage generation and skippy ABI of kleinbem/nixpkgs@$NIXPKGS_MESH_REF; built with @$BUILT_WITH ($RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           fi
