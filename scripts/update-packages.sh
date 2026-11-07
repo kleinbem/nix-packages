@@ -33,7 +33,9 @@ list() {
       in if r.success then r.value else [ ]) (builtins.attrNames ps)' |
     jq -c '.[] | .file = (.position | sub("^/nix/store/[^/]+/"; "") | sub(":[0-9]+$"; ""))' |
     while read -r entry; do
-      [[ -f $(jq -r .file <<<"$entry") ]] && jq -c '{attr, args, tests}' <<<"$entry"
+      if [[ -f $(jq -r .file <<<"$entry") ]]; then
+        jq -c '{attr, args, tests}' <<<"$entry"
+      fi
     done | jq -sc .
 }
 
