@@ -42,8 +42,18 @@ in
       type = types.nullOr types.path;
       default = null;
       description = ''
-        File containing environment variables for Langfuse.
-        Must contain DATABASE_URL, NEXTAUTH_SECRET, etc.
+        File containing environment variables for Langfuse: at least
+        DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET, SALT, ENCRYPTION_KEY,
+        CLICKHOUSE_URL, CLICKHOUSE_USER, CLICKHOUSE_PASSWORD,
+        REDIS_CONNECTION_STRING and LANGFUSE_S3_EVENT_UPLOAD_BUCKET.
+
+        The web service applies the Postgres and ClickHouse migrations before
+        it starts, so it also needs CLICKHOUSE_MIGRATION_URL
+        (clickhouse://host:9000), and CLICKHOUSE_CLUSTER_ENABLED=false on a
+        single-node ClickHouse: the default picks the clustered migrations
+        (ReplicatedMergeTree, needs Keeper). Set LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED
+        or LANGFUSE_AUTO_CLICKHOUSE_MIGRATION_DISABLED to "true" only when
+        migrations are run some other way.
       '';
     };
 
