@@ -15,13 +15,13 @@
 
 buildGoModule (finalAttrs: {
   pname = "chrome-open-in-app-host";
-  version = "1.5.1-unstable-2026-10-16";
+  version = "0-unstable-2026-11-07";
 
   src = fetchFromGitHub {
     owner = "kleinbem";
     repo = "chrome-open-in-app";
-    rev = "b0f37010b2600aa627b2b8200f0d61ee301c2673";
-    hash = "sha256-GOCTCvShd1fctF8NSIV0XHSXQQ6NK1+Peisqyc6BZ0E=";
+    rev = "16554af66092d534dc8a688de90cc2c676d7a32c";
+    hash = "sha256-Ji5IzZBsNd+99E7ofaUEqU7HS4UqgNzbso/3ayIVsQI=";
   };
 
   sourceRoot = "${finalAttrs.src.name}/host";
