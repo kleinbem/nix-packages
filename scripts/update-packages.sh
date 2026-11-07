@@ -58,7 +58,7 @@ update() {
       dep=$(sed -nE "s/.*[Pp]ackage '([^']+)'.*/\1/p" <<<"$err" | head -1)
       local msg="${dep:-a dependency} is marked broken in nixpkgs"
       echo "skip $attr: $msg" >&2
-      if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+      if [[ -n ${GITHUB_ACTIONS:-} ]]; then
         echo "::warning title=Skipped $attr::$msg"
         echo "- skipped \`$attr\`: $msg" >>"${GITHUB_STEP_SUMMARY:-/dev/null}"
       fi
