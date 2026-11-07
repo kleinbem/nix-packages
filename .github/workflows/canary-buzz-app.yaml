@@ -24,10 +24,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # The prep branch for the next desktop release until buzz-app lands in
-  # NixOS/nixpkgs (#577918); then NixOS/nixpkgs master.
+  # The branch of NixOS/nixpkgs#577918, so the canary tests the recipe under
+  # review; NixOS/nixpkgs master once buzz-app has landed there.
   NIXPKGS_REPO: kleinbem/nixpkgs
-  NIXPKGS_REF: buzz-app-next
+  NIXPKGS_REF: buzz-app-init
   ISSUE_TITLE: "Canary: buzz-app packaging fails against buzz-app main"
 
 jobs:
