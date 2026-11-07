@@ -6,7 +6,7 @@
 #
 #   NIXPKGS=~/nixpkgs canary/buzz-app/run.sh
 #
-# NIXPKGS: a nixpkgs checkout with buzz-app (kleinbem/nixpkgs@buzz-app-next).
+# NIXPKGS: a nixpkgs checkout with buzz-app (kleinbem/nixpkgs@buzz-app-init).
 # BUZZ_APP_REV: the commit to build (default: main).
 set -euo pipefail
 
