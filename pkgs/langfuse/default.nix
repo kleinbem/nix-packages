@@ -17,6 +17,9 @@
   openssl,
   vips,
   makeWrapper,
+  bash,
+  coreutils,
+  gnused,
   callPackage,
   # Build-time environment variables for Next.js frontend. A cloud region turns
   # on Langfuse Cloud behaviour (billing, dd-trace), so self-hosting leaves it null.
@@ -154,8 +157,17 @@ stdenv.mkDerivation (finalAttrs: {
 
     chmod +x $lf/worker/entrypoint.sh
 
-    # Prisma loads the Nix engines instead of the downloaded ones.
+    # The entrypoints shell out to sh, sed and coreutils, which a systemd
+    # unit's PATH lacks. Prisma loads the Nix engines, not downloaded ones.
     engineEnv=(
+      --prefix PATH : ${
+        lib.makeBinPath [
+          node
+          bash
+          coreutils
+          gnused
+        ]
+      }
       --set-default PRISMA_QUERY_ENGINE_LIBRARY ${prisma-engines_6}/lib/libquery_engine.node
       --set-default PRISMA_SCHEMA_ENGINE_BINARY ${prisma-engines_6}/bin/schema-engine
     )
@@ -164,16 +176,15 @@ stdenv.mkDerivation (finalAttrs: {
       --set-default NEXT_MANUAL_SIG_HANDLE true \
       --prefix PATH : ${
         lib.makeBinPath [
-          node
           prisma_6
           go-migrate
+          openssl # Prisma probes it to pick its OpenSSL variant
         ]
       } \
       --chdir $lf \
       --add-flags "${node}/bin/node $lf/web/server.js --keepAliveTimeout 110000"
     makeWrapper $lf/worker/entrypoint.sh $out/bin/langfuse-worker \
       "''${engineEnv[@]}" \
-      --prefix PATH : ${lib.makeBinPath [ node ]} \
       --chdir $lf/worker \
       --add-flags "${node}/bin/node $lf/worker/dist/index.js"
 
