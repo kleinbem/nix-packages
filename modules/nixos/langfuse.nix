@@ -49,7 +49,9 @@ in
 
         The web service applies the Postgres and ClickHouse migrations before
         it starts, so it also needs CLICKHOUSE_MIGRATION_URL
-        (clickhouse://host:9000). Set LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED
+        (clickhouse://host:9000), and CLICKHOUSE_CLUSTER_ENABLED=false on a
+        single-node ClickHouse: the default picks the clustered migrations
+        (ReplicatedMergeTree, needs Keeper). Set LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED
         or LANGFUSE_AUTO_CLICKHOUSE_MIGRATION_DISABLED to "true" only when
         migrations are run some other way.
       '';
