@@ -9,13 +9,13 @@
 # Upstream has no releases or tags yet; the version is the commit's date.
 buildGoModule (finalAttrs: {
   pname = "codecrucible";
-  version = "0-unstable-2026-10-15";
+  version = "0-unstable-2026-11-05";
 
   src = fetchFromGitHub {
     owner = "block";
     repo = "codecrucible";
-    rev = "b5c8086b7f7031b828b5fbcfeac53fa58b4c9a38";
-    hash = "sha256-MUvLAtN4rVGxbKLBDt604YnTC0DosL5cdKGb6mzwzgQ=";
+    rev = "22db6e2c9935e8d52154da965e996ea49294076e";
+    hash = "sha256-i4xDkKNIsJ+j2iJ0TA6jxzLgit8IzFX7kGclSvPuIMs=";
   };
 
   vendorHash = "sha256-ixHwMQf9cB2yWDbaxgWjobReUojj5hMMAKzZDDzG5iM=";
