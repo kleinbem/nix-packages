@@ -133,7 +133,7 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r web/.next/standalone/. $lf/
     cp -r web/.next/static $lf/web/.next/static
     cp -r web/public $lf/web/public
-    cp web/entrypoint.sh $lf/web/entrypoint.sh
+    install -m755 web/entrypoint.sh $lf/web/entrypoint.sh
     cp -r packages/shared/prisma packages/shared/clickhouse $lf/packages/shared/
     cp packages/shared/scripts/cleanup.sql $lf/packages/shared/scripts/
 
@@ -151,6 +151,8 @@ stdenv.mkDerivation (finalAttrs: {
     rm -rf "$deployed_client" "$(dirname "$(dirname "$deployed_client")")/.prisma"
     cp -R "$builder_client" "$deployed_client"
     cp -R "$(dirname "$(dirname "$builder_client")")/.prisma" "$(dirname "$(dirname "$deployed_client")")/.prisma"
+
+    chmod +x $lf/worker/entrypoint.sh
 
     # Prisma loads the Nix engines instead of the downloaded ones.
     engineEnv=(
