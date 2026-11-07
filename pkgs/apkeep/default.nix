@@ -4,6 +4,7 @@
   fetchurl,
   autoPatchelfHook,
   openssl,
+  nix-update-script,
 }:
 
 let
@@ -47,6 +48,14 @@ stdenv.mkDerivation {
 
     runHook postInstall
   '';
+
+  # Upstream also tags API snapshots (apkpure-api-2025-10); only releases count.
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "^(\\d+\\.\\d+\\.\\d+)$"
+    ];
+  };
 
   meta = with lib; {
     description = "Command-line tool for downloading APK files from Google Play, F-Droid, and APKPure";

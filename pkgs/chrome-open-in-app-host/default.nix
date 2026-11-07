@@ -3,12 +3,12 @@
 # manifest whose `path` points at it; nix-config links that manifest into
 # each browser's NativeMessagingHosts dir.
 #
-# Bump: take the new commit SHA from kleinbem/chrome-open-in-app, then
-#   nix run nixpkgs#nix-prefetch-github -- kleinbem chrome-open-in-app --rev <sha>
+# Updated by scripts/update-packages.sh (no upstream tags, so branch head).
 {
   lib,
   buildGoModule,
   fetchFromGitHub,
+  nix-update-script,
   # Unpacked extension ID that may talk to the host.
   extensionIds ? [ "ngfknlddgkbipaimbaihckmaodkmndoa" ],
 }:
@@ -48,6 +48,8 @@ buildGoModule (finalAttrs: {
     substituteInPlace $out/etc/chromium/native-messaging-hosts/com.kleinbem.open_in_app.json \
       --replace-fail @out@ $out
   '';
+
+  passthru.updateScript = nix-update-script { extraArgs = [ "--version=branch" ]; };
 
   meta = {
     description = "Native messaging host for the Open in App browser extension";

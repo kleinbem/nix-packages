@@ -51,3 +51,8 @@ update-langfuse:
 update-buzz-source:
     @./scripts/update-buzz-source.sh
     @echo "✅ pkgs/buzz/source.json updated — review 'git diff' and commit."
+
+# Packages whose updateScript is nix-update-script (workflow update-packages.yaml).
+[group("Updates")]
+update-package pkg:
+    @./scripts/update-packages.sh update {{pkg}}
