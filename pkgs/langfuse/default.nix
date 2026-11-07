@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  nodejs_22,
+  nodejs_24,
   pnpmConfigHook,
   fetchPnpmDeps,
   pnpm_12,
@@ -10,27 +10,33 @@
   cargo,
   rustc,
   prisma-engines_6,
+  prisma_6,
+  go-migrate,
   python3,
   pkg-config,
   openssl,
   vips,
-  # Build-time environment variables for Next.js frontend
-  nextPublicLangfuseCloudRegion ? "EU",
+  makeWrapper,
+  callPackage,
+  # Build-time environment variables for Next.js frontend. A cloud region turns
+  # on Langfuse Cloud behaviour (billing, dd-trace), so self-hosting leaves it null.
+  nextPublicLangfuseCloudRegion ? null,
   nextTelemetryDisabled ? "1",
 }:
 
 let
-  node = nodejs_22;
+  # Langfuse pins engines.node = 24.
+  node = nodejs_24;
   pnpm = pnpm_12;
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "langfuse";
   version = "4.75.0";
 
   src = fetchFromGitHub {
     owner = "langfuse";
     repo = "langfuse";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     hash = "sha256-Y7OGygQwxIYwBLBUrl4vkhpvf5Fro6xgH8kuda1AhF4=";
   };
 
@@ -44,6 +50,7 @@ stdenv.mkDerivation rec {
     rustc
     python3 # Required for some node-gyp builds
     pkg-config
+    makeWrapper
   ];
 
   buildInputs = [
@@ -52,14 +59,14 @@ stdenv.mkDerivation rec {
   ];
 
   pnpmDeps = fetchPnpmDeps {
-    inherit pname version src;
+    inherit (finalAttrs) pname version src;
     inherit pnpm;
     hash = "sha256-hPPWLWKWwnJbG78QFavkMbitEoM9YzMN2xD6KysKpsI=";
     # fetcherVersion 3 was rejected for pnpm 11 in nixpkgs ≥ 2026-06; 4 uses the
     # SQLite-dump store format (nixpkgs #522703) — hash computed against it.
     fetcherVersion = 4;
     prePnpmInstall = ''
-      cp -r ${src}/patches .
+      cp -r ${finalAttrs.src}/patches .
     '';
   };
 
@@ -67,7 +74,7 @@ stdenv.mkDerivation rec {
   # Its hash = stays after pnpmDeps': the updater sets them by position.
   cargoRoot = "packages/native";
   cargoDeps = rustPlatform.fetchCargoVendor {
-    inherit
+    inherit (finalAttrs)
       pname
       version
       src
@@ -77,12 +84,11 @@ stdenv.mkDerivation rec {
   };
 
   preConfigure = ''
-    cp -r ${src}/patches .
+    cp -r ${finalAttrs.src}/patches .
   '';
 
   # Required for Next.js build-time configuration and Prisma engines
   env = {
-    NEXT_PUBLIC_LANGFUSE_CLOUD_REGION = nextPublicLangfuseCloudRegion;
     NEXT_TELEMETRY_DISABLED = nextTelemetryDisabled;
     DOCKER_BUILD = "1";
     CI = "true";
@@ -93,6 +99,11 @@ stdenv.mkDerivation rec {
     PRISMA_QUERY_ENGINE_BINARY = "${prisma-engines_6}/bin/query-engine";
     PRISMA_QUERY_ENGINE_LIBRARY = "${prisma-engines_6}/lib/libquery_engine.node";
     PRISMA_FMT_BINARY = "${prisma-engines_6}/bin/prisma-fmt";
+    # pnpm re-checks node_modules before each run; the frozen install is authoritative.
+    pnpm_config_verify_deps_before_run = "false";
+  }
+  // lib.optionalAttrs (nextPublicLangfuseCloudRegion != null) {
+    NEXT_PUBLIC_LANGFUSE_CLOUD_REGION = nextPublicLangfuseCloudRegion;
   };
 
   buildPhase = ''
@@ -100,6 +111,9 @@ stdenv.mkDerivation rec {
 
     # Generate Prisma client
     pnpm run db:generate
+
+    # Render the ClickHouse migrations up.sh applies at web start (as web/Dockerfile does).
+    node ./packages/shared/clickhouse/scripts/prepare-migrations.mjs materialize ./packages/shared/clickhouse/migrations
 
     # Build web and worker with Turbo. Through pnpm: npx refuses to run since
     # Langfuse declares devEngines.packageManager = pnpm (EBADDEVENGINES).
@@ -111,30 +125,51 @@ stdenv.mkDerivation rec {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/lib/langfuse
+    lf=$out/lib/langfuse
+    mkdir -p $lf/packages/shared/scripts
 
-    # Next.js standalone output for the web app
-    cp -r web/.next/standalone/* $out/lib/langfuse/
-    cp -r web/.next/static $out/lib/langfuse/web/.next/static
-    cp -r web/public $out/lib/langfuse/web/public
+    # Next.js standalone output for the web app, laid out like web/Dockerfile's
+    # runner so upstream's entrypoint.sh (migrations, then server) runs unchanged.
+    cp -r web/.next/standalone/. $lf/
+    cp -r web/.next/static $lf/web/.next/static
+    cp -r web/public $lf/web/public
+    cp web/entrypoint.sh $lf/web/entrypoint.sh
+    cp -r packages/shared/prisma packages/shared/clickhouse $lf/packages/shared/
+    cp packages/shared/scripts/cleanup.sql $lf/packages/shared/scripts/
 
-    # Worker build
-    cp -r worker/dist $out/lib/langfuse/worker
+    # Worker: its own production node_modules with the workspace packages
+    # (@langfuse/shared, the @langfuse/native addon) materialised, as
+    # worker/Dockerfile does. The deploy reinstalls @prisma/client, so the
+    # generated client is copied over from the build tree.
+    pnpm --offline --filter worker deploy --prod $lf/worker
+    builder_client=$(find node_modules/.pnpm -path '*/node_modules/@prisma/client' -type d | head -n 1)
+    deployed_client=$(find $lf/worker/node_modules/.pnpm -path '*/node_modules/@prisma/client' -type d | head -n 1)
+    rm -rf "$deployed_client" "$(dirname "$(dirname "$deployed_client")")/.prisma"
+    cp -R "$builder_client" "$deployed_client"
+    cp -R "$(dirname "$(dirname "$builder_client")")/.prisma" "$(dirname "$(dirname "$deployed_client")")/.prisma"
 
-    # Create bin wrappers
-    mkdir -p $out/bin
-
-    cat > $out/bin/langfuse-web <<EOF
-    #!/bin/sh
-    exec ${node}/bin/node $out/lib/langfuse/web/server.js
-    EOF
-
-    cat > $out/bin/langfuse-worker <<EOF
-    #!/bin/sh
-    exec ${node}/bin/node $out/lib/langfuse/worker/index.js
-    EOF
-
-    chmod +x $out/bin/langfuse-web $out/bin/langfuse-worker
+    # Prisma loads the Nix engines instead of the downloaded ones.
+    engineEnv=(
+      --set-default PRISMA_QUERY_ENGINE_LIBRARY ${prisma-engines_6}/lib/libquery_engine.node
+      --set-default PRISMA_SCHEMA_ENGINE_BINARY ${prisma-engines_6}/bin/schema-engine
+    )
+    makeWrapper $lf/web/entrypoint.sh $out/bin/langfuse-web \
+      "''${engineEnv[@]}" \
+      --set-default NEXT_MANUAL_SIG_HANDLE true \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          node
+          prisma_6
+          go-migrate
+        ]
+      } \
+      --chdir $lf \
+      --add-flags "${node}/bin/node $lf/web/server.js --keepAliveTimeout 110000"
+    makeWrapper $lf/worker/entrypoint.sh $out/bin/langfuse-worker \
+      "''${engineEnv[@]}" \
+      --prefix PATH : ${lib.makeBinPath [ node ]} \
+      --chdir $lf/worker \
+      --add-flags "${node}/bin/node $lf/worker/dist/index.js"
 
     # Prune broken symlinks common in pnpm monorepos
     find $out -type l -xtype l -delete
@@ -142,10 +177,12 @@ stdenv.mkDerivation rec {
     runHook postInstall
   '';
 
+  passthru.tests.vm = callPackage ./test.nix { langfuse = finalAttrs.finalPackage; };
+
   meta = with lib; {
     description = "Open source LLM engineering platform: observability, metrics, eval, prompt management";
     homepage = "https://langfuse.com";
     license = licenses.mit;
     platforms = platforms.linux;
   };
-}
+})
