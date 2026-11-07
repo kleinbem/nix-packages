@@ -64,7 +64,7 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
-      # nix-update builds the new version and runs passthru.tests; that is
+      # nix-update builds the new version and runs passthru.tests if any; that is
       # the gate before the PR auto-merges.
       - name: Update, build and test
         id: update
@@ -131,7 +131,7 @@ jobs:
             }}}' | gh api graphql --input -
 
           body=$(printf '%s\n\n%s\n\n---\n%s\n' "$BODY" \
-            "nix-update --build --test passed on the runner." \
+            "nix-update built it (and ran passthru.tests, if any) on the runner." \
             "🤖 Opened by the update-packages workflow.")
           open=$(gh pr list -R "$REPO" --head "$branch" --state open --json number --jq length)
           [[ $open != 0 ]] ||
