@@ -61,12 +61,13 @@ nixpkgs_pnpm() {
 # Langfuse pins pnpm close to its newest release, and an older pnpm can't
 # parse a newer pnpm-workspace.yaml, so wait for nixpkgs rather than fail.
 RELEASES=$(curl -fsSL "https://api.github.com/repos/langfuse/langfuse/releases?per_page=30" |
-  jq -r '.[] | select(.draft or .prerelease | not) | .tag_name | ltrimstr("v")' | sort -rV)
-[[ -n $RELEASES ]] || err "Could not fetch releases"
+  jq -r '.[] | select(.draft or .prerelease | not) | .tag_name | ltrimstr("v")' | sort -rV) ||
+  err "Could not fetch releases"
+[[ -n $RELEASES ]] || err "No releases found"
 
 LATEST=""
 for v in $RELEASES; do
-  want=$(required_pnpm "$v")
+  want=$(required_pnpm "$v") || err "Could not read v$v/package.json"
   [[ $want =~ ^([0-9]+)\. ]] || err "No pnpm version in v$v/package.json"
   major="${BASH_REMATCH[1]}"
   have=$(nixpkgs_pnpm "$major")
