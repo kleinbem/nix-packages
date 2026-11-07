@@ -63,8 +63,15 @@ jobs:
         env:
           BUZZ_APP_REV: ${{ steps.rev.outputs.rev }}
           NIXPKGS_REF: ${{ env.NIXPKGS_MESH_REF }}
+        # A failed check still builds (with the release recipe) and is
+        # reported as a failure.
         run: |
-          canary/buzz-app/mesh-match.sh | tee -a "$GITHUB_OUTPUT"
+          if out="$(canary/buzz-app/mesh-match.sh)"; then
+            echo "$out" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "::error::could not compare buzz-app's MeshLLM pin with nixpkgs'"
+            echo "match=error" >> "$GITHUB_OUTPUT"
+          fi
 
       - id: ref
         env:
@@ -143,7 +150,7 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RESULT: ${{ needs.plan.result == 'success' && needs.build.result || 'plan failed' }}
+          RESULT: ${{ needs.plan.result != 'success' && 'plan failed' || needs.plan.outputs.match == 'error' && format('{0}, MeshLLM check failed', needs.build.result) || needs.build.result }}
           BUZZ_APP_REV: ${{ needs.plan.outputs.rev }}
           MATCH: ${{ needs.plan.outputs.match }}
           BUILT_WITH: ${{ needs.plan.outputs.nixpkgs_ref }}
