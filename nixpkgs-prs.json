@@ -16,10 +16,13 @@
     "pr": 577918,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "93fd20ade7e9cac9010b3bcac80de586cdce36f9",
-    "narHash": "sha256-fylTIe7h0zTx6KClegGbmeEEO+OR47vLrfGawCSZP9c=",
+    "rev": "2d78b15ddc4b290315be8843465f3b1c4f55df55",
+    "narHash": "sha256-hgxG4tvEBSR4lOjKCKWTMjoOxOqvVb+DAyS1MW8XmYA=",
     "attrs": [
       "buzz-app"
+    ],
+    "scope": [
+      "skippy-native-runtime"
     ]
   },
   "garage-ui": {
