@@ -9,13 +9,13 @@
 # Upstream has no releases or tags yet; the version is the commit's date.
 buildGoModule (finalAttrs: {
   pname = "braindump";
-  version = "0-unstable-2026-04-29";
+  version = "0-unstable-2026-11-09";
 
   src = fetchFromGitHub {
     owner = "block";
     repo = "braindump";
-    rev = "d267ace6b39a5c2a12657915cb4b4a9379f76386";
-    hash = "sha256-HBCOeiwuXHc2l+Bz3dKhTjVnXwKNBEs7IHTzqC7SkzI=";
+    rev = "9e61e4101c053a29082c9437bdf0d6408e33ff8b";
+    hash = "sha256-0FcbR+sPELxcVNYlQieIbJYuNcjjhC+kU096FYCtJwc=";
   };
 
   vendorHash = "sha256-gM8vBy+1fKOOEh5MUIFJHqtGFp4QZrECF+ZWcIsQ7Ew=";
