@@ -22,11 +22,11 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # The three nixpkgs PRs merged into one branch (packages #571722, skippy
-  # #581182, module #581183), rebuilt when one of them changes; then
-  # NixOS/nixpkgs master once they have landed.
+  # The whole nixpkgs stack (#571722 and the PRs on top), the branch the fleet
+  # pins too (nixpkgs-prs.json); NixOS/nixpkgs master once it has landed.
+  # Don't delete it: both this canary and kleinbem/mesh-llm-gpu's read it.
   NIXPKGS_REPO: kleinbem/nixpkgs
-  NIXPKGS_REF: mesh-llm-canary
+  NIXPKGS_REF: mesh-llm-dev
   ISSUE_TITLE: "Canary: mesh-llm packaging fails against MeshLLM main"
 
 jobs:
