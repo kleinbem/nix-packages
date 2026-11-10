@@ -58,7 +58,9 @@ jobs:
           # Assigned, so each report notifies the owner (and reaches ntfy
           # through github-notify) without watching the whole repo.
           if [[ -n "$issue" ]]; then
-            gh issue edit "$issue" --add-assignee "$GITHUB_REPOSITORY_OWNER"
+            # A failed assignment must not cost the report.
+            gh issue edit "$issue" --add-assignee "$GITHUB_REPOSITORY_OWNER" \
+              || echo "::warning::could not assign #$issue to $GITHUB_REPOSITORY_OWNER"
             gh issue comment "$issue" --body-file report.md
           else
             gh issue create --title "$ISSUE_TITLE" --body-file report.md --assignee "$GITHUB_REPOSITORY_OWNER"
