@@ -2,7 +2,6 @@
   lib,
   stdenvNoCC,
   cups,
-  coreutils,
   runCommand,
 }:
 
@@ -17,8 +16,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     mkdir -p $out/share/cups/model/ricoh $out/lib/cups/backend
     cp RICOH-SP-220Nw.ppd $out/share/cups/model/ricoh/RICOH-SP-220Nw.ppd
     substitute ricoh-sp220.sh $out/lib/cups/backend/ricoh-sp220 \
-      --subst-var-by cups ${cups} \
-      --subst-var-by coreutils ${coreutils}
+      --subst-var-by cups ${cups}
     chmod 0755 $out/lib/cups/backend/ricoh-sp220
     runHook postInstall
   '';
@@ -48,5 +46,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     description = "Driverless PWG Raster profile and sanitizing IPP backend for Ricoh SP 220Nw series";
     license = lib.licenses.mit;
     platforms = lib.platforms.all;
+    maintainers = with lib.maintainers; [ ];
   };
 })
