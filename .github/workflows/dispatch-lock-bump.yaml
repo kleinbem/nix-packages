@@ -3,8 +3,6 @@ name: Dispatch nix-config lock bump
 # Hosts deploy from nix-config's flake.lock, so a merge here reaches no device
 # until that lock moves (nightly at 03:00 UTC otherwise). Once main is green,
 # ask nix-config's Maintain Flake to bump just this input right away.
-# workflow_run is safe here: the job checks out nothing and runs no code from
-# the triggering run, and it only acts on pushes to this repo's main.
 on:
   workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: ["Check Flake"]
@@ -15,33 +13,13 @@ permissions: {}
 
 jobs:
   dispatch:
-    # Fork PRs from a branch named main also match the branches filter.
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_repository.full_name == github.repository
-    runs-on: ubuntu-latest
-    steps:
-      - name: Mint GitHub App token for nix-config
-        id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: nix-config
-          permission-contents: write
-
-      - name: Ask Maintain Flake to bump this input
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          OWNER: ${{ github.repository_owner }}
-          INPUT: ${{ github.event.repository.name }}
-          SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -euo pipefail
-          gh api "repos/$OWNER/nix-config/dispatches" \
-            -f event_type=lock-bump \
-            -f "client_payload[inputs]=$INPUT" \
-            -f "client_payload[sha]=$SHA"
-          echo "requested nix-config lock bump of '$INPUT' at $SHA"
+    uses: kleinbem/actions/.github/workflows/dispatch-lock-bump.yaml@b3ffb6b2eeb888969e5f16640c84a55956581542 # v1.9.0
+    with:
+      sha: ${{ github.event.workflow_run.head_sha }}
+    secrets:
+      app-id: ${{ secrets.APP_ID }}
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
