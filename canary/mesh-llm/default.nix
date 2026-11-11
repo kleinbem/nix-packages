@@ -65,6 +65,11 @@ let
     });
 
     mesh-llm = prev.mesh-llm.overrideAttrs (old: {
+      # The b12199 bindings grew llama_context_params, the test still expects
+      # the old size. upstream: Mesh-LLM/mesh-llm#2987
+      checkFlags = old.checkFlags or [ ] ++ [
+        "--skip=llama_draft::tests::mirrors_match_the_pinned_upstream_layouts"
+      ];
       cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${meshLlmSrc}/Cargo.lock"; };
       pnpmDeps = old.pnpmDeps.overrideAttrs {
         outputHash = pnpmHash;

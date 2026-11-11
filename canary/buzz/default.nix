@@ -61,7 +61,17 @@ let
         {
           cargoDeps = cargoDeps final "buzz-workspace-vendor" workspaceCargoHash { };
         }
-        // prev.lib.optionalAttrs (name == "buzz-cli") { inherit src; }
+        // prev.lib.optionalAttrs (name == "buzz-cli") {
+          inherit src;
+          # A test checks its child with /bin/kill, which the Linux sandbox lacks.
+          # tracking: kleinbem/nix-packages#295
+          postPatch =
+            old.postPatch or ""
+            + prev.lib.optionalString prev.stdenv.hostPlatform.isLinux ''
+              substituteInPlace crates/buzz-cli/src/desktop_provider/ownership.rs \
+                --replace-quiet '"/bin/kill"' '"${prev.lib.getExe' final.util-linux "kill"}"'
+            '';
+        }
         // prev.lib.optionalAttrs (name == "buzz-relay") {
           passthru = old.passthru // {
             web = old.passthru.web.overrideAttrs (web: {
