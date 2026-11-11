@@ -4,6 +4,8 @@
   fetchFromGitHub,
   cacert,
   stdenv,
+  pkg-config,
+  aws-lc,
 }:
 
 let
@@ -21,6 +23,10 @@ rustPlatform.buildRustPackage {
   cargoTestFlags = [
     "--package=buzz-cli"
   ];
+
+  # nixpkgs makes aws-lc-sys link the system AWS-LC (AWS_LC_SYS_USE_SYSTEM=1).
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ aws-lc ];
 
   nativeCheckInputs = [ cacert ];
 

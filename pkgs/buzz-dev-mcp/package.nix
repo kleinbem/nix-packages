@@ -6,6 +6,8 @@
   git,
   makeWrapper,
   ripgrep,
+  pkg-config,
+  aws-lc,
 }:
 
 let
@@ -20,7 +22,12 @@ rustPlatform.buildRustPackage {
     ./fix-bip340-pubkey-validation.patch
   ];
 
-  nativeBuildInputs = [ makeWrapper ];
+  # nixpkgs makes aws-lc-sys link the system AWS-LC (AWS_LC_SYS_USE_SYSTEM=1).
+  nativeBuildInputs = [
+    makeWrapper
+    pkg-config
+  ];
+  buildInputs = [ aws-lc ];
   nativeCheckInputs = [
     bash
     git
