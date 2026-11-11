@@ -4,6 +4,8 @@
   fetchFromGitHub,
   cacert,
   stdenv,
+  pkg-config,
+  aws-lc,
 }:
 
 let
@@ -43,6 +45,10 @@ rustPlatform.buildRustPackage {
     "--skip=signals_cancel_startup_turn_and_pending_stdin_without_hanging"
     "--skip=stop_reasons_failures_and_permission_exchange_are_explicit"
   ];
+
+  # nixpkgs makes aws-lc-sys link the system AWS-LC (AWS_LC_SYS_USE_SYSTEM=1).
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ aws-lc ];
 
   nativeCheckInputs = [ cacert ];
 

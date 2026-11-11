@@ -4,6 +4,8 @@
   fetchFromGitHub,
   cacert,
   stdenv,
+  pkg-config,
+  aws-lc,
 }:
 
 let
@@ -31,6 +33,10 @@ rustPlatform.buildRustPackage {
     "--skip=steer_rejected_on_run_id_mismatch"
     "--skip=steer_rejected_on_empty_prompt"
   ];
+
+  # nixpkgs makes aws-lc-sys link the system AWS-LC (AWS_LC_SYS_USE_SYSTEM=1).
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ aws-lc ];
 
   nativeCheckInputs = [ cacert ];
 
