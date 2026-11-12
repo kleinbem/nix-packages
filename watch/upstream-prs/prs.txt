@@ -24,6 +24,7 @@ NixOS/nixpkgs#571722
 NixOS/nixpkgs#574877
 NixOS/nixpkgs#577918
 NixOS/nixpkgs#584660
+NixOS/nixpkgs#585881
 #
 # Buzz:
 block/buzz#8071
