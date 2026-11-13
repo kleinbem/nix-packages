@@ -118,6 +118,9 @@
   # launcher as upstream ships it). In nixpkgs form for a later nixpkgs PR.
   trailblaze = pkgs.callPackage ./pkgs/trailblaze/package.nix { };
 
+  # CLI and web dashboard for temporary nixpkgs package holds and ahead PRs.
+  nix-detour = pkgs.callPackage "${nix-detour}/package.nix" { };
+
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...
 }
