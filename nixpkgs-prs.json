@@ -16,8 +16,8 @@
     "pr": 577918,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "a57b99ed57228b03ad1d3571a26138bad78ee8a6",
-    "narHash": "sha256-qoQHualWI/TcNNMDR6XpRBMLMwmqq7UQuSK7Q/h5fxw=",
+    "rev": "00a55a67251dffcb01b0317a33034d3b353ea451",
+    "narHash": "sha256-QacuhaLikkvteTTKZPrIXUQ54ZOkzuc67VRl8QcxrZ4=",
     "attrs": [
       "buzz-app"
     ],
@@ -39,8 +39,8 @@
     "pr": 571722,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "8044951cd3001316f321f4031df66d1be9e98e87",
-    "narHash": "sha256-ZKXxBFBOFkPDIRlmzts/1C0qUj59T9L5Ufbpj2XLSB8=",
+    "rev": "ddb90897eaf8384347589b352af90bc78113f7b5",
+    "narHash": "sha256-MKsFEMnRsqALV83Nixn4n6QgEhipKXOwdsH9rBrAeyw=",
     "attrs": [
       "mesh-llm",
       "mesh-llm-cuda",
