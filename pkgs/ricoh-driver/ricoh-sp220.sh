@@ -13,21 +13,33 @@ if [ "$#" -eq 0 ]; then
   exit 0
 fi
 
+# Allowlist only valid user print-intent options, discarding CUPS queue internals
+# (e.g. printer-state=*, marker-*, device-uri=*) and firmware-conflicting options
+# (PageSize, ColorModel, finishings, media, media-col).
 CLEAN_OPTS="print-color-mode=monochrome"
 
 read -r -a opts <<<"${5:-}"
 for opt in "${opts[@]}"; do
   opt_lower="${opt,,}"
   case "$opt_lower" in
-  pagesize=* | colormodel=* | finishings=* | print-color-mode=* | media=* | media-col=*)
+  copies=* | number-up=* | orientation-requested=* | page-ranges=* | resolution=* | sides=* | job-priority=* | job-hold-until=* | collate | nocollate)
+    CLEAN_OPTS="$CLEAN_OPTS $opt"
     ;;
   *)
-    CLEAN_OPTS="$CLEAN_OPTS $opt"
     ;;
   esac
 done
 
 REAL_URI="${DEVICE_URI#ricoh-sp220:}"
+# Ensure a connection timeout default (30s) if not already specified in the URI,
+# so CUPS doesn't hang indefinitely (default 7 days) if the printer is powered off.
+if [[ $REAL_URI != *"contimeout="* ]]; then
+  if [[ $REAL_URI == *"?"* ]]; then
+    REAL_URI="${REAL_URI}&contimeout=30"
+  else
+    REAL_URI="${REAL_URI}?contimeout=30"
+  fi
+fi
 export DEVICE_URI="ipp:${REAL_URI}"
 
 IPP_BACKEND="@cups@/lib/cups/backend/ipp"

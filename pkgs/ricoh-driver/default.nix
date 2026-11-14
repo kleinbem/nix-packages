@@ -7,7 +7,7 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ricoh-sp220-driver";
-  version = "2.1";
+  version = "2.2";
 
   src = ./.;
 
@@ -31,11 +31,21 @@ stdenvNoCC.mkDerivation (finalAttrs: {
           cupstestppd -v ${finalAttrs.finalPackage}/share/cups/model/ricoh/RICOH-SP-220Nw.ppd
           touch $out
         '';
+    backend = runCommand "ricoh-driver-testbackend" { } ''
+      backend="${finalAttrs.finalPackage}/lib/cups/backend/ricoh-sp220"
+      if grep -E -q '@[a-zA-Z_]+@' "$backend"; then
+        echo "Unsubstituted placeholders found in $backend" >&2
+        exit 1
+      fi
+      "$backend" | grep -q "network ricoh-sp220"
+      touch $out
+    '';
   };
 
   meta = {
     description = "Driverless PWG Raster profile and sanitizing IPP backend for Ricoh SP 220Nw series";
     license = lib.licenses.mit;
     platforms = lib.platforms.all;
+    maintainers = with lib.maintainers; [ ];
   };
 })
