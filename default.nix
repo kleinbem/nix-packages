@@ -46,10 +46,6 @@
   # Native messaging host (binary + manifest) for kleinbem/chrome-open-in-app.
   chrome-open-in-app-host = pkgs.callPackage ./pkgs/chrome-open-in-app-host { };
 
-  # Relay server, admin CLI, and pairing relay for the self-hosted Buzz workspace.
-  # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569154
-  buzz-relay = pkgs.callPackage ./pkgs/buzz-relay/package.nix { };
-
   # Git credential helper producing NIP-98 authentication headers for Nostr git repos.
   # Staged derivation matching upstream PR https://github.com/NixOS/nixpkgs/pull/569173
   git-credential-nostr = pkgs.callPackage ./pkgs/git-credential-nostr/package.nix { };

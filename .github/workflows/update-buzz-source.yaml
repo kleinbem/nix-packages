@@ -1,9 +1,9 @@
 name: "Update Buzz Source"
 
 # Bumps pkgs/buzz/source.json to the latest block/buzz commit and opens a PR.
-# Because all 7 Rust packages (buzz-relay, buzz-cli, buzz-acp, buzz-agent,
+# Because all 6 local Buzz Rust packages (buzz-cli, buzz-acp, buzz-agent,
 # buzz-dev-mcp, git-credential-nostr, git-sign-nostr) share the workspace
-# source and cargo vendor hash, bumping source.json updates all 7 simultaneously.
+# source and cargo vendor hash, bumping source.json updates all 6 simultaneously.
 
 on:
   schedule:
@@ -96,8 +96,7 @@ jobs:
 
           Bumps `pkgs/buzz/source.json` to **${{ steps.update.outputs.version }}** ([`block/buzz@${{ steps.update.outputs.rev }}`](https://github.com/block/buzz/commit/${{ steps.update.outputs.rev }})).
 
-          This synchronously updates all 7 Rust packages:
-          - `buzz-relay`
+          This synchronously updates all 6 local Rust packages:
           - `buzz-cli`
           - `buzz-acp`
           - `buzz-agent`
@@ -105,7 +104,7 @@ jobs:
           - `git-credential-nostr`
           - `git-sign-nostr`
 
-          All 7 packages were built (with their test suites) on the runner before this PR was opened.
+          All 6 packages were built (with their test suites) on the runner before this PR was opened.
 
           ---
           🤖 Opened automatically by the update-buzz-source workflow.

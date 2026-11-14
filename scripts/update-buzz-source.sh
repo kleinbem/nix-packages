@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Update pkgs/buzz/source.json to the latest block/buzz commit.
 #
-# The 7 Buzz packages are crates of one workspace, so they share this one
+# The 6 Buzz packages here are crates of one workspace, so they share this one
 # commit, source hash and Cargo vendor hash. All of them are built at the end,
 # so a broken bump never reaches the auto-merged PR.
 #
@@ -74,7 +74,7 @@ rm -f "$backup"
 # ── 5. Verify builds ──────────────────────────────────────────────────────────
 # All of them: they share the vendor hash, but each has its own patches,
 # substitutions and test suite that a new upstream commit can break.
-PACKAGES=(buzz-relay buzz-cli buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr)
+PACKAGES=(buzz-cli buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr git-sign-nostr)
 log "Verifying builds of ${PACKAGES[*]}..."
 build_log="$(mktemp)"
 if ! nix build --no-link --keep-going "${PACKAGES[@]/#/.#}" >"$build_log" 2>&1; then
