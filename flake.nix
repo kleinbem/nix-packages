@@ -10,6 +10,8 @@
     git-hooks.inputs.nixpkgs.follows = "nixpkgs";
     nix-devshells.url = "github:kleinbem/nix-devshells";
     nix-devshells.inputs.nixpkgs.follows = "nixpkgs";
+    nix-gantry.url = "github:kleinbem-dev/nix-gantry";
+    nix-gantry.inputs.nixpkgs.follows = "nixpkgs";
     # Packages from our open nixpkgs PRs (nixpkgs-prs.json).
     nix-detour.url = "github:kleinbem-dev/nix-detour";
     nix-detour.inputs.nixpkgs.follows = "nixpkgs";
@@ -69,7 +71,7 @@
           };
           legacyPkgs = import ./default.nix {
             pkgs = pkgsUnfree;
-            inherit (inputs) nix-detour nix-devshells;
+            inherit (inputs) nix-detour nix-devshells nix-gantry;
           };
         in
         {

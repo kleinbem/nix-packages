@@ -424,6 +424,26 @@
         "type": "github"
       }
     },
+    "nix-gantry": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794682444,
+        "narHash": "sha256-HjKFrgd6TVU29KlX60i3k/PPdfZOmwvFB/skdsbvHec=",
+        "owner": "kleinbem-dev",
+        "repo": "nix-gantry",
+        "rev": "b9055a052efe66f0fc84f3598f31860970e6cd88",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kleinbem-dev",
+        "repo": "nix-gantry",
+        "type": "github"
+      }
+    },
     "nix-github-actions": {
       "inputs": {
         "nixpkgs": [
@@ -663,6 +683,7 @@
         "git-hooks": "git-hooks",
         "nix-detour": "nix-detour",
         "nix-devshells": "nix-devshells",
+        "nix-gantry": "nix-gantry",
         "nixpkgs": "nixpkgs_3",
         "treefmt-nix": "treefmt-nix_3"
       }
