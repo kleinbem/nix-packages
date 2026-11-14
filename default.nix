@@ -7,6 +7,7 @@
   # take the commit in flake.lock.
   nix-detour ? import ./locked-input.nix "nix-detour",
   nix-devshells ? import ./locked-input.nix "nix-devshells",
+  nix-gantry ? import ./locked-input.nix "nix-gantry",
 }:
 
 # Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-detour).
@@ -120,6 +121,9 @@
 
   # CLI and web dashboard for temporary nixpkgs package holds and ahead PRs.
   nix-detour = pkgs.callPackage "${nix-detour}/package.nix" { };
+
+  # Declarative, manifest-driven atomic updates for NixOS systemd-nspawn containers.
+  nix-gantry = pkgs.callPackage "${nix-gantry}/package.nix" { };
 
   # some-qt5-package = pkgs.libsForQt5.callPackage ./pkgs/some-qt5-package { };
   # ...

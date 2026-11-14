@@ -44,6 +44,8 @@ is everything else the fleet needs.
 | `oh-my-pi` | Terminal coding-agent CLI, prebuilt release binary. Packaged and updated in `kleinbem/nix-devshells`, re-exported here. |
 | `apkeep` | Downloads APKs from Google Play, F-Droid and APKPure. |
 | `chrome-open-in-app-host` | Native messaging host for `kleinbem/chrome-open-in-app`. |
+| `nix-detour` | CLI and web dashboard for temporary nixpkgs package holds and ahead PRs (`kleinbem-dev/nix-detour`). |
+| `nix-gantry` | CLI and manifest publisher for declarative atomic updates of NixOS `systemd-nspawn` containers (`kleinbem-dev/nix-gantry`). |
 
 `modules/nixos/` ships NixOS modules alongside the packages: `langfuse`,
 `buzz-relay`, and `mesh-llm` (from its nixpkgs PR).
