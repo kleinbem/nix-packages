@@ -3,8 +3,8 @@
     "pr": 580616,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "aba4b6f5dbb63574efa64004971127c15faafc4c",
-    "narHash": "sha256-eKckqoSFrVAa2fJZJh/UPZLzyCbNmE+jRhlKztq/5k4=",
+    "rev": "33890833f82aee9b09cdf938ae7b7a297255ccd0",
+    "narHash": "sha256-W7uMd5DV6l3vIX+vlA9tF7VZdqAJe8cs13ybt9VSb2M=",
     "attrs": [
       "berd"
     ],
