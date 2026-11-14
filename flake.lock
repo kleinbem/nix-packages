@@ -411,11 +411,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1794475736,
-        "narHash": "sha256-duUeebM1vf38Hz5rzuZKSVw5jTuXCCXyhGVZRdHoTLw=",
+        "lastModified": 1794573950,
+        "narHash": "sha256-b4cyErmCqVlMORjWHiPDHjQRtZp8hyNiEgGBI6+1Ioo=",
         "owner": "kleinbem",
         "repo": "nix-devshells",
-        "rev": "041535a834a7dbe457083acfb1a4431c3489b68b",
+        "rev": "a32da7019770a2ce96eac3ca191ae7e6fc91ed9c",
         "type": "github"
       },
       "original": {
