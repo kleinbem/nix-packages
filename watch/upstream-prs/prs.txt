@@ -2,12 +2,9 @@
 # A weekly look is enough; the agent sessions watch the active ones closely.
 #
 # Fixes our packages or holds wait on (each removes a workaround once released):
-Mesh-LLM/mesh-llm#2528
-Mesh-LLM/mesh-llm#2577
-Mesh-LLM/mesh-llm#2605
-Mesh-LLM/mesh-llm#2629
-Mesh-LLM/mesh-llm#2630
-Mesh-LLM/mesh-llm#2648
+Mesh-LLM/mesh-llm#3025
+Mesh-LLM/mesh-llm#3042
+Mesh-LLM/mesh-llm-python-sdk#6
 # Not ours: vendored as patches in skippy-native-runtime.
 ggml-org/llama.cpp#26103
 # Not ours: the fixes behind nix-detour-fleet's holds.
@@ -15,21 +12,23 @@ ggml-org/llama.cpp#26103
 NixOS/nixpkgs#563493
 # posthog (aider-chat, open-webui):
 NixOS/nixpkgs#578265
-NixOS/nixpkgs#581270
-# qdrant's build failure:
-NixOS/nixpkgs#553191
+# qdrant and aider-chat fixes (our drafts):
+NixOS/nixpkgs#587920
+NixOS/nixpkgs#587923
 #
 # Our nixpkgs PRs:
 NixOS/nixpkgs#571722
 NixOS/nixpkgs#574877
 NixOS/nixpkgs#577918
-NixOS/nixpkgs#584660
+NixOS/nixpkgs#581182
+NixOS/nixpkgs#581183
+NixOS/nixpkgs#582939
+NixOS/nixpkgs#583562
 NixOS/nixpkgs#585881
+NixOS/nixpkgs#587433
 #
 # Buzz:
 block/buzz#8071
-# Not ours: the fix our closed #8091 deferred to.
-block/buzz#5292
 # buzz-app workarounds in nixpkgs (#577918) wait on these.
 block/buzz-app#1778
 block/buzz-app#1779
