@@ -6,6 +6,7 @@
   pkg-config,
   perl,
   protobuf,
+  aws-lc,
   openssl,
   git,
   bash,
@@ -32,7 +33,11 @@ rustPlatform.buildRustPackage {
     makeWrapper
   ];
 
-  buildInputs = [ openssl ];
+  # nixpkgs makes aws-lc-sys link the system AWS-LC (AWS_LC_SYS_USE_SYSTEM=1).
+  buildInputs = [
+    aws-lc
+    openssl
+  ];
 
   # cmake is only used by dependency build scripts; avoid overriding cargo configurePhase
   dontUseCmakeConfigure = true;
