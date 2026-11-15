@@ -12,8 +12,6 @@ ggml-org/llama.cpp#26103
 NixOS/nixpkgs#563493
 # posthog (aider-chat, open-webui):
 NixOS/nixpkgs#578265
-# aider-chat fix (our draft):
-NixOS/nixpkgs#587923
 #
 # Our nixpkgs PRs:
 NixOS/nixpkgs#571722
