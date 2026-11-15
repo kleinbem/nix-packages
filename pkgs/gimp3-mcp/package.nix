@@ -2,7 +2,6 @@
   lib,
   python3Packages,
   fetchPypi,
-  fetchpatch,
 }:
 
 python3Packages.buildPythonApplication (finalAttrs: {
@@ -16,22 +15,11 @@ python3Packages.buildPythonApplication (finalAttrs: {
     hash = "sha256-OVFKg9q7KZQcToiRpagphQ3ucXB/ymuRsPzsEwSBiHk=";
   };
 
-  # Workaround: runs on mcp 1 and 2 (nixpkgs has 2: FastMCP is MCPServer, and
-  # only a ToolError's message reaches the client). Drop with tifyr/gimp3-mcp#2.
-  patches = [
-    (fetchpatch {
-      url = "https://github.com/tifyr/gimp3-mcp/commit/c3e98c6ab2a02f3d27430dfe31c7eab9f5fb5096.patch";
-      includes = [
-        "gimp_mcp_server.py"
-        "pyproject.toml"
-      ];
-      hash = "sha256-nS6uMSnjJKaxswgld5abpSU9NHmY54ZItRDI6tsmf3c=";
-    })
-  ];
-
   build-system = [ python3Packages.hatchling ];
 
-  dependencies = [ python3Packages.mcp ];
+  # Upstream pins mcp < 2 (FastMCP is MCPServer in 2), so use nixpkgs' mcp 1
+  # like the other mcp 1 dependents.
+  dependencies = [ python3Packages.mcp_1 ];
 
   pythonImportsCheck = [ "gimp3_mcp" ];
 
