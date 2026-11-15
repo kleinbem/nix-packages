@@ -17,10 +17,14 @@ NixOS/nixpkgs#578265
 NixOS/nixpkgs#571722
 NixOS/nixpkgs#574877
 NixOS/nixpkgs#577918
+NixOS/nixpkgs#580616
+NixOS/nixpkgs#580909
 NixOS/nixpkgs#581182
 NixOS/nixpkgs#581183
 NixOS/nixpkgs#582939
 NixOS/nixpkgs#583562
+NixOS/nixpkgs#584498
+NixOS/nixpkgs#584499
 NixOS/nixpkgs#585881
 NixOS/nixpkgs#587433
 #

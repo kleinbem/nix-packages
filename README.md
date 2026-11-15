@@ -15,7 +15,7 @@ is everything else the fleet needs.
 
 | Attribute | What it is |
 |---|---|
-| `buzz-relay`, `buzz-cli`, `buzz-acp`, `buzz-agent`, `buzz-dev-mcp`, `git-credential-nostr`, `git-sign-nostr` | The Buzz workspace's Rust crates, one pinned source (`pkgs/buzz/source.json`). Staged for NixOS/nixpkgs#570552 and #574877; `buzz-cli` is already in nixpkgs. |
+| `buzz-cli`, `buzz-acp`, `buzz-agent`, `buzz-dev-mcp`, `git-credential-nostr`, `git-sign-nostr` | The Buzz workspace's Rust crates, one pinned source (`pkgs/buzz/source.json`). Staged for NixOS/nixpkgs#570552; `buzz-cli` is already in nixpkgs. |
 | `aittributor` | Git prepare-commit-msg hook that adds AI agent attribution (block/aittributor). Not in nixpkgs yet; written in nixpkgs form. |
 | `lhm` | Merges system, user and repo lefthook configs into one set of git hooks (block/lhm). Not in nixpkgs yet; written in nixpkgs form. |
 | `block-review` | LLM code reviewer for git changes, built on Goose (block/review; binary `review`). Not in nixpkgs yet; written in nixpkgs form. |
@@ -31,8 +31,11 @@ is everything else the fleet needs.
 | Attribute | What it is |
 |---|---|
 | `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `skippy`, `skippy-native-runtime`, `skippy-native-runtime-vulkan`, `skippy-tools`, `mesh-llm-ffi`, `mesh-llm-nodejs`, `mesh-llmPlugins.*`, `python3Packages.mesh-llm` | MeshLLM, all its nixpkgs PRs at once (NixOS/nixpkgs#571722 and the PRs stacked on it), pinned from the fork's `mesh-llm-stack` branch. `nixosModules.mesh-llm` is the stack's `services.mesh-llm`, with its `plugins` option. `python3Packages.mesh-llm` comes only through `overlays.default`. |
+| `buzz-relay` | The Buzz relay, pairing relay and admin CLI, plus `nixosModules.buzz-relay` (`services.buzz-relay`), NixOS/nixpkgs#574877. |
 | `buzz-app` | The Buzz desktop app, NixOS/nixpkgs#577918. |
 | `berd` | Berd, Block's desktop app for AI agents on goose, NixOS/nixpkgs#580616. |
+| `pi-acp` | Agent Client Protocol (ACP) adapter for Pi coding agent, NixOS/nixpkgs#584498. |
+| `amp-acp` | Agent Client Protocol (ACP) adapter for Amp coding agent, NixOS/nixpkgs#584499. |
 
 ### Everything else
 
@@ -47,8 +50,7 @@ is everything else the fleet needs.
 | `nix-detour` | CLI and web dashboard for temporary nixpkgs package holds and ahead PRs (`kleinbem-dev/nix-detour`). |
 | `nix-gantry` | CLI and manifest publisher for declarative atomic updates of NixOS `systemd-nspawn` containers (`kleinbem-dev/nix-gantry`). |
 
-`modules/nixos/` ships NixOS modules alongside the packages: `langfuse`,
-`buzz-relay`, and `mesh-llm` (from its nixpkgs PR).
+`modules/nixos/` ships `langfuse` alongside `buzz-relay` and `mesh-llm` (both from their nixpkgs PRs, exported verbatim via `nix-detour`). Upstream `services.buzz-relay` (NixOS/nixpkgs#574877) defaults `listenAddress` to `"127.0.0.1"` (set `"0.0.0.0"` when exposing directly with `openFirewall = true`), uses `environmentFiles` and freeform `settings` (e.g. `settings.BUZZ_S3_ENDPOINT`), and enables `settings.BUZZ_REQUIRE_RELAY_MEMBERSHIP` by default (requiring `settings.RELAY_OWNER_PUBKEY` and `environmentFiles`, or `settings.BUZZ_REQUIRE_RELAY_MEMBERSHIP = false`).
 
 ## Rule for packages that are also ours in nixpkgs
 

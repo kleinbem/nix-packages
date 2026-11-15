@@ -1,4 +1,14 @@
 {
+  "amp-acp": {
+    "pr": 584499,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "8d329a1578101c480fe3d7c02b1fc194f2b41c18",
+    "narHash": "sha256-OUkFEl5vpO0ZNX2GXKmwhMWBxLkbDODFHiE7HXBGUyo=",
+    "attrs": [
+      "amp-acp"
+    ]
+  },
   "berd": {
     "pr": 580616,
     "owner": "kleinbem",
@@ -24,6 +34,22 @@
     "scope": [
       "skippy-native-runtime"
     ]
+  },
+  "buzz-relay": {
+    "pr": 574877,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "bedd804cc73b7228701d9f918543e26ad9d0b793",
+    "narHash": "sha256-oBvPiYH1v0hDX4yrow8D+8/ENpXdisSsXz9j2YO1EqY=",
+    "attrs": [
+      "buzz-relay"
+    ],
+    "scope": [
+      "buzz-cli"
+    ],
+    "modules": {
+      "buzz-relay": "nixos/modules/services/networking/buzz-relay.nix"
+    }
   },
   "garage-ui": {
     "pr": 580190,
@@ -62,5 +88,15 @@
     "modules": {
       "mesh-llm": "nixos/modules/services/misc/mesh-llm.nix"
     }
+  },
+  "pi-acp": {
+    "pr": 584498,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "5154f947813efb62d77724c847664824d1418f73",
+    "narHash": "sha256-qbTI7ewcpZBScuFnEGVUVjO/gIw5WVRDoEU8Kqmtlag=",
+    "attrs": [
+      "pi-acp"
+    ]
   }
 }
