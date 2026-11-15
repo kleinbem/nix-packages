@@ -61,6 +61,19 @@
       "garage-ui"
     ]
   },
+  "gnomeExtensions.arcmenu": {
+    "pr": 588459,
+    "owner": "kleinbem",
+    "repo": "nixpkgs",
+    "rev": "e322e702bddf87be50b8a581f4340df015d6845e",
+    "narHash": "sha256-99IIjc2gVnj5JYpQVlYen+twa7ur7sv18n8HejFnf5w=",
+    "attrs": [
+      "gnomeExtensions.arcmenu"
+    ],
+    "paths": {
+      "gnomeExtensions.arcmenu": "pkgs/desktops/gnome/extensions/arcmenu/default.nix"
+    }
+  },
   "mesh-llm": {
     "pr": 571722,
     "owner": "kleinbem",
