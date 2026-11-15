@@ -12,6 +12,8 @@ ggml-org/llama.cpp#26103
 NixOS/nixpkgs#563493
 # posthog (aider-chat, open-webui):
 NixOS/nixpkgs#578265
+# gimp3-mcp on mcp 2 (our draft; we build on mcp_1 meanwhile):
+tifyr/gimp3-mcp#2
 #
 # Our nixpkgs PRs:
 NixOS/nixpkgs#571722

@@ -2,6 +2,7 @@
   lib,
   python3Packages,
   fetchPypi,
+  callPackage,
 }:
 
 python3Packages.buildPythonApplication (finalAttrs: {
@@ -21,7 +22,12 @@ python3Packages.buildPythonApplication (finalAttrs: {
   # like the other mcp 1 dependents.
   dependencies = [ python3Packages.mcp_1 ];
 
-  pythonImportsCheck = [ "gimp3_mcp" ];
+  pythonImportsCheck = [
+    "gimp3_mcp"
+    "gimp3_mcp.server"
+  ];
+
+  passthru.tests.smoke = callPackage ./smoke-test.nix { gimp3-mcp = finalAttrs.finalPackage; };
 
   meta = {
     description = "MCP server for GIMP 3 (the GIMP plugin ships in the sdist)";
