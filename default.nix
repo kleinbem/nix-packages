@@ -21,10 +21,23 @@ let
 in
 prPackages
 // {
-  # MeshLLM with one GPU backend, for hosts whose nixpkgs config doesn't set
-  # cudaSupport or rocmSupport globally.
-  mesh-llm-cuda = prPackages.mesh-llm.override { cudaSupport = true; };
-  mesh-llm-rocm = prPackages.mesh-llm.override { rocmSupport = true; };
+  # MeshLLM with one GPU backend, whatever the host's nixpkgs config sets
+  # globally (plain mesh-llm follows cudaSupport/rocmSupport, else CPU).
+  mesh-llm-cuda = prPackages.mesh-llm.override {
+    cudaSupport = true;
+    rocmSupport = false;
+    vulkanSupport = false;
+  };
+  mesh-llm-rocm = prPackages.mesh-llm.override {
+    cudaSupport = false;
+    rocmSupport = true;
+    vulkanSupport = false;
+  };
+  mesh-llm-vulkan = prPackages.mesh-llm.override {
+    cudaSupport = false;
+    rocmSupport = false;
+    vulkanSupport = true;
+  };
 
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
