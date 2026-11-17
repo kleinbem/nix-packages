@@ -78,18 +78,15 @@
     "pr": 571722,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "ddb90897eaf8384347589b352af90bc78113f7b5",
-    "narHash": "sha256-MKsFEMnRsqALV83Nixn4n6QgEhipKXOwdsH9rBrAeyw=",
+    "rev": "ac82ee60a9a2f915be6d2bb0bced5926314ac1ed",
+    "narHash": "sha256-CSJQWDRafj4F4TMMU6FXU5kpq2VUfGiAM1p9M3aooDA=",
     "attrs": [
       "mesh-llm",
-      "mesh-llm-cuda",
-      "mesh-llm-rocm",
       "mesh-llm-ffi",
       "mesh-llm-nodejs",
       "mesh-llmPlugins",
       "skippy",
       "skippy-native-runtime",
-      "skippy-native-runtime-vulkan",
       "skippy-tools"
     ],
     "paths": {

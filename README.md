@@ -30,7 +30,7 @@ is everything else the fleet needs.
 
 | Attribute | What it is |
 |---|---|
-| `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `skippy`, `skippy-native-runtime`, `skippy-native-runtime-vulkan`, `skippy-tools`, `mesh-llm-ffi`, `mesh-llm-nodejs`, `mesh-llmPlugins.*`, `python3Packages.mesh-llm` | MeshLLM, all its nixpkgs PRs at once (NixOS/nixpkgs#571722 and the PRs stacked on it), pinned from the fork's `mesh-llm-stack` branch. `nixosModules.mesh-llm` is the stack's `services.mesh-llm`, with its `plugins` option. `python3Packages.mesh-llm` comes only through `overlays.default`. |
+| `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `skippy`, `skippy-native-runtime`, `skippy-tools`, `mesh-llm-ffi`, `mesh-llm-nodejs`, `mesh-llmPlugins.*`, `python3Packages.mesh-llm` | MeshLLM, all its nixpkgs PRs at once (NixOS/nixpkgs#571722 and the PRs stacked on it), pinned from the fork's `mesh-llm-dev` branch; `mesh-llm-cuda` and `mesh-llm-rocm` are `mesh-llm` with that backend switched on. `nixosModules.mesh-llm` is the stack's `services.mesh-llm`, with its `plugins` option. `python3Packages.mesh-llm` comes only through `overlays.default`. |
 | `buzz-relay` | The Buzz relay, pairing relay and admin CLI, plus `nixosModules.buzz-relay` (`services.buzz-relay`), NixOS/nixpkgs#574877. |
 | `buzz-app` | The Buzz desktop app, NixOS/nixpkgs#577918. |
 | `berd` | Berd, Block's desktop app for AI agents on goose, NixOS/nixpkgs#580616. |

@@ -10,13 +10,22 @@
   nix-gantry ? import ./locked-input.nix "nix-gantry",
 }:
 
-# Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-detour).
-(import "${nix-detour}/prs.nix" {
-  inherit (pkgs) lib;
-  prs = ./nixpkgs-prs.json;
-}).packages
-  pkgs
+let
+  # Packages from our open nixpkgs PRs (nixpkgs-prs.json, built by nix-detour).
+  prPackages =
+    (import "${nix-detour}/prs.nix" {
+      inherit (pkgs) lib;
+      prs = ./nixpkgs-prs.json;
+    }).packages
+      pkgs;
+in
+prPackages
 // {
+  # MeshLLM with one GPU backend, for hosts whose nixpkgs config doesn't set
+  # cudaSupport or rocmSupport globally.
+  mesh-llm-cuda = prPackages.mesh-llm.override { cudaSupport = true; };
+  mesh-llm-rocm = prPackages.mesh-llm.override { rocmSupport = true; };
+
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
 
