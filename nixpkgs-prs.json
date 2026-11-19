@@ -88,8 +88,8 @@
     "pr": 571722,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "ac82ee60a9a2f915be6d2bb0bced5926314ac1ed",
-    "narHash": "sha256-CSJQWDRafj4F4TMMU6FXU5kpq2VUfGiAM1p9M3aooDA=",
+    "rev": "ebf370ca1ef4fabc474db00c6d6f925052184aa1",
+    "narHash": "sha256-TXzcTjWhuHHSY6tSz5fvuwQpQfKbBZAWCeRe3ybNlWo=",
     "attrs": [
       "mesh-llm",
       "mesh-llm-ffi",

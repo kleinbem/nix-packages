@@ -18,26 +18,27 @@ let
       prs = ./nixpkgs-prs.json;
     }).packages
       pkgs;
+  # mesh-llm bundles whatever skippy-native-runtime it is given.
+  meshLlmWith =
+    backend:
+    prPackages.mesh-llm.override {
+      skippy-native-runtime = prPackages.skippy-native-runtime.override (
+        {
+          cudaSupport = false;
+          rocmSupport = false;
+          vulkanSupport = false;
+        }
+        // backend
+      );
+    };
 in
 prPackages
 // {
   # MeshLLM with one GPU backend, whatever the host's nixpkgs config sets
   # globally (plain mesh-llm follows cudaSupport/rocmSupport, else CPU).
-  mesh-llm-cuda = prPackages.mesh-llm.override {
-    cudaSupport = true;
-    rocmSupport = false;
-    vulkanSupport = false;
-  };
-  mesh-llm-rocm = prPackages.mesh-llm.override {
-    cudaSupport = false;
-    rocmSupport = true;
-    vulkanSupport = false;
-  };
-  mesh-llm-vulkan = prPackages.mesh-llm.override {
-    cudaSupport = false;
-    rocmSupport = false;
-    vulkanSupport = true;
-  };
+  mesh-llm-cuda = meshLlmWith { cudaSupport = true; };
+  mesh-llm-rocm = meshLlmWith { rocmSupport = true; };
+  mesh-llm-vulkan = meshLlmWith { vulkanSupport = true; };
 
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
