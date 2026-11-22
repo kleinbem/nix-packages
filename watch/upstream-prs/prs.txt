@@ -16,7 +16,6 @@ NixOS/nixpkgs#578265
 tifyr/gimp3-mcp#2
 #
 # Our nixpkgs PRs:
-NixOS/nixpkgs#571722
 NixOS/nixpkgs#574877
 NixOS/nixpkgs#577918
 NixOS/nixpkgs#580616
@@ -37,3 +36,8 @@ block/buzz-app#1778
 block/buzz-app#1779
 block/buzz-app#1780
 block/buzz-app#1781
+block/buzz-app#1961
+block/buzz-app#2376
+block/buzz-app#2417
+block/buzz-app#4209
+block/buzz-app#4210

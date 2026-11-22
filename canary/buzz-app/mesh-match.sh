@@ -37,19 +37,24 @@ versions() {
 }
 
 app_rev="$(raw block/buzz-app "${BUZZ_APP_REV:?}" src/bundled/mesh-compute/compute/Cargo.toml |
-  sed -n 's/^mesh-llm-sdk = .*rev = "\([0-9a-f]\{40\}\)".*/\1/p')"
+  sed -n 's/^mesh-llm-\(embedded-runtime\|sdk\) = .*rev = "\([0-9a-f]\{40\}\)".*/\2/p')"
 [[ -n $app_rev ]] || {
-  echo "buzz-app $BUZZ_APP_REV pins no mesh-llm-sdk revision" >&2
+  echo "buzz-app $BUZZ_APP_REV pins no mesh-llm-embedded-runtime revision" >&2
   exit 1
 }
 
 # nixpkgs pins a commit (rev) until a release, then the tag of its version.
 runtime="$(raw "${NIXPKGS_REPO:?}" "${NIXPKGS_REF:?}" pkgs/by-name/sk/skippy-native-runtime/package.nix |
-  sed -n '/release ? {/,/};/p')"
+  sed -n '/release [?=] {/,/};/p')"
 nixpkgs_rev="$(sed -n 's/^ *rev = "\([0-9a-f]\{40\}\)";/\1/p' <<<"$runtime")"
 if [[ -z $nixpkgs_rev ]]; then
-  nixpkgs_rev="v$(sed -n 's/^ *version = "\([^"]*\)";/\1/p' <<<"$runtime")"
+  ver="$(sed -n 's/^ *version = "\([^"]*\)";/\1/p' <<<"$runtime")"
+  [[ -n $ver ]] && nixpkgs_rev="v$ver"
 fi
+[[ -n $nixpkgs_rev ]] || {
+  echo "could not parse skippy-native-runtime release from $NIXPKGS_REPO@$NIXPKGS_REF" >&2
+  exit 1
+}
 
 read -r app_generation app_abi < <(versions "$app_rev")
 read -r nixpkgs_generation nixpkgs_abi < <(versions "$nixpkgs_rev")

@@ -6,6 +6,7 @@
 {
   nixpkgs,
   rev,
+  match ? false,
   cargoHash ? "",
   pnpmHash ? "",
 }:
@@ -23,26 +24,34 @@ let
     };
 
   overlay = final: prev: {
-    buzz-app = prev.buzz-app.overrideAttrs (old: {
-      inherit src;
-      # main no longer runs /usr/bin/printenv (block/buzz-app#2665); the release
-      # recipe still needs the substitution. Drop once the recipe's version has it.
-      postPatch =
-        builtins.replaceStrings
-          [ "--replace-fail /usr/bin/printenv" ]
-          [ "--replace-quiet /usr/bin/printenv" ]
-          old.postPatch;
-      cargoDeps = final.rustPlatform.fetchCargoVendor {
-        name = "buzz-app-vendor";
+    buzz-app = prev.buzz-app.overrideAttrs (
+      old:
+      let
+        cargoPatches = if match then [ ] else old.cargoPatches;
+      in
+      {
         inherit src;
-        hash = cargoHash;
-      };
-      pnpmDeps = old.pnpmDeps.overrideAttrs {
-        inherit src;
-        outputHash = pnpmHash;
-        outputHashAlgo = "sha256";
-      };
-    });
+        # Drop the 0.80 bump patch once buzz-app main pins a matching MeshLLM.
+        patches = if match then final.lib.subtractLists old.cargoPatches old.patches else old.patches;
+        # main may already drop /usr/bin/printenv (block/buzz-app#2417).
+        postPatch =
+          builtins.replaceStrings
+            [ "--replace-fail /usr/bin/printenv" ]
+            [ "--replace-quiet /usr/bin/printenv" ]
+            old.postPatch;
+        cargoDeps = final.rustPlatform.fetchCargoVendor {
+          name = "buzz-app-vendor";
+          inherit src;
+          patches = cargoPatches;
+          hash = cargoHash;
+        };
+        pnpmDeps = old.pnpmDeps.overrideAttrs {
+          inherit src;
+          outputHash = pnpmHash;
+          outputHashAlgo = "sha256";
+        };
+      }
+    );
   };
 
   pkgs = import nixpkgs { overlays = [ overlay ]; };
