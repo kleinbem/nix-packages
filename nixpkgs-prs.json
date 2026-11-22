@@ -51,16 +51,6 @@
       "buzz-relay": "nixos/modules/services/networking/buzz-relay.nix"
     }
   },
-  "devin-desktop": {
-    "pr": 590137,
-    "owner": "sarahec",
-    "repo": "nixpkgs",
-    "rev": "e98fbefa8195b1dc768b4e4918f235ee2788441c",
-    "narHash": "sha256-yKetawSoLbs/WqOGOaNKqvruGjrmoo7T0C8TgdkTxUE=",
-    "attrs": [
-      "devin-desktop"
-    ]
-  },
   "garage-ui": {
     "pr": 580190,
     "owner": "kleinbem",
@@ -108,15 +98,5 @@
     "modules": {
       "mesh-llm": "nixos/modules/services/misc/mesh-llm.nix"
     }
-  },
-  "pi-acp": {
-    "pr": 584498,
-    "owner": "kleinbem",
-    "repo": "nixpkgs",
-    "rev": "5154f947813efb62d77724c847664824d1418f73",
-    "narHash": "sha256-qbTI7ewcpZBScuFnEGVUVjO/gIw5WVRDoEU8Kqmtlag=",
-    "attrs": [
-      "pi-acp"
-    ]
   }
 }
