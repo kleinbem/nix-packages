@@ -5,6 +5,8 @@
 Mesh-LLM/mesh-llm#3025
 Mesh-LLM/mesh-llm#3042
 Mesh-LLM/mesh-llm-python-sdk#6
+Mesh-LLM/skippy#170
+Mesh-LLM/skippy#171
 # Not ours: vendored as patches in skippy-native-runtime.
 ggml-org/llama.cpp#26103
 # Not ours: the fixes behind nix-detour-fleet's holds.
