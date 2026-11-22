@@ -55,9 +55,14 @@ jobs:
             runner: ubuntu-latest
             attrs: native-runtime mesh-llm skippy client-ready network network-skippy goose nixos
           # The GPU runtimes build without a GPU; one ROCm target is enough.
-          - name: x86_64-linux GPU runtimes
+          # Split ROCm and CUDA into separate jobs so each gets the full
+          # 340-minute timeout instead of hitting it sequentially.
+          - name: x86_64-linux ROCm runtime
             runner: ubuntu-latest
-            attrs: runtime-rocm runtime-cuda
+            attrs: runtime-rocm
+          - name: x86_64-linux CUDA runtime
+            runner: ubuntu-latest
+            attrs: runtime-cuda
             config: '{ allowUnfree = true; }'
           - name: aarch64-linux
             runner: ubuntu-24.04-arm
