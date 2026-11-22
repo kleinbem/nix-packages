@@ -173,6 +173,8 @@ in
         nativeBuildInputs = [
           pkgs.mesh-llm
           meshDev
+          # WORKAROUND(mesh-llm): plain-HTTP plugin health probes fail without a system CA
+          # bundle (upstream: Mesh-LLM/mesh-llm#3196). Drop once #3196 lands in a release.
           pkgs.cacert
         ];
         meta.platforms = pkgs.lib.platforms.linux;
