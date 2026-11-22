@@ -30,10 +30,6 @@
 let
   # Langfuse pins engines.node = 24.
   node = nodejs_24;
-  # Only the ClickHouse driver, as web/Dockerfile builds it. nixpkgs' all-driver
-  # build panics at start in gosnowflake's init ("failed to parse CA certificate").
-  # Upstream fix in NixOS/nixpkgs#584660; drop once the fix reaches our nixpkgs input.
-  migrate = go-migrate.overrideAttrs { tags = [ "clickhouse" ]; };
   pnpm = pnpm_12;
 in
 stdenv.mkDerivation (finalAttrs: {
@@ -181,7 +177,7 @@ stdenv.mkDerivation (finalAttrs: {
       --prefix PATH : ${
         lib.makeBinPath [
           prisma_6
-          migrate
+          go-migrate
           openssl # Prisma probes it to pick its OpenSSL variant
         ]
       } \

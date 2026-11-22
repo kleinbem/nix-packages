@@ -28,10 +28,6 @@ rustPlatform.buildRustPackage {
     # Test executes the `buzz-agent` binary via `.env_clear()`, which strips `SSL_CERT_FILE`
     # and fails TLS root initialization inside the Nix build sandbox.
     "--skip=cli_signin_aliases_reuse_legacy_cache_without_runtime_configuration"
-    # Racy: stop reading at the prompt response before the steer rejection arrives.
-    # https://github.com/block/buzz/pull/8091
-    "--skip=steer_rejected_on_run_id_mismatch"
-    "--skip=steer_rejected_on_empty_prompt"
   ];
 
   # nixpkgs makes aws-lc-sys link the system AWS-LC (AWS_LC_SYS_USE_SYSTEM=1).
