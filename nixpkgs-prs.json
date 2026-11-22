@@ -39,8 +39,8 @@
     "pr": 574877,
     "owner": "kleinbem",
     "repo": "nixpkgs",
-    "rev": "bedd804cc73b7228701d9f918543e26ad9d0b793",
-    "narHash": "sha256-oBvPiYH1v0hDX4yrow8D+8/ENpXdisSsXz9j2YO1EqY=",
+    "rev": "6b050ae45be9e11d6f7d2f78a6184d5cda7a4ef2",
+    "narHash": "sha256-BazKWstJo3BaZD4iTsVGv847U/FDJFBoTsGSw1wTRmA=",
     "attrs": [
       "buzz-relay"
     ],
