@@ -42,9 +42,10 @@ let
         postPatch = ''
           llamaDir=${skippySrc}/llama_cpp
           patchDir=$llamaDir/patches
-          shopt -s nullglob
-          queue=("$patchDir"/*.patch)
-          shopt -u nullglob
+          queue=()
+          for p in "$patchDir"/*.patch; do
+            [ -e "$p" ] && queue+=("$p")
+          done
           for set in model_support generated; do
             if [ -f "$patchDir/$set/series" ]; then
               while IFS= read -r p || [ -n "$p" ]; do
