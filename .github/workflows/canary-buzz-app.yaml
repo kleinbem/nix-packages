@@ -43,15 +43,22 @@ jobs:
     outputs:
       rev: ${{ steps.rev.outputs.rev }}
       match: ${{ steps.mesh.outputs.match }}
-      nixpkgs_ref: ${{ steps.ref.outputs.nixpkgs_ref }}
+      nixpkgs_ref: ${{ steps.rev.outputs.nixpkgs_rev }}
     steps:
       - id: rev
         env:
           BUZZ_APP_REV: ${{ inputs.buzz_app_rev }}
+          TARGET_NIXPKGS_REF: ${{ inputs.nixpkgs_ref || env.NIXPKGS_REF }}
         run: |
           rev="${BUZZ_APP_REV:-$(git ls-remote https://github.com/block/buzz-app refs/heads/main | cut -f1)}"
           [[ -n $rev ]] || { echo "could not resolve block/buzz-app main" >&2; exit 1; }
+          nixpkgs_rev="$(git ls-remote "https://github.com/$NIXPKGS_REPO" "$TARGET_NIXPKGS_REF" | awk 'NR==1{out=$1} END{if (out) print out}')"
+          if [[ -z $nixpkgs_rev && $TARGET_NIXPKGS_REF =~ ^[0-9a-f]{40}$ ]]; then
+            nixpkgs_rev="$TARGET_NIXPKGS_REF"
+          fi
+          [[ -n $nixpkgs_rev ]] || { echo "could not resolve $NIXPKGS_REPO@$TARGET_NIXPKGS_REF" >&2; exit 1; }
           echo "rev=$rev" >> "$GITHUB_OUTPUT"
+          echo "nixpkgs_rev=$nixpkgs_rev" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,7 +67,7 @@ jobs:
       - id: mesh
         env:
           BUZZ_APP_REV: ${{ steps.rev.outputs.rev }}
-          NIXPKGS_REF: ${{ inputs.nixpkgs_ref || env.NIXPKGS_REF }}
+          NIXPKGS_REF: ${{ steps.rev.outputs.nixpkgs_rev }}
         # A failed check still builds (with the 0.80 patch kept) and is
         # reported as a failure.
         run: |
@@ -71,18 +78,17 @@ jobs:
             echo "match=error" >> "$GITHUB_OUTPUT"
           fi
 
-      - id: ref
+      - name: Summary
         env:
-          INPUT_REF: ${{ inputs.nixpkgs_ref }}
+          TARGET_REF: ${{ inputs.nixpkgs_ref || env.NIXPKGS_REF }}
+          RESOLVED_REV: ${{ steps.rev.outputs.nixpkgs_rev }}
           MATCH: ${{ steps.mesh.outputs.match }}
           APP: ${{ steps.mesh.outputs.app_generation }} / ${{ steps.mesh.outputs.app_abi }}
           NIXPKGS: ${{ steps.mesh.outputs.nixpkgs_generation }} / ${{ steps.mesh.outputs.nixpkgs_abi }}
         run: |
-          ref="${INPUT_REF:-$NIXPKGS_REF}"
-          echo "nixpkgs_ref=$ref" >> "$GITHUB_OUTPUT"
           {
             echo "MeshLLM stage generation / skippy ABI: buzz-app main $APP, nixpkgs $NIXPKGS (match: $MATCH)."
-            echo "Building with kleinbem/nixpkgs@$ref."
+            echo "Building with kleinbem/nixpkgs@$TARGET_REF ($RESOLVED_REV)."
           } >> "$GITHUB_STEP_SUMMARY"
 
   build:
@@ -152,14 +158,14 @@ jobs:
           BUZZ_APP_REV: ${{ needs.plan.outputs.rev }}
           MATCH: ${{ needs.plan.outputs.match }}
           BUILT_WITH: ${{ needs.plan.outputs.nixpkgs_ref }}
-          # Only a run on main (no buzz_app_rev) speaks for main.
-          ON_MAIN: ${{ inputs.buzz_app_rev == '' }}
+          # Only a run on main against the default nixpkgs ref speaks for main.
+          ON_MAIN: ${{ inputs.buzz_app_rev == '' && inputs.nixpkgs_ref == '' }}
         run: |
           # Once: the day buzz-app main's MeshLLM matches nixpkgs', the 0.80
           # bump patch can be dropped on the next buzz-app release.
           if [[ $MATCH == true && $ON_MAIN == true ]] && [[ -z "$(gh issue list --state all --search "in:title \"$MATCH_ISSUE_TITLE\"" --limit 100 --json title \
             --jq "map(select(.title == \"$MATCH_ISSUE_TITLE\"))[0].title // empty")" ]]; then
-            gh issue create --title "$MATCH_ISSUE_TITLE" --body "buzz-app [\`${BUZZ_APP_REV:0:9}\`](https://github.com/block/buzz-app/commit/$BUZZ_APP_REV) pins a MeshLLM with the stage generation and skippy ABI of kleinbem/nixpkgs@$NIXPKGS_REF; built with @$BUILT_WITH ($RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            gh issue create --title "$MATCH_ISSUE_TITLE" --body "buzz-app [\`${BUZZ_APP_REV:0:9}\`](https://github.com/block/buzz-app/commit/$BUZZ_APP_REV) pins a MeshLLM with the stage generation and skippy ABI of kleinbem/nixpkgs@$NIXPKGS_REF (\`${BUILT_WITH:0:12}\`, $RESULT): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           fi
           issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --limit 100 --json number,title \
             --jq "map(select(.title == \"$ISSUE_TITLE\"))[0].number // empty")"

@@ -27,12 +27,15 @@ let
     buzz-app = prev.buzz-app.overrideAttrs (
       old:
       let
-        cargoPatches = if match then [ ] else old.cargoPatches;
+        oldCargoPatches = old.cargoPatches or [ ];
+        oldPatches = old.patches or [ ];
+        cargoPatches = if match then [ ] else oldCargoPatches;
       in
       {
         inherit src;
-        # Drop the 0.80 bump patch once buzz-app main pins a matching MeshLLM.
-        patches = if match then final.lib.subtractLists old.cargoPatches old.patches else old.patches;
+        # Drop the 0.80 bump patch once buzz-app main pins a matching MeshLLM
+        # (https://github.com/block/buzz-app/pull/4209).
+        patches = if match then final.lib.subtractLists oldCargoPatches oldPatches else oldPatches;
         # main may already drop /usr/bin/printenv (block/buzz-app#2417).
         postPatch =
           builtins.replaceStrings

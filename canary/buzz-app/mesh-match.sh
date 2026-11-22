@@ -37,7 +37,7 @@ versions() {
 }
 
 app_rev="$(raw block/buzz-app "${BUZZ_APP_REV:?}" src/bundled/mesh-compute/compute/Cargo.toml |
-  sed -n 's/^mesh-llm-\(embedded-runtime\|sdk\) = .*rev = "\([0-9a-f]\{40\}\)".*/\2/p')"
+  sed -nE 's/^mesh-llm-(embedded-runtime|sdk) = .*rev = "([0-9a-f]{40})".*/\2/p')"
 [[ -n $app_rev ]] || {
   echo "buzz-app $BUZZ_APP_REV pins no mesh-llm-embedded-runtime revision" >&2
   exit 1
