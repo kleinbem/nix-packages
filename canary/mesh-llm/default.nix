@@ -152,6 +152,7 @@ let
       '';
   runtimeTests =
     if (pkgs.skippy.tests or { }) ? runtime-rocm then pkgs.skippy.tests else pkgs.mesh-llm.tests;
+  meshDev = pkgs.callPackage ../../pkgs/mesh-dev/package.nix { };
 in
 {
   inherit (pkgs) mesh-llm;
@@ -162,6 +163,30 @@ in
   # Their tests moved from mesh-llm to skippy when the packages were split.
   inherit (runtimeTests) runtime-rocm;
   runtime-cuda = runtimeTests.runtime-cuda or null;
+
+  # Runs mesh-dev's 5 declarative live E2E suites (96 steps) against the freshly
+  # built mesh-llm binary: inference endpoints, MCP, stapled HTTP, request_transform,
+  # openai_exchange, backpressure, startup grace, and security boundaries.
+  plugin-contract =
+    pkgs.runCommand "mesh-llm-plugin-contract"
+      {
+        nativeBuildInputs = [
+          pkgs.mesh-llm
+          meshDev
+          pkgs.cacert
+        ];
+        meta.platforms = pkgs.lib.platforms.linux;
+      }
+      ''
+        set -o pipefail
+        export HOME=$TMPDIR/home XDG_CONFIG_HOME=$TMPDIR/config
+        export XDG_CACHE_HOME=$TMPDIR/cache XDG_DATA_HOME=$TMPDIR/data
+        mesh-dev test-suite \
+          --mesh-llm ${pkgs.lib.getExe pkgs.mesh-llm} \
+          --archive ${meshDev}/share/mesh-dev/mesh-dev.tar.gz \
+          ${meshDev}/share/mesh-dev/suites/*.toml \
+          | tee $out
+      '';
 
   # `mesh-llm goose` against nixpkgs' Goose: mesh-llm writes Goose's custom
   # provider and MCP extension, then starts `goose session`; a shim turns that

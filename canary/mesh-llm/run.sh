@@ -47,7 +47,7 @@ if [[ -z $pnpm_hash ]]; then
 fi
 
 if (($# == 0)); then
-  set -- native-runtime mesh-llm client-ready network nixos
+  set -- native-runtime mesh-llm client-ready network plugin-contract nixos
 fi
 attrs=()
 for attr in "$@"; do

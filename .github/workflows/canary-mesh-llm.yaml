@@ -53,7 +53,7 @@ jobs:
           # The NixOS test needs KVM, which only the x86 runners have.
           - name: x86_64-linux
             runner: ubuntu-latest
-            attrs: native-runtime mesh-llm skippy client-ready network network-skippy goose nixos
+            attrs: native-runtime mesh-llm skippy client-ready network network-skippy goose plugin-contract nixos
           # The GPU runtimes build without a GPU; one ROCm target is enough.
           - name: x86_64-linux GPU runtimes
             runner: ubuntu-latest
@@ -61,7 +61,7 @@ jobs:
             config: '{ allowUnfree = true; }'
           - name: aarch64-linux
             runner: ubuntu-24.04-arm
-            attrs: native-runtime mesh-llm skippy client-ready network network-skippy goose
+            attrs: native-runtime mesh-llm skippy client-ready network network-skippy goose plugin-contract
           - name: aarch64-darwin
             runner: macos-15
             attrs: native-runtime mesh-llm skippy
