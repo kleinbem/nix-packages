@@ -26,11 +26,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
     protobuf
   ];
 
-  checkFlags = [
-    "--"
-    "--test-threads=1"
-  ];
-
   # Ship plugin metadata, declarative E2E suites, and an installable archive
   # alongside the binary so `mesh-llm plugins install --archive` and canary
   # checks can consume it straight from the Nix store.
