@@ -40,6 +40,9 @@ prPackages
   mesh-llm-rocm = meshLlmWith { rocmSupport = true; };
   mesh-llm-vulkan = meshLlmWith { vulkanSupport = true; };
 
+  # Zero-GPU developer and test plugin for Mesh-LLM (kleinbem/mesh-dev-plugin).
+  mesh-dev = pkgs.callPackage ./pkgs/mesh-dev/package.nix { };
+
   langfuse = pkgs.callPackage ./pkgs/langfuse { };
   ricoh-driver = pkgs.callPackage ./pkgs/ricoh-driver/default.nix { };
 
