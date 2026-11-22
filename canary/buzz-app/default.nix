@@ -6,6 +6,7 @@
 {
   nixpkgs,
   rev,
+  match ? false,
   cargoHash ? "",
   pnpmHash ? "",
 }:
@@ -23,26 +24,37 @@ let
     };
 
   overlay = final: prev: {
-    buzz-app = prev.buzz-app.overrideAttrs (old: {
-      inherit src;
-      # main no longer runs /usr/bin/printenv (block/buzz-app#2665); the release
-      # recipe still needs the substitution. Drop once the recipe's version has it.
-      postPatch =
-        builtins.replaceStrings
-          [ "--replace-fail /usr/bin/printenv" ]
-          [ "--replace-quiet /usr/bin/printenv" ]
-          old.postPatch;
-      cargoDeps = final.rustPlatform.fetchCargoVendor {
-        name = "buzz-app-vendor";
+    buzz-app = prev.buzz-app.overrideAttrs (
+      old:
+      let
+        oldCargoPatches = old.cargoPatches or [ ];
+        oldPatches = old.patches or [ ];
+        cargoPatches = if match then [ ] else oldCargoPatches;
+      in
+      {
         inherit src;
-        hash = cargoHash;
-      };
-      pnpmDeps = old.pnpmDeps.overrideAttrs {
-        inherit src;
-        outputHash = pnpmHash;
-        outputHashAlgo = "sha256";
-      };
-    });
+        # Drop the 0.80 bump patch once buzz-app main pins a matching MeshLLM
+        # (https://github.com/block/buzz-app/pull/4209).
+        patches = if match then final.lib.subtractLists oldCargoPatches oldPatches else oldPatches;
+        # main may already drop /usr/bin/printenv (block/buzz-app#2417).
+        postPatch =
+          builtins.replaceStrings
+            [ "--replace-fail /usr/bin/printenv" ]
+            [ "--replace-quiet /usr/bin/printenv" ]
+            old.postPatch;
+        cargoDeps = final.rustPlatform.fetchCargoVendor {
+          name = "buzz-app-vendor";
+          inherit src;
+          patches = cargoPatches;
+          hash = cargoHash;
+        };
+        pnpmDeps = old.pnpmDeps.overrideAttrs {
+          inherit src;
+          outputHash = pnpmHash;
+          outputHashAlgo = "sha256";
+        };
+      }
+    );
   };
 
   pkgs = import nixpkgs { overlays = [ overlay ]; };
