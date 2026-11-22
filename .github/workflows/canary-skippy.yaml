@@ -95,7 +95,7 @@ jobs:
 
   report:
     needs: [plan, build]
-    if: always() && needs.plan.result != 'cancelled'
+    if: always() && needs.plan.result != 'cancelled' && needs.build.result != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       issues: write

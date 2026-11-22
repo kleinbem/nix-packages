@@ -54,12 +54,14 @@ let
               done < "$patchDir/$set/series"
             fi
           done
-          git init -q
-          git add -A
-          gitArgs=(-c user.name=nixbld -c user.email=nixbld@localhost -c core.hooksPath=/dev/null -c gc.auto=0)
-          git "''${gitArgs[@]}" commit -q --no-gpg-sign -m base
-          git "''${gitArgs[@]}" am -q --3way --no-gpg-sign "''${queue[@]}"
-          rm -rf .git
+          if (( ''${#queue[@]} > 0 )); then
+            git init -q
+            git add -A
+            gitArgs=(-c user.name=nixbld -c user.email=nixbld@localhost -c core.hooksPath=/dev/null -c gc.auto=0)
+            git "''${gitArgs[@]}" commit -q --no-gpg-sign -m base
+            git "''${gitArgs[@]}" am -q --3way --no-gpg-sign "''${queue[@]}"
+            rm -rf .git
+          fi
 
           appendToVar cmakeFlags "-DLLAMA_BUILD_COMMIT=$(head -c 7 $llamaDir/upstream.txt)"
         '';
@@ -77,9 +79,17 @@ let
             ${final.lib.optionalString (backend == "rocm") ''
               export HIPCC=${final.rocmPackages.clr}/bin/hipcc
               export LLAMA_STAGE_AMDGPU_TARGETS="${
-                final.lib.concatStringsSep ";" (
-                  final.rocmPackages.clr.localGpuTargets or final.rocmPackages.clr.gpuTargets
-                )
+                let
+                  hipFlags = builtins.filter (final.lib.hasPrefix "-DCMAKE_HIP_ARCHITECTURES") (
+                    old.cmakeFlags or [ ]
+                  );
+                in
+                if hipFlags != [ ] then
+                  final.lib.last (final.lib.splitString "=" (builtins.head hipFlags))
+                else
+                  final.lib.concatStringsSep ";" (
+                    final.rocmPackages.clr.localGpuTargets or final.rocmPackages.clr.gpuTargets
+                  )
               }"
             ''}
             export SKIPPY_NATIVE_RUNTIME_RANK=1000
