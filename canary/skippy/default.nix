@@ -22,49 +22,83 @@ let
   skippySrc = github "Mesh-LLM" "skippy" rev;
 
   overlay = final: prev: {
-    skippy-native-runtime = prev.skippy-native-runtime.overrideAttrs (old: {
-      version =
-        (builtins.fromTOML (builtins.readFile "${skippySrc}/Cargo.toml")).workspace.package.version;
-      src = github "ggml-org" "llama.cpp" (
-        final.lib.trim (builtins.readFile "${skippySrc}/llama_cpp/upstream.txt")
-      );
-      postPatch = ''
-        llamaDir=${skippySrc}/llama_cpp
-        patchDir=$llamaDir/patches
-        queue=("$patchDir"/*.patch)
-        for set in model_support generated; do
-          if [ -f "$patchDir/$set/series" ]; then
-            while IFS= read -r p || [ -n "$p" ]; do queue+=("$patchDir/$set/''${p%$'\r'}"); done < "$patchDir/$set/series"
-          fi
-        done
-        git init -q
-        git add -A
-        gitArgs=(-c user.name=nixbld -c user.email=nixbld@localhost -c core.hooksPath=/dev/null -c gc.auto=0)
-        git "''${gitArgs[@]}" commit -q --no-gpg-sign -m base
-        git "''${gitArgs[@]}" am -q --3way --no-gpg-sign "''${queue[@]}"
-        rm -rf .git
+    skippy-native-runtime = prev.skippy-native-runtime.overrideAttrs (
+      old:
+      let
+        inherit (old.passthru) backend;
+        gpuBackendLib =
+          {
+            cuda = "libggml-cuda.so";
+            rocm = "libggml-hip.so";
+          }
+          .${backend} or null;
+      in
+      {
+        version =
+          (builtins.fromTOML (builtins.readFile "${skippySrc}/Cargo.toml")).workspace.package.version;
+        src = github "ggml-org" "llama.cpp" (
+          final.lib.trim (builtins.readFile "${skippySrc}/llama_cpp/upstream.txt")
+        );
+        postPatch = ''
+          llamaDir=${skippySrc}/llama_cpp
+          patchDir=$llamaDir/patches
+          shopt -s nullglob
+          queue=("$patchDir"/*.patch)
+          shopt -u nullglob
+          for set in model_support generated; do
+            if [ -f "$patchDir/$set/series" ]; then
+              while IFS= read -r p || [ -n "$p" ]; do
+                p=''${p%$'\r'}
+                [[ -z "$p" || "$p" == \#* ]] && continue
+                queue+=("$patchDir/$set/$p")
+              done < "$patchDir/$set/series"
+            fi
+          done
+          git init -q
+          git add -A
+          gitArgs=(-c user.name=nixbld -c user.email=nixbld@localhost -c core.hooksPath=/dev/null -c gc.auto=0)
+          git "''${gitArgs[@]}" commit -q --no-gpg-sign -m base
+          git "''${gitArgs[@]}" am -q --3way --no-gpg-sign "''${queue[@]}"
+          rm -rf .git
 
-        appendToVar cmakeFlags "-DLLAMA_BUILD_COMMIT=$(head -c 7 $llamaDir/upstream.txt)"
-      '';
-      preFixup = ''
-        packageNativeRuntime() {
-          cp -r ${skippySrc} skippy && chmod -R u+w skippy
-          export SKIPPY_NATIVE_RUNTIME_RANK=1000
-          export LLAMA_WORKDIR=$NIX_BUILD_TOP/source
-          mkdir -p core && cp -P $out/lib/lib*${final.stdenv.hostPlatform.extensions.sharedLibrary}* core/
-          LLAMA_STAGE_BUILD_DIR=$PWD/core \
-            bash skippy/scripts/package-native-runtime.sh --backend ${old.passthru.backend} \
-              --keep-runpath --no-model-package-tool --out $out/share/mesh-llm/runtimes \
-              --id-suffix nixpkgs
-          rm -f $out/share/mesh-llm/runtimes/*.tar.gz*
-        }
-        postFixupHooks+=(packageNativeRuntime)
-      '';
-      passthru = old.passthru // {
-        inherit llamaCppBuild skippySrc;
-        automation = null;
-      };
-    });
+          appendToVar cmakeFlags "-DLLAMA_BUILD_COMMIT=$(head -c 7 $llamaDir/upstream.txt)"
+        '';
+        preFixup = ''
+          packageNativeRuntime() {
+            cp -r ${skippySrc} skippy && chmod -R u+w skippy
+            ${final.lib.optionalString (gpuBackendLib != null) ''
+              NIX_LDFLAGS+=" -rpath $(patchelf --print-rpath $out/lib/ggml-backends/${gpuBackendLib})"
+            ''}
+            ${final.lib.optionalString (backend == "cuda") ''
+              export CUDA_LIBRARY_PATH=${final.cudaPackages.cuda_cudart}/lib
+              export SKIPPY_CUDA_LICENSE_FILE=${final.cudaPackages.cuda_cudart}/LICENSE
+              export LLAMA_STAGE_CUDA_ARCHITECTURES="${final.cudaPackages.flags.cmakeCudaArchitecturesString}"
+            ''}
+            ${final.lib.optionalString (backend == "rocm") ''
+              export HIPCC=${final.rocmPackages.clr}/bin/hipcc
+              export LLAMA_STAGE_AMDGPU_TARGETS="${
+                final.lib.concatStringsSep ";" (
+                  final.rocmPackages.clr.localGpuTargets or final.rocmPackages.clr.gpuTargets
+                )
+              }"
+            ''}
+            export SKIPPY_NATIVE_RUNTIME_RANK=1000
+            export LLAMA_WORKDIR=$NIX_BUILD_TOP/source
+            mkdir -p core && cp -P $out/lib/lib*${final.stdenv.hostPlatform.extensions.sharedLibrary}* core/
+            LLAMA_STAGE_BUILD_DIR=$PWD/core \
+              bash skippy/scripts/package-native-runtime.sh --backend ${backend} \
+                --keep-runpath --no-model-package-tool --out $out/share/mesh-llm/runtimes \
+                --id-suffix nixpkgs
+            rm -f $out/share/mesh-llm/runtimes/*.tar.gz*
+          }
+          postFixupHooks+=(packageNativeRuntime)
+        '';
+        passthru = old.passthru // {
+          inherit llamaCppBuild skippySrc;
+          automation = null;
+        };
+      }
+    );
 
     skippy = prev.skippy.overrideAttrs (old: {
       version =
@@ -75,7 +109,7 @@ let
         builtins.replaceStrings
           [ "MESH_LLM_NATIVE_RUNTIME_BUNDLE_DIR" ]
           [ "SKIPPY_NATIVE_RUNTIME_BUNDLE_DIR" ]
-          old.postInstall;
+          (old.postInstall or "");
     });
 
     skippy-tools = prev.skippy-tools.overrideAttrs (old: {
@@ -83,16 +117,12 @@ let
         (builtins.fromTOML (builtins.readFile "${skippySrc}/Cargo.toml")).workspace.package.version;
       src = skippySrc;
       cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${skippySrc}/Cargo.lock"; };
-      postPatch =
-        builtins.replaceStrings
-          [ "skippy/crates/skippy-quantize/Cargo.toml" ]
-          [ "crates/skippy-quantize/Cargo.toml" ]
-          old.postPatch;
+      postPatch = builtins.replaceStrings [ "skippy/crates/" ] [ "crates/" ] (old.postPatch or "");
       postInstall =
         builtins.replaceStrings
           [ "MESH_LLM_NATIVE_RUNTIME_BUNDLE_DIR" ]
           [ "SKIPPY_NATIVE_RUNTIME_BUNDLE_DIR" ]
-          old.postInstall;
+          (old.postInstall or "");
     });
   };
 

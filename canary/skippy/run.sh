@@ -17,7 +17,7 @@ echo "Skippy $rev"
 
 llama_rev="$(curl -fsSL "https://raw.githubusercontent.com/Mesh-LLM/skippy/$rev/llama_cpp/upstream.txt" | tr -d '[:space:]')"
 llama_build="$(git ls-remote --tags https://github.com/ggml-org/llama.cpp 'refs/tags/b*' |
-  awk -v rev="$llama_rev" '$1 == rev && !found { sub("refs/tags/b", "", $2); print $2; found = 1 }')"
+  awk -v rev="$llama_rev" '$1 == rev && !found { sub("refs/tags/b", "", $2); sub(/\^\{\}$/, "", $2); print $2; found = 1 }')"
 if [[ -z $llama_build ]]; then
   echo "warning: no llama.cpp release tag points at ${llama_rev:-the pin}; reporting build 0" >&2
   llama_build=0
