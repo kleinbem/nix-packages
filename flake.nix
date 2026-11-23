@@ -34,9 +34,9 @@
 
       flake = {
         overlays.default = import ./overlay.nix;
-        # Plus the modules of our open nixpkgs PRs (services.mesh-llm,
-        # services.buzz-relay), exactly as in each PR; they need the overlay
-        # (or the packages) for their packages. See nix-detour's mkPrs.
+        # Plus the modules of our open nixpkgs PRs (services.buzz-relay),
+        # exactly as in each PR; they need the overlay (or the packages) for
+        # their packages. See nix-detour's mkPrs.
         nixosModules = {
           langfuse = import ./modules/nixos/langfuse.nix;
         }

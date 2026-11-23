@@ -81,12 +81,10 @@
     "rev": "ebf370ca1ef4fabc474db00c6d6f925052184aa1",
     "narHash": "sha256-TXzcTjWhuHHSY6tSz5fvuwQpQfKbBZAWCeRe3ybNlWo=",
     "attrs": [
-      "mesh-llm",
       "mesh-llm-ffi",
       "mesh-llm-nodejs",
       "mesh-llmPlugins",
       "skippy",
-      "skippy-native-runtime",
       "skippy-tools"
     ],
     "paths": {
@@ -94,9 +92,6 @@
     },
     "pythonPackages": [
       "mesh-llm"
-    ],
-    "modules": {
-      "mesh-llm": "nixos/modules/services/misc/mesh-llm.nix"
-    }
+    ]
   }
 }

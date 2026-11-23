@@ -30,7 +30,7 @@ is everything else the fleet needs.
 
 | Attribute | What it is |
 |---|---|
-| `mesh-llm`, `mesh-llm-cuda`, `mesh-llm-rocm`, `mesh-llm-vulkan`, `skippy`, `skippy-native-runtime`, `skippy-tools`, `mesh-llm-ffi`, `mesh-llm-nodejs`, `mesh-llmPlugins.*`, `python3Packages.mesh-llm` | MeshLLM, all its nixpkgs PRs at once (NixOS/nixpkgs#571722 and the PRs stacked on it), pinned from the fork's `mesh-llm-dev` branch; `mesh-llm-cuda`, `mesh-llm-rocm` and `mesh-llm-vulkan` are `mesh-llm` with that one GPU backend (plain `mesh-llm` is CPU-only on Linux unless the nixpkgs config sets `cudaSupport` or `rocmSupport`). `nixosModules.mesh-llm` is the stack's `services.mesh-llm`, with its `plugins` option. `python3Packages.mesh-llm` comes only through `overlays.default`. |
+| `mesh-llm-cuda`, `mesh-llm-rocm`, `mesh-llm-vulkan`, `skippy`, `skippy-tools`, `mesh-llm-ffi`, `mesh-llm-nodejs`, `mesh-llmPlugins.*`, `python3Packages.mesh-llm` | MeshLLM's stacked nixpkgs PRs (`mesh-llm`, `skippy-native-runtime` and `services.mesh-llm` landed in NixOS/nixpkgs#571722), pinned from the fork's `mesh-llm-dev` branch; `mesh-llm-cuda`, `mesh-llm-rocm` and `mesh-llm-vulkan` are `pkgs.mesh-llm` with that one GPU backend (plain `mesh-llm` is CPU-only on Linux unless the nixpkgs config sets `cudaSupport` or `rocmSupport`). `python3Packages.mesh-llm` comes only through `overlays.default`. |
 | `buzz-relay` | The Buzz relay, pairing relay and admin CLI, plus `nixosModules.buzz-relay` (`services.buzz-relay`), NixOS/nixpkgs#574877. |
 | `buzz-app` | The Buzz desktop app, NixOS/nixpkgs#577918. |
 | `berd` | Berd, Block's desktop app for AI agents on goose, NixOS/nixpkgs#580616. |
@@ -50,7 +50,7 @@ is everything else the fleet needs.
 | `nix-detour` | CLI and web dashboard for temporary nixpkgs package holds and ahead PRs (`kleinbem-dev/nix-detour`). |
 | `nix-gantry` | CLI and manifest publisher for declarative atomic updates of NixOS `systemd-nspawn` containers (`kleinbem-dev/nix-gantry`). |
 
-`modules/nixos/` ships `langfuse` alongside `buzz-relay` and `mesh-llm` (both from their nixpkgs PRs, exported verbatim via `nix-detour`). Upstream `services.buzz-relay` (NixOS/nixpkgs#574877) defaults `listenAddress` to `"127.0.0.1"` (set `"0.0.0.0"` when exposing directly with `openFirewall = true`), uses `environmentFiles` and freeform `settings` (e.g. `settings.BUZZ_S3_ENDPOINT`), and enables `settings.BUZZ_REQUIRE_RELAY_MEMBERSHIP` by default (requiring `settings.RELAY_OWNER_PUBKEY` and `environmentFiles`, or `settings.BUZZ_REQUIRE_RELAY_MEMBERSHIP = false`).
+`modules/nixos/` ships `langfuse` alongside `buzz-relay` (from its nixpkgs PR, exported verbatim via `nix-detour`). Upstream `services.buzz-relay` (NixOS/nixpkgs#574877) defaults `listenAddress` to `"127.0.0.1"` (set `"0.0.0.0"` when exposing directly with `openFirewall = true`), uses `environmentFiles` and freeform `settings` (e.g. `settings.BUZZ_S3_ENDPOINT`), and enables `settings.BUZZ_REQUIRE_RELAY_MEMBERSHIP` by default (requiring `settings.RELAY_OWNER_PUBKEY` and `environmentFiles`, or `settings.BUZZ_REQUIRE_RELAY_MEMBERSHIP = false`).
 
 ## Rule for packages that are also ours in nixpkgs
 
