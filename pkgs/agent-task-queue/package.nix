@@ -20,7 +20,15 @@ python3Packages.buildPythonApplication (finalAttrs: {
 
   build-system = [ python3Packages.hatchling ];
 
-  dependencies = [ python3Packages.fastmcp ];
+  dependencies = [
+    # nixpkgs' fastmcp-slim is marked broken against mcp >= 2 (NixOS/nixpkgs#577109
+    # kept library dependencies on unversioned mcp); pin mcp_1 for this application.
+    (python3Packages.fastmcp.override {
+      fastmcp-slim = python3Packages.fastmcp-slim.override {
+        mcp = python3Packages.mcp_1;
+      };
+    })
+  ];
 
   nativeCheckInputs = with python3Packages; [
     pytestCheckHook

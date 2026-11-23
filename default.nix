@@ -21,8 +21,8 @@ let
   # mesh-llm bundles whatever skippy-native-runtime it is given.
   meshLlmWith =
     backend:
-    prPackages.mesh-llm.override {
-      skippy-native-runtime = prPackages.skippy-native-runtime.override (
+    pkgs.mesh-llm.override {
+      skippy-native-runtime = pkgs.skippy-native-runtime.override (
         {
           cudaSupport = false;
           rocmSupport = false;
