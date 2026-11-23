@@ -326,11 +326,11 @@
         "nixpkgs-stable": "nixpkgs-stable"
       },
       "locked": {
-        "lastModified": 1795316518,
-        "narHash": "sha256-0cogmx/JJofbOqSzOSkyebdoaSw1OBU/6ye1ek0In+w=",
+        "lastModified": 1795343022,
+        "narHash": "sha256-MvISmv/sQUUJYwoIf1X/vSAYn4+e/8ma1xUOLafprQ0=",
         "owner": "kleinbem-dev",
         "repo": "nix-detour",
-        "rev": "e6d5241063b33adae50ddd2b5fdab495de5faa75",
+        "rev": "557aa0ee876e5e0b68f25aba972fd837b62eb7b0",
         "type": "github"
       },
       "original": {
@@ -431,11 +431,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795316215,
-        "narHash": "sha256-jSJ4vrqzvYCo2lRYOqYMUvFyyH0o2ACUe8GrGAtjYYI=",
+        "lastModified": 1795343290,
+        "narHash": "sha256-lhkYwBZM2jvYL/exssaNZcSjR7UeGRX3hp/73GSYhWY=",
         "owner": "kleinbem-dev",
         "repo": "nix-gantry",
-        "rev": "bb2c8ff42d0e214a8418aaa9807d346e82574ef0",
+        "rev": "e2f42430b15dec45e716e3d1c337156dc3127e3f",
         "type": "github"
       },
       "original": {
@@ -612,11 +612,11 @@
     },
     "nixpkgs-stable": {
       "locked": {
-        "lastModified": 1795137884,
-        "narHash": "sha256-iKXCN36qYfBni+3nH4vAd98/kshoIsPB2S9mYWhma30=",
+        "lastModified": 1795258312,
+        "narHash": "sha256-IEuDsf80ubivfpidbRsIm30HVo7PZIdZt1stRsbaY4Y=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ab5c18fdedfc8f9bbc9d773f10a540790e2787a7",
+        "rev": "94c3211b0ee8ba969a3f12eb4aff8ba0f72971dd",
         "type": "github"
       },
       "original": {
