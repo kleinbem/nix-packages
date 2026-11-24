@@ -65,11 +65,6 @@ let
       });
 
       mesh-llm = prev.mesh-llm.overrideAttrs (old: {
-        # The b12199 bindings grew llama_context_params, the test still expects
-        # the old size. upstream: Mesh-LLM/mesh-llm#2987
-        checkFlags = old.checkFlags or [ ] ++ [
-          "--skip=llama_draft::tests::mirrors_match_the_pinned_upstream_layouts"
-        ];
         cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${meshLlmSrc}/Cargo.lock"; };
         pnpmDeps = old.pnpmDeps.overrideAttrs {
           outputHash = pnpmHash;
@@ -83,7 +78,8 @@ let
     let
       skippyDep = meshCargo.workspace.dependencies.skippy-native-runtime or { };
       skippyRev =
-        skippyDep.rev or (throw "MeshLLM ${rev} has neither llama.cpp upstream.txt nor a skippy-native-runtime rev in Cargo.toml");
+        skippyDep.rev
+          or (throw "MeshLLM ${rev} has neither llama.cpp upstream.txt nor a skippy-native-runtime rev in Cargo.toml");
       skippySrc = github "Mesh-LLM" "skippy" skippyRev;
     in
     [
