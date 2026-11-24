@@ -27,59 +27,95 @@ let
     };
 
   meshLlmSrc = github "Mesh-LLM" "mesh-llm" rev;
+  meshCargo = builtins.fromTOML (builtins.readFile "${meshLlmSrc}/Cargo.toml");
 
-  # The pin moved from third_party/llama.cpp to skippy/llama_cpp after 0.78.
-  llamaPin =
-    let
-      pins = builtins.filter builtins.pathExists [
-        "${meshLlmSrc}/skippy/llama_cpp/upstream.txt"
-        "${meshLlmSrc}/third_party/llama.cpp/upstream.txt"
-      ];
-    in
-    if pins == [ ] then throw "MeshLLM ${rev} has no llama.cpp upstream.txt" else builtins.head pins;
+  # Pre-split MeshLLM carries llama.cpp's pin in-tree (third_party/llama.cpp
+  # before 0.79, skippy/llama_cpp after); post-split (Mesh-LLM/mesh-llm#3193)
+  # drops skippy/ and pins Mesh-LLM/skippy in Cargo.toml instead.
+  llamaPins = builtins.filter builtins.pathExists [
+    "${meshLlmSrc}/skippy/llama_cpp/upstream.txt"
+    "${meshLlmSrc}/third_party/llama.cpp/upstream.txt"
+  ];
+  inTreeSkippy = llamaPins != [ ];
 
   # The runtime's attribute: skippy-native-runtime since the prep branch for
   # 0.79 renamed it after upstream, mesh-llm-native-runtime before.
   runtimeAttr =
     pkgs': if pkgs' ? skippy-native-runtime then "skippy-native-runtime" else "mesh-llm-native-runtime";
 
-  overlay = final: prev: {
-    ${runtimeAttr prev} = prev.${runtimeAttr prev}.overrideAttrs (old: {
-      # mesh-llm --version reports the workspace version, which versionCheckHook checks.
-      version =
-        (builtins.fromTOML (builtins.readFile "${meshLlmSrc}/Cargo.toml")).workspace.package.version;
-      src = github "ggml-org" "llama.cpp" (final.lib.trim (builtins.readFile llamaPin));
-      passthru =
-        old.passthru
-        // {
-          inherit meshLlmSrc llamaCppBuild;
-        }
-        # Upstream's automation tool (newer packages): its cargo hash is pinned
-        # to one release, so take its dependencies from the lockfile as well.
-        // final.lib.optionalAttrs (old.passthru ? automation) {
-          automation = old.passthru.automation.overrideAttrs {
-            src = meshLlmSrc;
-            cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${meshLlmSrc}/Cargo.lock"; };
+  preSplitOverlays = [
+    (final: prev: {
+      ${runtimeAttr prev} = prev.${runtimeAttr prev}.overrideAttrs (old: {
+        # mesh-llm --version reports the workspace version, which versionCheckHook checks.
+        version = meshCargo.workspace.package.version;
+        src = github "ggml-org" "llama.cpp" (final.lib.trim (builtins.readFile (builtins.head llamaPins)));
+        passthru =
+          old.passthru
+          // {
+            inherit meshLlmSrc llamaCppBuild;
+          }
+          # Upstream's automation tool (newer packages): its cargo hash is pinned
+          # to one release, so take its dependencies from the lockfile as well.
+          // final.lib.optionalAttrs (old.passthru ? automation) {
+            automation = old.passthru.automation.overrideAttrs {
+              src = meshLlmSrc;
+              cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${meshLlmSrc}/Cargo.lock"; };
+            };
           };
-        };
-    });
+      });
 
-    mesh-llm = prev.mesh-llm.overrideAttrs (old: {
-      # The b12199 bindings grew llama_context_params, the test still expects
-      # the old size. upstream: Mesh-LLM/mesh-llm#2987
-      checkFlags = old.checkFlags or [ ] ++ [
-        "--skip=llama_draft::tests::mirrors_match_the_pinned_upstream_layouts"
-      ];
-      cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${meshLlmSrc}/Cargo.lock"; };
-      pnpmDeps = old.pnpmDeps.overrideAttrs {
-        outputHash = pnpmHash;
-        outputHashAlgo = "sha256";
-      };
-    });
-  };
+      mesh-llm = prev.mesh-llm.overrideAttrs (old: {
+        # The b12199 bindings grew llama_context_params, the test still expects
+        # the old size. upstream: Mesh-LLM/mesh-llm#2987
+        checkFlags = old.checkFlags or [ ] ++ [
+          "--skip=llama_draft::tests::mirrors_match_the_pinned_upstream_layouts"
+        ];
+        cargoDeps = final.rustPlatform.importCargoLock { lockFile = "${meshLlmSrc}/Cargo.lock"; };
+        pnpmDeps = old.pnpmDeps.overrideAttrs {
+          outputHash = pnpmHash;
+          outputHashAlgo = "sha256";
+        };
+      });
+    })
+  ];
+
+  postSplitOverlays =
+    let
+      skippyDep = meshCargo.workspace.dependencies.skippy-native-runtime or { };
+      skippyRev =
+        skippyDep.rev or (throw "MeshLLM ${rev} has neither llama.cpp upstream.txt nor a skippy-native-runtime rev in Cargo.toml");
+      skippySrc = github "Mesh-LLM" "skippy" skippyRev;
+    in
+    [
+      (import ../skippy/overlay.nix { inherit skippySrc llamaCppBuild; })
+      (final: prev: {
+        mesh-llm = prev.mesh-llm.overrideAttrs (old: {
+          version = meshCargo.workspace.package.version;
+          src = meshLlmSrc;
+          cargoDeps = final.rustPlatform.importCargoLock {
+            lockFile = "${meshLlmSrc}/Cargo.lock";
+            allowBuiltinFetchGit = true;
+          };
+          cargoTestFlags = [ "--workspace" ];
+          checkFlags = [ ];
+          # Skippy's runtime-loading tests moved out of this workspace; leaving
+          # MESH_LLM_NATIVE_RUNTIME_BUNDLE_DIR set trips mesh-llm-commands'
+          # discovery tests (upstream: Mesh-LLM/mesh-llm#3193).
+          preCheck = ''
+            patchShebangs scripts
+            export CARGO_PROFILE_DEV_DEBUG=0
+          '';
+          pnpmDeps = old.pnpmDeps.overrideAttrs {
+            src = meshLlmSrc;
+            outputHash = pnpmHash;
+            outputHashAlgo = "sha256";
+          };
+        });
+      })
+    ];
 
   pkgs = import nixpkgs {
-    overlays = [ overlay ];
+    overlays = if inTreeSkippy then preSplitOverlays else postSplitOverlays;
     inherit config;
   };
 
