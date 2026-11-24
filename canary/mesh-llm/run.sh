@@ -17,13 +17,26 @@ rev="${MESH_LLM_REV:-$(git ls-remote "$repo" refs/heads/main | cut -f1)}"
 echo "MeshLLM $rev"
 
 # llama.cpp reports its release number (the bNNNNN tag), which the source
-# tarball doesn't carry. MeshLLM pins a commit, so find the tag pointing at it.
+# tarball doesn't carry. Pre-split MeshLLM pins it in-tree; post-split
+# (Mesh-LLM/mesh-llm#3193) pins Mesh-LLM/skippy in Cargo.toml, which holds it.
 llama_rev=""
 for pin in skippy/llama_cpp/upstream.txt third_party/llama.cpp/upstream.txt; do
-  llama_rev="$(curl -fsSL "https://raw.githubusercontent.com/Mesh-LLM/mesh-llm/$rev/$pin" | tr -d '[:space:]')" && break
+  if llama_rev="$(curl -fsSL "https://raw.githubusercontent.com/Mesh-LLM/mesh-llm/$rev/$pin" 2>/dev/null | tr -d '[:space:]')" && [[ -n $llama_rev ]]; then
+    break
+  fi
 done
+if [[ -z $llama_rev ]]; then
+  skippy_rev="$(
+    curl -fsSL "https://raw.githubusercontent.com/Mesh-LLM/mesh-llm/$rev/Cargo.toml" |
+      sed -n 's/^skippy-native-runtime *=.*rev *= *"\([0-9a-f]\{7,\}\)".*/\1/p' | head -n 1
+  )"
+  if [[ -n $skippy_rev ]]; then
+    echo "Skippy $skippy_rev (pinned in Cargo.toml)"
+    llama_rev="$(curl -fsSL "https://raw.githubusercontent.com/Mesh-LLM/skippy/$skippy_rev/llama_cpp/upstream.txt" | tr -d '[:space:]')"
+  fi
+fi
 llama_build="$(git ls-remote --tags https://github.com/ggml-org/llama.cpp 'refs/tags/b*' |
-  awk -v rev="$llama_rev" '$1 == rev && !found { sub("refs/tags/b", "", $2); print $2; found = 1 }')"
+  awk -v rev="$llama_rev" '$1 == rev && !found { sub("refs/tags/b", "", $2); sub(/\^\{\}$/, "", $2); print $2; found = 1 }')"
 if [[ -z $llama_build ]]; then
   echo "warning: no llama.cpp release tag points at ${llama_rev:-the pin}; reporting build 0" >&2
   llama_build=0
