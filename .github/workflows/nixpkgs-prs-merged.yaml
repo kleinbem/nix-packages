@@ -34,6 +34,6 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           nix-path: nixpkgs=channel:nixos-unstable
 
-      - uses: kleinbem-dev/nix-detour/pr-merged@b1bad90a62b55305a6a545b56de7bc2cb8392c42 # v0.3.1
+      - uses: kleinbem-dev/nix-detour/pr-merged@31a0e6f79d7d6082f1d47c16d25e2d4a2bd31dba # v0.4.0
         with:
           token: ${{ steps.app-token.outputs.token }}
