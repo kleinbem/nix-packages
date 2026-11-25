@@ -58,35 +58,6 @@ collect_github() { # owner/repo path
       | "\(.url)\t\($src)\t\(first($blame[] | select(.s <= $n and $n <= .e) | .d) // "")"' >>"$found"
 }
 
-# Code search allows few requests per minute and answers 429 "try again in N s" when the
-# runner's token has just used it; wait as asked, up to three tries.
-search_code() {
-  local out wait try
-  for try in 1 2 3; do
-    if out="$(gh api -X GET search/code -f q='"communities.buzz.xyz/invite"' -f per_page=100 \
-      --jq '.items[] | "\(.repository.full_name) \(.path)"' 2>&1)"; then
-      printf '%s\n' "$out"
-      return 0
-    fi
-    wait="$({ grep -oE 'try again in [0-9]+' <<<"$out" || true; } | head -n1 | grep -oE '[0-9]+$' || true)"
-    [[ -z $wait || $try == 3 ]] && break
-    echo "code search rate-limited, waiting $((wait + 2)) s" >&2
-    sleep "$((wait + 2))"
-  done
-  printf '%s\n' "$out"
-  return 1
-}
-
-# GitHub code search finds new places; it can lag behind, so known files are read directly too.
-if items="$(search_code)"; then
-  while read -r repo path; do
-    [[ -z $repo ]] && continue
-    collect_github "$repo" "$path" || echo "warning: could not read $repo/$path" >&2
-  done <<<"$items"
-else
-  echo "warning: code search failed: $items" >&2
-fi
-
 while read -r repo path; do
   [[ -z $repo || $repo == \#* ]] && continue
   collect_github "$repo" "$path" || echo "warning: could not read $repo/$path" >&2
@@ -138,6 +109,36 @@ if hits="$(gh api -X GET search/issues -f per_page=100 -f sort=updated -f order=
   done <<<"$hits"
 else
   echo "warning: issue search failed: $hits" >&2
+fi
+
+# Code search often answers the workflow token with 429 "try again in N s", and an early retry
+# raises N, so it runs last and waits at least a minute per try.
+search_code() {
+  local out wait try
+  for try in 1 2 3 4 5; do
+    if out="$(gh api -X GET search/code -f q='"communities.buzz.xyz/invite"' -f per_page=100 \
+      --jq '.items[] | "\(.repository.full_name) \(.path)"' 2>&1)"; then
+      printf '%s\n' "$out"
+      return 0
+    fi
+    wait="$({ grep -oE 'try again in [0-9]+' <<<"$out" || true; } | head -n1 | grep -oE '[0-9]+$' || true)"
+    [[ -z $wait || $try == 5 ]] && break
+    wait=$((wait + 2 > 60 ? wait + 2 : 60))
+    echo "code search rate-limited, waiting $wait s (try $try of 5)" >&2
+    sleep "$wait"
+  done
+  printf '%s\n' "$out"
+  return 1
+}
+
+# GitHub code search finds new places; it can lag behind, so known files are read directly too.
+if items="$(search_code)"; then
+  while read -r repo path; do
+    [[ -z $repo ]] && continue
+    collect_github "$repo" "$path" || echo "warning: could not read $repo/$path" >&2
+  done <<<"$items"
+else
+  echo "warning: code search failed: $items" >&2
 fi
 
 joined="$({ grep -vE '^\s*(#|$)' "$here/joined.txt" || true; } | jq -R . | jq -s .)"
