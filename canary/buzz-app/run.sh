@@ -7,18 +7,20 @@
 #   NIXPKGS=~/nixpkgs canary/buzz-app/run.sh
 #
 # NIXPKGS: a nixpkgs checkout with buzz-app (kleinbem/nixpkgs@buzz-app-init).
+# BUZZ_APP_REPO: owner/name to fetch it from (default: block/buzz-app).
 # BUZZ_APP_REV: the commit to build (default: main).
 # BUZZ_APP_MESH_MATCH: true when buzz-app's MeshLLM matches nixpkgs' (drops the 0.80 patch).
 set -euo pipefail
 
 nixpkgs="$(realpath "${NIXPKGS:?set NIXPKGS to a nixpkgs checkout}")"
 here="$(dirname "$(realpath "$0")")"
-rev="${BUZZ_APP_REV:-$(git ls-remote https://github.com/block/buzz-app refs/heads/main | cut -f1)}"
+repo="${BUZZ_APP_REPO:-block/buzz-app}"
+rev="${BUZZ_APP_REV:-$(git ls-remote "https://github.com/$repo" refs/heads/main | cut -f1)}"
 match=false
 [[ ${BUZZ_APP_MESH_MATCH:-false} == true ]] && match=true
-echo "buzz-app $rev (mesh match: $match)"
+echo "buzz-app $repo $rev (mesh match: $match)"
 
-args=(--arg nixpkgs "$nixpkgs" --argstr rev "$rev" --arg match "$match")
+args=(--arg nixpkgs "$nixpkgs" --argstr repo "$repo" --argstr rev "$rev" --arg match "$match")
 
 # The dependency hashes change with the commit: build each fetcher once with an
 # empty hash and take the one Nix reports.

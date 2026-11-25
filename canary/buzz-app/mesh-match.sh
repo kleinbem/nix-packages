@@ -3,7 +3,7 @@
 # compute splits models only between nodes of the same skippy stage protocol
 # generation, and the app loads only a runtime with its skippy ABI.
 #
-#   BUZZ_APP_REV=<commit> NIXPKGS_REPO=kleinbem/nixpkgs NIXPKGS_REF=<branch> canary/buzz-app/mesh-match.sh
+#   [BUZZ_APP_REPO=<owner/name>] BUZZ_APP_REV=<commit> NIXPKGS_REPO=kleinbem/nixpkgs NIXPKGS_REF=<branch> canary/buzz-app/mesh-match.sh
 #
 # Prints key=value lines (app_*, nixpkgs_*, match=true|false) for $GITHUB_OUTPUT.
 set -euo pipefail
@@ -36,7 +36,7 @@ versions() {
   echo "$generation $abi"
 }
 
-app_rev="$(raw block/buzz-app "${BUZZ_APP_REV:?}" src/bundled/mesh-compute/compute/Cargo.toml |
+app_rev="$(raw "${BUZZ_APP_REPO:-block/buzz-app}" "${BUZZ_APP_REV:?}" src/bundled/mesh-compute/compute/Cargo.toml |
   sed -nE 's/^mesh-llm-(embedded-runtime|sdk) = .*rev = "([0-9a-f]{40})".*/\2/p')"
 [[ -n $app_rev ]] || {
   echo "buzz-app $BUZZ_APP_REV pins no mesh-llm-embedded-runtime revision" >&2

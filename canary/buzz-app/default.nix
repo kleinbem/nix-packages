@@ -5,6 +5,8 @@
 # hash makes Nix print it).
 {
   nixpkgs,
+  # A fork tests an upstream PR branch before it lands.
+  repo ? "block/buzz-app",
   rev,
   match ? false,
   cargoHash ? "",
@@ -15,8 +17,8 @@ let
   src =
     builtins.fetchTree {
       type = "github";
-      owner = "block";
-      repo = "buzz-app";
+      owner = builtins.head (builtins.split "/" repo);
+      repo = builtins.baseNameOf repo;
       inherit rev;
     }
     // {
