@@ -45,9 +45,11 @@ jobs:
             # Bodies edited on the web end lines with \r\n.
             body="$(gh issue view "$issue" --json body --jq .body)"
             encoded="$(sed -n "s/^<!-- $STATE_TAG:\([A-Za-z0-9+/=]*\) -->\r\?$/\1/p" <<<"$body")"
-            if [[ -n $encoded ]]; then
-              base64 -d <<<"$encoded" | gunzip >state-in.json
+            if [[ -z $encoded ]]; then
+              echo "::error::state block missing from #$issue; restore it or close the issue to start over"
+              exit 1
             fi
+            base64 -d <<<"$encoded" | gunzip >state-in.json
           fi
 
       - name: Collect invites

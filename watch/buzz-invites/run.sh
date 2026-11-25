@@ -41,10 +41,11 @@ blame_query='query($owner: String!, $name: String!, $path: String!) {
 # Appends "<url>\t<source>\t<epoch>" for every invite link in a GitHub file, dated by the
 # commit that last changed its line.
 collect_github() { # owner/repo path
-  local src="https://github.com/$1/blob/HEAD/$2" content blame
+  local path src content blame
+  path="$(jq -rn --arg p "$2" '$p | split("/") | map(@uri) | join("/")')"
+  src="https://github.com/$1/blob/HEAD/$path"
   # Raw media type: the JSON form has no content for files over 1 MB.
-  content="$(gh api -H 'Accept: application/vnd.github.raw+json' \
-    "repos/$1/contents/$(jq -rn --arg p "$2" '$p | split("/") | map(@uri) | join("/")')")" || return 1
+  content="$(gh api -H 'Accept: application/vnd.github.raw+json' "repos/$1/contents/$path")" || return 1
   blame="$(gh api graphql -f query="$blame_query" -F owner="${1%%/*}" -F name="${1#*/}" -F path="$2" \
     --jq '[.data.repository.defaultBranchRef.target.blame.ranges[]
            | {s: .startingLine, e: .endingLine, d: (.commit.committedDate | fromdateiso8601)}]' 2>/dev/null)" ||
@@ -105,7 +106,7 @@ jq -Rn --argjson prev "$prev" --argjson now "$now" --argjson max "$max_age" \
            community: $i.community,
            first_seen: ([$p.first_seen // $now, $i.posted // $now] | min),
            expires: (if ($i.code | startswith("eyJ"))
-                     then (try ($i.code | split(".")[0] | b64url | fromjson | .e | numbers) catch null)
+                     then ((try ($i.code | split(".")[0] | b64url | fromjson | .e | numbers) catch null) // null)
                      else null end),
            sources: $i.sources
          }})
