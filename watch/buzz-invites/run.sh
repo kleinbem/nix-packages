@@ -112,9 +112,11 @@ else
 fi
 
 # Code search often answers the workflow token with 429 "try again in N s", and an early retry
-# raises N, so it runs last and waits at least a minute per try.
+# raises N, so it runs last and waits at least a minute per try. All waits together stay under
+# CODE_SEARCH_BUDGET seconds, so the job (15 min) still publishes the report.
+# no-link: GitHub's documented rate limit for search, not a bug to report.
 search_code() {
-  local out wait try
+  local out wait try waited=0 budget="${CODE_SEARCH_BUDGET:-300}"
   for try in 1 2 3 4 5; do
     if out="$(gh api -X GET search/code -f q='"communities.buzz.xyz/invite"' -f per_page=100 \
       --jq '.items[] | "\(.repository.full_name) \(.path)"' 2>&1)"; then
@@ -124,8 +126,13 @@ search_code() {
     wait="$({ grep -oE 'try again in [0-9]+' <<<"$out" || true; } | head -n1 | grep -oE '[0-9]+$' || true)"
     [[ -z $wait || $try == 5 ]] && break
     wait=$((wait + 2 > 60 ? wait + 2 : 60))
+    if ((waited + wait > budget)); then
+      echo "code search rate-limited, a ${wait} s wait would pass the ${budget} s budget" >&2
+      break
+    fi
     echo "code search rate-limited, waiting $wait s (try $try of 5)" >&2
     sleep "$wait"
+    waited=$((waited + wait))
   done
   printf '%s\n' "$out"
   return 1
