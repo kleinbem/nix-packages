@@ -106,7 +106,7 @@ curl -fsS -m 30 'https://hn.algolia.com/api/v1/search_by_date?query=communities.
   collect_posts || echo "warning: could not search Hacker News" >&2
 
 # GitHub issues and PRs, with their comments; code search doesn't cover them.
-if hits="$(gh api -X GET search/issues -f per_page=100 \
+if hits="$(gh api -X GET search/issues -f per_page=100 -f sort=updated -f order=desc \
   -f q="\"communities.buzz.xyz/invite\" -repo:${GITHUB_REPOSITORY:-kleinbem/nix-packages}" \
   --jq '.items[] | {text: (.body // ""), source: .html_url, date: (.created_at | fromdateiso8601),
                      comments: .comments_url, count: .comments} | @json' 2>&1)"; then
