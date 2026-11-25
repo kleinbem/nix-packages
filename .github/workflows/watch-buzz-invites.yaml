@@ -1,0 +1,81 @@
+name: "Watch: Buzz community invites"
+
+# Collects public Buzz community invites once a week (watch/buzz-invites/run.sh) into one
+# issue, rewritten in place. Invites live up to 30 days, so weekly is enough. A community
+# seen for the first time and not in joined.txt gets a comment, which reaches Martin
+# through the assignment and github-notify. The state lives in a hidden block of the body.
+
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: watch-buzz-invites
+  cancel-in-progress: false
+
+env:
+  ISSUE_TITLE: "Watch: Buzz community invites"
+  STATE_TAG: buzz-invites-state
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read the previous state
+        id: prev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue="$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --limit 100 --json number,title \
+            --jq "map(select(.title == \"$ISSUE_TITLE\"))[0].number // empty")"
+          echo "issue=$issue" >>"$GITHUB_OUTPUT"
+          : >state-in.json
+          if [[ -n $issue ]]; then
+            gh issue view "$issue" --json body --jq .body |
+              sed -n "s/^<!-- $STATE_TAG:\([A-Za-z0-9+/=]*\) -->$/\1/p" |
+              base64 -d | gunzip >state-in.json || : >state-in.json
+          fi
+
+      - name: Collect invites
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATE_IN: state-in.json
+          OUT: .
+        run: watch/buzz-invites/run.sh
+
+      - name: Update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ steps.prev.outputs.issue }}
+          NEW: ${{ steps.check.outputs.new }}
+        run: |
+          { cat report.md
+            echo
+            echo "<!-- $STATE_TAG:$(gzip -9c state.json | base64 -w0) -->"
+          } >body.md
+          if [[ -n $ISSUE ]]; then
+            gh issue edit "$ISSUE" --body-file body.md
+          else
+            ISSUE="$(gh issue create --title "$ISSUE_TITLE" --body-file body.md \
+              --assignee "$GITHUB_REPOSITORY_OWNER" | sed 's|.*/||')"
+          fi
+          if [[ $NEW == true ]]; then
+            { echo "New Buzz communities with an invite:"
+              echo
+              cat new.md
+              echo
+              echo "Joined one? Add its name to \`watch/buzz-invites/joined.txt\`."
+            } >comment.md
+            gh issue comment "$ISSUE" --body-file comment.md
+          fi
