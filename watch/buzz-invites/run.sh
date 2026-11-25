@@ -114,7 +114,7 @@ if hits="$(gh api -X GET search/issues -f per_page=100 \
     [[ -z $hit ]] && continue
     jq -c 'del(.comments, .count)' <<<"$hit" | collect_posts
     [[ $(jq -r .count <<<"$hit") == 0 ]] && continue
-    gh api "$(jq -r .comments <<<"$hit")?per_page=100" \
+    gh api --paginate "$(jq -r .comments <<<"$hit")?per_page=100" \
       --jq '.[] | {text: (.body // ""), source: .html_url, date: (.created_at | fromdateiso8601)}' |
       collect_posts || echo "warning: could not read comments of $(jq -r .source <<<"$hit")" >&2
   done <<<"$hits"
