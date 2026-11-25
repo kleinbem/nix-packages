@@ -81,7 +81,7 @@ done <"$here/sites.txt"
 
 # Appends "<url>\t<source>\t<epoch>" for every invite link in JSON lines {text, source, date}.
 collect_posts() {
-  jq -r --arg re "$link_re" '.text as $t | .source as $s | .date as $d
+  jq -r --arg re "$link_re" '(.text // "") as $t | .source as $s | (.date // "") as $d
     | [$t | scan($re)] | unique[] | "\(.)\t\($s)\t\($d)"' >>"$found"
 }
 
@@ -108,10 +108,12 @@ curl -fsS -m 30 'https://hn.algolia.com/api/v1/search_by_date?query=communities.
 # GitHub issues and PRs, with their comments; code search doesn't cover them.
 if hits="$(gh api -X GET search/issues -f per_page=100 \
   -f q="\"communities.buzz.xyz/invite\" -repo:${GITHUB_REPOSITORY:-kleinbem/nix-packages}" \
-  --jq '.items[] | {text: (.body // ""), source: .html_url, date: (.created_at | fromdateiso8601), comments: .comments_url} | @json' 2>&1)"; then
+  --jq '.items[] | {text: (.body // ""), source: .html_url, date: (.created_at | fromdateiso8601),
+                     comments: .comments_url, count: .comments} | @json' 2>&1)"; then
   while read -r hit; do
     [[ -z $hit ]] && continue
-    jq -c 'del(.comments)' <<<"$hit" | collect_posts
+    jq -c 'del(.comments, .count)' <<<"$hit" | collect_posts
+    [[ $(jq -r .count <<<"$hit") == 0 ]] && continue
     gh api "$(jq -r .comments <<<"$hit")?per_page=100" \
       --jq '.[] | {text: (.body // ""), source: .html_url, date: (.created_at | fromdateiso8601)}' |
       collect_posts || echo "warning: could not read comments of $(jq -r .source <<<"$hit")" >&2
