@@ -1,0 +1,5 @@
+# Files read on every run, "owner/repo path". Code search finds others, but can lag.
+block/buzz-app README.md
+block/buzz README.md
+pavlenex/buzz-directory app/communities.ts
+radiofrequency/buzzftw src/data/marketplace-communities.generated.ts

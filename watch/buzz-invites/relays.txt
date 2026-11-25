@@ -1,0 +1,3 @@
+# Nostr relays with full-text search (NIP-50). relay.nostr.band returned nothing on 2026-11-25.
+wss://relay.ditto.pub
+wss://search.nos.today
