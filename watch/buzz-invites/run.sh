@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Collects public Buzz community invites (https://<name>.communities.buzz.xyz/invite/<code>)
-# from GitHub code search, the files in sources.txt and the directory sites in sites.txt.
+# from GitHub code search, the files in sources.txt, the directory sites in sites.txt, Nostr
+# posts on the search relays in relays.txt (needs `nak`), Hacker News, and GitHub issues and PRs.
 #
 # Reads the previous state from STATE_IN (JSON, may be missing or empty) and writes:
 #   $OUT/state.json   invites still posted or still valid, and every community seen so far
@@ -9,8 +10,9 @@
 # Writes "new=true" to $GITHUB_OUTPUT when new.md has entries on a run with previous state.
 #
 # Invites live at most 30 days (buzz-app admin-protocol.ts). An invite leaves the report at
-# the expiry its code carries (v1 codes), else 30 days after it was posted: the date of the
-# commit that added the line (git blame) for links on GitHub, the first run that saw it otherwise.
+# the expiry its code carries (v1 codes), else 30 days after it was posted: the post's date on
+# Nostr, Hacker News and GitHub issues, the commit that added the line (git blame) for files on
+# GitHub, the first run that saw it otherwise.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -76,6 +78,47 @@ while read -r site; do
   [[ -z $site || $site == \#* ]] && continue
   curl -fsSL -m 30 "$site" | collect "$site" || echo "warning: could not fetch $site" >&2
 done <"$here/sites.txt"
+
+# Appends "<url>\t<source>\t<epoch>" for every invite link in JSON lines {text, source, date}.
+collect_posts() {
+  jq -r --arg re "$link_re" '.text as $t | .source as $s | .date as $d
+    | [$t | scan($re)] | unique[] | "\(.)\t\($s)\t\($d)"' >>"$found"
+}
+
+# Nostr: Buzz is built on it, so most invites are shared there. Search relays (NIP-50) only.
+if command -v nak >/dev/null; then
+  while read -r relay; do
+    [[ -z $relay || $relay == \#* ]] && continue
+    # nak reads stdin, which here is relays.txt.
+    { timeout 60 nak req -k 1 --search 'communities.buzz.xyz/invite' -l 500 "$relay" </dev/null 2>/dev/null || true; } |
+      jq -c '{text: .content, source: "https://njump.me/\(.id)", date: .created_at}' | collect_posts ||
+      echo "warning: could not search $relay" >&2
+  done <"$here/relays.txt"
+else
+  echo "warning: nak not found, Nostr skipped" >&2
+fi
+
+# Hacker News stories and comments (Algolia); the text is HTML-escaped.
+curl -fsS -m 30 'https://hn.algolia.com/api/v1/search_by_date?query=communities.buzz.xyz&tags=(story,comment)&hitsPerPage=100' |
+  jq -c '.hits[] | {text: ([.comment_text, .story_text, .url] | map(. // "") | join(" ")
+                           | gsub("&#x2F;"; "/") | gsub("&amp;"; "&")),
+                    source: "https://news.ycombinator.com/item?id=\(.objectID)", date: .created_at_i}' |
+  collect_posts || echo "warning: could not search Hacker News" >&2
+
+# GitHub issues and PRs, with their comments; code search doesn't cover them.
+if hits="$(gh api -X GET search/issues -f per_page=100 \
+  -f q="\"communities.buzz.xyz/invite\" -repo:${GITHUB_REPOSITORY:-kleinbem/nix-packages}" \
+  --jq '.items[] | {text: (.body // ""), source: .html_url, date: (.created_at | fromdateiso8601), comments: .comments_url} | @json' 2>&1)"; then
+  while read -r hit; do
+    [[ -z $hit ]] && continue
+    jq -c 'del(.comments)' <<<"$hit" | collect_posts
+    gh api "$(jq -r .comments <<<"$hit")?per_page=100" \
+      --jq '.[] | {text: (.body // ""), source: .html_url, date: (.created_at | fromdateiso8601)}' |
+      collect_posts || echo "warning: could not read comments of $(jq -r .source <<<"$hit")" >&2
+  done <<<"$hits"
+else
+  echo "warning: issue search failed: $hits" >&2
+fi
 
 joined="$({ grep -vE '^\s*(#|$)' "$here/joined.txt" || true; } | jq -R . | jq -s .)"
 prev='{"invites": {}, "communities": []}'

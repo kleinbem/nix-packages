@@ -52,13 +52,18 @@ jobs:
             base64 -d <<<"$encoded" | gunzip >state-in.json
           fi
 
+      # For nak, the Nostr client that searches the relays.
+      - uses: kleinbem/actions/nix-setup@d5aec5d8fbed30867e0b2c1d781992844240ee1e # v1.10.0
+        with:
+          github-token: ${{ github.token }}
+
       - name: Collect invites
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
           STATE_IN: state-in.json
           OUT: .
-        run: watch/buzz-invites/run.sh
+        run: nix shell nixpkgs#nak -c watch/buzz-invites/run.sh
 
       - name: Update the issue
         env:
