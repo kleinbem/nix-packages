@@ -71,7 +71,7 @@ search_code() {
     wait="$({ grep -oE 'try again in [0-9]+' <<<"$out" || true; } | head -n1 | grep -oE '[0-9]+$' || true)"
     [[ -z $wait || $try == 3 ]] && break
     echo "code search rate-limited, waiting $((wait + 2)) s" >&2
-    sleep $((wait + 2))
+    sleep "$((wait + 2))"
   done
   printf '%s\n' "$out"
   return 1
