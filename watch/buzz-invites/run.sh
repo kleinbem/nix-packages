@@ -90,7 +90,7 @@ if command -v nak >/dev/null; then
   while read -r relay; do
     [[ -z $relay || $relay == \#* ]] && continue
     # nak reads stdin, which here is relays.txt.
-    { timeout 60 nak req -k 1 --search 'communities.buzz.xyz/invite' -l 500 "$relay" </dev/null 2>/dev/null || true; } |
+    timeout 60 nak req -k 1 --search 'communities.buzz.xyz/invite' -l 500 "$relay" </dev/null 2>/dev/null |
       jq -c '{text: .content, source: "https://njump.me/\(.id)", date: .created_at}' | collect_posts ||
       echo "warning: could not search $relay" >&2
   done <"$here/relays.txt"
