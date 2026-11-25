@@ -1,2 +1,3 @@
 # Communities already joined (the <name> in <name>.communities.buzz.xyz), one per line.
 # Their new invites stay in the issue's table but don't send a notice.
+buzz

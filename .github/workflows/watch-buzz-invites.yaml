@@ -41,9 +41,13 @@ jobs:
           echo "issue=$issue" >>"$GITHUB_OUTPUT"
           : >state-in.json
           if [[ -n $issue ]]; then
-            gh issue view "$issue" --json body --jq .body |
-              sed -n "s/^<!-- $STATE_TAG:\([A-Za-z0-9+/=]*\) -->$/\1/p" |
-              base64 -d | gunzip >state-in.json || : >state-in.json
+            # A failed read must fail the run: an empty state would reset every date.
+            # Bodies edited on the web end lines with \r\n.
+            body="$(gh issue view "$issue" --json body --jq .body)"
+            encoded="$(sed -n "s/^<!-- $STATE_TAG:\([A-Za-z0-9+/=]*\) -->\r\?$/\1/p" <<<"$body")"
+            if [[ -n $encoded ]]; then
+              base64 -d <<<"$encoded" | gunzip >state-in.json
+            fi
           fi
 
       - name: Collect invites
