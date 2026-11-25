@@ -75,12 +75,12 @@ jobs:
             echo
             echo "<!-- $STATE_TAG:$(gzip -9c state.json | base64 -w0) -->"
           } >body.md
-          if [[ -n $ISSUE ]]; then
-            gh issue edit "$ISSUE" --body-file body.md
-          else
-            ISSUE="$(gh issue create --title "$ISSUE_TITLE" --body-file body.md \
-              --assignee "$GITHUB_REPOSITORY_OWNER" | sed 's|.*/||')"
+          if [[ -z $ISSUE ]]; then
+            # The first run never sends a notice (no earlier state), so creating is enough.
+            gh issue create --title "$ISSUE_TITLE" --body-file body.md --assignee "$GITHUB_REPOSITORY_OWNER"
+            exit 0
           fi
+          # Notice first: if it fails, the state stays as it was and the next run retries it.
           if [[ $NEW == true ]]; then
             { echo "New Buzz communities with an invite:"
               echo
@@ -90,3 +90,4 @@ jobs:
             } >comment.md
             gh issue comment "$ISSUE" --body-file comment.md
           fi
+          gh issue edit "$ISSUE" --body-file body.md

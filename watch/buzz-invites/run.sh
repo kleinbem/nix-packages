@@ -48,7 +48,7 @@ collect_github() { # owner/repo path
   src="https://github.com/$1/blob/HEAD/$path"
   # Raw media type: the JSON form has no content for files over 1 MB.
   content="$(gh api -H 'Accept: application/vnd.github.raw+json' "repos/$1/contents/$path")" || return 1
-  blame="$(gh api graphql -f query="$blame_query" -F owner="${1%%/*}" -F name="${1#*/}" -F path="$2" \
+  blame="$(gh api graphql -f query="$blame_query" -f owner="${1%%/*}" -f name="${1#*/}" -f path="$2" \
     --jq '[.data.repository.defaultBranchRef.target.blame.ranges[]
            | {s: .startingLine, e: .endingLine, d: (.commit.committedDate | fromdateiso8601)}]' 2>/dev/null)" ||
     blame='[]'
@@ -122,8 +122,10 @@ fi
 
 joined="$({ grep -vE '^\s*(#|$)' "$here/joined.txt" || true; } | jq -R . | jq -s .)"
 prev='{"invites": {}, "communities": []}'
+has_prev=false
 if [[ -n $state_in && -s $state_in ]]; then
   prev="$(cat "$state_in")"
+  has_prev=true
 fi
 
 # State: every invite still posted somewhere (expired ones too, so a stale invite that stays
@@ -198,7 +200,7 @@ jq -r --argjson prev "$prev" --argjson joined "$joined" --argjson now "$now" --a
 
 if [[ -n ${GITHUB_OUTPUT:-} ]]; then
   # The first run has nothing to compare with; it only fills the issue.
-  if [[ $(jq '.communities | length' <<<"$prev") -gt 0 && -s $out/new.md ]]; then
+  if [[ $has_prev == true && -s $out/new.md ]]; then
     echo "new=true" >>"$GITHUB_OUTPUT"
   else
     echo "new=false" >>"$GITHUB_OUTPUT"
